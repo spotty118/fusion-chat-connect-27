@@ -1,15 +1,29 @@
-export const checkWindowAI = () => {
-  if (typeof window === 'undefined' || !window?.ai) {
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second
+
+const waitForWindowAI = async (retries = 0) => {
+  if (typeof window !== 'undefined' && window?.ai) {
+    return true;
+  }
+
+  if (retries >= MAX_RETRIES) {
     throw new Error(
       "Window AI not found! Please install the Chrome extension: https://windowai.io"
     );
   }
-  return true;
+
+  // Wait for 1 second
+  await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+  return waitForWindowAI(retries + 1);
+};
+
+export const checkWindowAI = async () => {
+  return waitForWindowAI();
 };
 
 export const generateResponse = async (message, fusionMode = false) => {
   try {
-    checkWindowAI();
+    await checkWindowAI();
     
     if (fusionMode) {
       const [response1, response2, response3] = await Promise.all([

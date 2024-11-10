@@ -7,7 +7,7 @@ export const CurrentModel = () => {
     queryKey: ['current-model'],
     queryFn: async () => {
       try {
-        checkWindowAI();
+        await checkWindowAI();
         const model = await window.ai.getCurrentModel();
         console.log('Current model:', model); // Debug log
         return model;
