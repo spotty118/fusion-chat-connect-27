@@ -18,14 +18,10 @@ const Index = () => {
   const handleSendMessage = async (content) => {
     try {
       setIsLoading(true);
-      // Add user message
       const userMessage = { role: 'user', content };
       setMessages(prev => [...prev, userMessage]);
 
-      // Get AI response
       const response = await generateResponse(content, fusionMode);
-      
-      // Window AI returns the response directly as a string
       const aiMessage = { role: 'assistant', content: response };
       setMessages(prev => [...prev, aiMessage]);
     } catch (error) {
@@ -43,9 +39,11 @@ const Index = () => {
     <div className="flex flex-col h-screen bg-gray-50">
       <header className="bg-gradient-to-r from-fusion-primary to-fusion-secondary p-4 text-white">
         <div className="flex justify-between items-center max-w-4xl mx-auto w-full">
-          <div className="space-y-1">
+          <div className="flex flex-col space-y-1">
             <h1 className="text-xl font-bold">Fusion Chat</h1>
-            <CurrentModel />
+            <div className="flex items-center space-x-2">
+              <CurrentModel />
+            </div>
           </div>
           <Button
             variant="ghost"
