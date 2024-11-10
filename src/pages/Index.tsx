@@ -18,12 +18,14 @@ const Index = () => {
     try {
       setIsLoading(true);
       // Add user message
-      const userMessage = { role: 'user', content };
+      const userMessage = { role: 'user', content: content };
       setMessages(prev => [...prev, userMessage]);
 
       // Get AI response
       const response = await generateResponse(content, fusionMode);
-      const aiMessage = { role: 'assistant', content: response };
+      // Ensure response is a string
+      const responseContent = typeof response === 'string' ? response : JSON.stringify(response);
+      const aiMessage = { role: 'assistant', content: responseContent };
       setMessages(prev => [...prev, aiMessage]);
     } catch (error) {
       toast({
