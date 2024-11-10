@@ -39,11 +39,9 @@ const Index = () => {
     <div className="flex flex-col h-screen bg-gray-50">
       <header className="bg-gradient-to-r from-fusion-primary to-fusion-secondary p-4 text-white">
         <div className="flex justify-between items-center max-w-4xl mx-auto w-full">
-          <div className="flex flex-col space-y-1">
-            <h1 className="text-xl font-bold">Fusion Chat</h1>
-            <div className="flex items-center space-x-2">
-              <CurrentModel />
-            </div>
+          <div className="flex flex-col">
+            <h1 className="text-xl font-bold mb-1">Fusion Chat</h1>
+            <CurrentModel />
           </div>
           <Button
             variant="ghost"
