@@ -1,4 +1,4 @@
-import React from 'react';
+import { Toaster } from "@/components/ui/toaster";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
@@ -79,6 +79,10 @@ const Settings = () => {
       queryFn: () => checkProviderStatus('openrouter', apiKeys.openrouter),
       enabled: !!apiKeys.openrouter,
     }),
+  };
+
+  const handleBack = () => {
+    navigate('/');
   };
 
   const handleFusionModeChange = (checked: boolean) => {
@@ -186,7 +190,7 @@ const Settings = () => {
       <div className="max-w-2xl mx-auto space-y-4">
         <Button 
           variant="ghost" 
-          onClick={() => navigate(-1)}
+          onClick={handleBack}
           className="mb-4"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
