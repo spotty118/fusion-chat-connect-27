@@ -27,10 +27,19 @@ export const generateResponse = async (message, fusionMode = false) => {
         }),
       ]);
 
-      // Handle array of responses and extract text content
-      const r1 = response1?.[0]?.text || response1?.[0]?.message?.content || 'No response';
-      const r2 = response2?.[0]?.text || response2?.[0]?.message?.content || 'No response';
-      const r3 = response3?.[0]?.text || response3?.[0]?.message?.content || 'No response';
+      // Extract content from standardized response format
+      const extractContent = (response) => {
+        if (!response?.length) return 'No response';
+        const choice = response[0];
+        if (choice.message?.content) return choice.message.content;
+        if (choice.text) return choice.text;
+        if (choice.delta?.content) return choice.delta.content;
+        return 'No valid content';
+      };
+
+      const r1 = extractContent(response1);
+      const r2 = extractContent(response2);
+      const r3 = extractContent(response3);
 
       return `Combined responses:\n\nGPT-4: ${r1}\n\nClaude: ${r2}\n\nPaLM: ${r3}`;
     } else {
@@ -38,17 +47,26 @@ export const generateResponse = async (message, fusionMode = false) => {
         messages: [{ role: "user", content: message }]
       });
       
-      if (!response || !response.length) {
+      if (!response?.length) {
         throw new Error('No response received from Window AI');
       }
 
-      // Extract text content from the first response
-      const textContent = response[0]?.text || response[0]?.message?.content;
-      if (!textContent) {
+      const choice = response[0];
+      let content = null;
+
+      if (choice.message?.content) {
+        content = choice.message.content;
+      } else if (choice.text) {
+        content = choice.text;
+      } else if (choice.delta?.content) {
+        content = choice.delta.content;
+      }
+
+      if (!content) {
         throw new Error('No valid response content received');
       }
 
-      return textContent;
+      return content;
     }
   } catch (error) {
     console.error("Error generating response:", error);
