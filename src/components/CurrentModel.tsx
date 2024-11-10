@@ -9,6 +9,7 @@ export const CurrentModel = () => {
       try {
         checkWindowAI();
         const model = await window.ai.getCurrentModel();
+        console.log('Current model:', model); // Debug log
         return model;
       } catch (error) {
         console.error('Error fetching current model:', error);
