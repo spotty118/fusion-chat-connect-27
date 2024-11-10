@@ -13,6 +13,14 @@ const ChatMessage = ({ message, isAI }) => {
 
   const messageContent = getMessageContent(message);
 
+  const TypingIndicator = () => (
+    <div className="flex space-x-1 px-2">
+      <div className="w-2 h-2 bg-gray-500 rounded-full animate-typing-dot-1"></div>
+      <div className="w-2 h-2 bg-gray-500 rounded-full animate-typing-dot-2"></div>
+      <div className="w-2 h-2 bg-gray-500 rounded-full animate-typing-dot-3"></div>
+    </div>
+  );
+
   return (
     <div
       className={cn(
@@ -29,12 +37,11 @@ const ChatMessage = ({ message, isAI }) => {
           "transform hover:scale-[1.02] transition-transform duration-200"
         )}
       >
-        <p className={cn(
-          "text-sm md:text-base leading-relaxed",
-          isAI ? "typing-animation" : "whitespace-pre-wrap"
-        )}>
-          {messageContent}
-        </p>
+        {isAI ? <TypingIndicator /> : (
+          <p className="text-sm md:text-base whitespace-pre-wrap leading-relaxed">
+            {messageContent}
+          </p>
+        )}
       </div>
     </div>
   );

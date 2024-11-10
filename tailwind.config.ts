@@ -78,11 +78,18 @@ export default {
             opacity: "0.4",
             filter: "saturate(100%) hue-rotate(360deg)",
           },
+        },
+        "typing-dot": {
+          "0%, 100%": { opacity: "0" },
+          "50%": { opacity: "1" },
         }
       },
       animation: {
         "message-in": "message-in 0.3s ease-out forwards",
         "fusion-glow": "fusion-glow 8s linear infinite",
+        "typing-dot-1": "typing-dot 1s infinite 0s",
+        "typing-dot-2": "typing-dot 1s infinite 0.2s",
+        "typing-dot-3": "typing-dot 1s infinite 0.4s",
       },
     },
   },
