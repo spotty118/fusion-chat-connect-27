@@ -60,3 +60,25 @@
     @apply bg-gray-400;
   }
 }
+
+@layer components {
+  .typing-animation {
+    overflow: hidden;
+    border-right: 2px solid #666;
+    white-space: nowrap;
+    margin: 0 auto;
+    animation: 
+      typing 1.5s steps(40, end),
+      blink-caret 0.75s step-end infinite;
+  }
+}
+
+@keyframes typing {
+  from { width: 0 }
+  to { width: 100% }
+}
+
+@keyframes blink-caret {
+  from, to { border-color: transparent }
+  50% { border-color: #666 }
+}
