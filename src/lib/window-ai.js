@@ -27,10 +27,10 @@ export const generateResponse = async (message, fusionMode = false) => {
         }),
       ]);
 
-      // Extract text from responses
-      const r1 = typeof response1 === 'string' ? response1 : response1?.text || 'No response';
-      const r2 = typeof response2 === 'string' ? response2 : response2?.text || 'No response';
-      const r3 = typeof response3 === 'string' ? response3 : response3?.text || 'No response';
+      // Extract text from responses, handling both string and object responses
+      const r1 = response1?.content || response1?.text || response1 || 'No response';
+      const r2 = response2?.content || response2?.text || response2 || 'No response';
+      const r3 = response3?.content || response3?.text || response3 || 'No response';
 
       return `Combined responses:\n\nGPT-4: ${r1}\n\nClaude: ${r2}\n\nPaLM: ${r3}`;
     } else {
@@ -42,7 +42,8 @@ export const generateResponse = async (message, fusionMode = false) => {
         return 'No response received from Window AI';
       }
       
-      return typeof completion === 'string' ? completion : completion?.text || 'No response';
+      // Handle both string and object responses
+      return completion?.content || completion?.text || completion || 'No response';
     }
   } catch (error) {
     console.error("Error generating response:", error);
