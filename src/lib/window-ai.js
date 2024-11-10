@@ -17,15 +17,15 @@ export const generateResponse = async (message, fusionMode = false) => {
         window.ai.generateText({
           messages: [{ role: "user", content: message }],
           model: "openai/gpt-4",
-        }).then(res => res.toString()),
+        }).then(res => res.text || res.toString()),
         window.ai.generateText({
           messages: [{ role: "user", content: message }],
           model: "anthropic/claude-2",
-        }).then(res => res.toString()),
+        }).then(res => res.text || res.toString()),
         window.ai.generateText({
           messages: [{ role: "user", content: message }],
           model: "google/palm-2",
-        }).then(res => res.toString()),
+        }).then(res => res.text || res.toString()),
       ]);
 
       return `Combined responses:\n\nGPT-4: ${response1}\n\nClaude: ${response2}\n\nPaLM: ${response3}`;
@@ -39,7 +39,7 @@ export const generateResponse = async (message, fusionMode = false) => {
         throw new Error("No response received from Window AI");
       }
       
-      return completion.toString();
+      return completion.text || completion.toString();
     }
   } catch (error) {
     console.error("Error generating response:", error);
