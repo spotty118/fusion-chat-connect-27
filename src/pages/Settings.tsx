@@ -1,3 +1,4 @@
+import React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
