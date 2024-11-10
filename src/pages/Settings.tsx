@@ -5,9 +5,10 @@ import { useToast } from "@/components/ui/use-toast";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, XCircle } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { ModelSelector } from '@/components/ModelSelector';
+import { useQuery } from '@tanstack/react-query';
 
 const Settings = () => {
   const { toast } = useToast();
@@ -25,6 +26,60 @@ const Settings = () => {
     google: '',
     openrouter: '',
   });
+
+  // Add status checks for each provider
+  const checkProviderStatus = async (provider: string, apiKey: string) => {
+    if (!apiKey) return false;
+    try {
+      const endpoints = {
+        openai: 'https://api.openai.com/v1/models',
+        claude: 'https://api.anthropic.com/v1/models',
+        google: 'https://generativelanguage.googleapis.com/v1beta/models',
+        openrouter: 'https://openrouter.ai/api/v1/models',
+      };
+      
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+
+      if (provider === 'claude') {
+        headers['x-api-key'] = apiKey;
+      } else {
+        headers['Authorization'] = `Bearer ${apiKey}`;
+      }
+
+      const response = await fetch(endpoints[provider as keyof typeof endpoints], {
+        headers
+      });
+      return response.ok;
+    } catch (error) {
+      return false;
+    }
+  };
+
+  // Status queries for each provider
+  const providerQueries = {
+    openai: useQuery({
+      queryKey: ['provider-status', 'openai', apiKeys.openai],
+      queryFn: () => checkProviderStatus('openai', apiKeys.openai),
+      enabled: !!apiKeys.openai,
+    }),
+    claude: useQuery({
+      queryKey: ['provider-status', 'claude', apiKeys.claude],
+      queryFn: () => checkProviderStatus('claude', apiKeys.claude),
+      enabled: !!apiKeys.claude,
+    }),
+    google: useQuery({
+      queryKey: ['provider-status', 'google', apiKeys.google],
+      queryFn: () => checkProviderStatus('google', apiKeys.google),
+      enabled: !!apiKeys.google,
+    }),
+    openrouter: useQuery({
+      queryKey: ['provider-status', 'openrouter', apiKeys.openrouter],
+      queryFn: () => checkProviderStatus('openrouter', apiKeys.openrouter),
+      enabled: !!apiKeys.openrouter,
+    }),
+  };
 
   const handleFusionModeChange = (checked: boolean) => {
     setFusionMode(checked);
@@ -91,28 +146,40 @@ const Settings = () => {
     provider: keyof typeof apiKeys,
     label: string,
     bgColor: string
-  ) => (
-    <div className="space-y-4" key={provider}>
-      <Label htmlFor={`${provider}-key`} className="flex items-center space-x-2">
-        <div className={`w-2 h-2 rounded-full ${bgColor}`} />
-        <span>{label}</span>
-      </Label>
-      <Input
-        id={`${provider}-key`}
-        type="password"
-        value={apiKeys[provider]}
-        onChange={handleApiKeyChange(provider)}
-        placeholder="Enter API key..."
-        className="mb-2"
-      />
-      <ModelSelector
-        provider={provider}
-        apiKey={apiKeys[provider]}
-        onModelSelect={handleModelSelect(provider)}
-        selectedModel={selectedModels[provider]}
-      />
-    </div>
-  );
+  ) => {
+    const status = providerQueries[provider].data;
+    const isLoading = providerQueries[provider].isLoading;
+
+    return (
+      <div className="space-y-4" key={provider}>
+        <div className="flex items-center justify-between">
+          <Label htmlFor={`${provider}-key`} className="flex items-center space-x-2">
+            <div className={`w-2 h-2 rounded-full ${bgColor}`} />
+            <span>{label}</span>
+          </Label>
+          {apiKeys[provider] && !isLoading && (
+            status ? 
+              <CheckCircle2 className="h-5 w-5 text-green-500" /> :
+              <XCircle className="h-5 w-5 text-red-500" />
+          )}
+        </div>
+        <Input
+          id={`${provider}-key`}
+          type="password"
+          value={apiKeys[provider]}
+          onChange={handleApiKeyChange(provider)}
+          placeholder="Enter API key..."
+          className="mb-2"
+        />
+        <ModelSelector
+          provider={provider}
+          apiKey={apiKeys[provider]}
+          onModelSelect={handleModelSelect(provider)}
+          selectedModel={selectedModels[provider]}
+        />
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
