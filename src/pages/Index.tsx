@@ -12,6 +12,7 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [fusionMode, setFusionMode] = useState(false);
 
   const handleSendMessage = async (content) => {
     try {
@@ -21,7 +22,7 @@ const Index = () => {
       setMessages(prev => [...prev, userMessage]);
 
       // Get AI response
-      const response = await generateResponse(content);
+      const response = await generateResponse(content, fusionMode);
       const aiMessage = { role: 'assistant', content: response };
       setMessages(prev => [...prev, aiMessage]);
     } catch (error) {

@@ -7,12 +7,9 @@ export const checkWindowAI = () => {
   return true;
 };
 
-export const generateResponse = async (message) => {
+export const generateResponse = async (message, fusionMode = false) => {
   try {
     checkWindowAI();
-    
-    // In a real implementation, you would get this value from a global state management solution
-    const fusionMode = false; // This would come from your state management
     
     if (fusionMode) {
       // When fusion mode is enabled, make three parallel requests and combine results
@@ -31,14 +28,11 @@ export const generateResponse = async (message) => {
         }),
       ]);
 
-      // Combine the responses (this is a simple concatenation, you might want to implement
-      // a more sophisticated combination logic)
       return `Combined responses:\n\nGPT-4: ${response1}\n\nClaude: ${response2}\n\nPaLM: ${response3}`;
     } else {
       // When fusion mode is disabled, use Window AI
       const response = await window.ai.generateText({
         messages: [{ role: "user", content: message }],
-        model: "openai/gpt-4", // This would be your default model
       });
       
       return response;
