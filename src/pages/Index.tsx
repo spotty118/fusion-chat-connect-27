@@ -6,6 +6,7 @@ import { generateResponse } from '@/lib/window-ai';
 import { Settings as SettingsIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { CurrentModel } from '@/components/CurrentModel';
 
 const Index = () => {
   const [messages, setMessages] = useState([]);
@@ -40,16 +41,21 @@ const Index = () => {
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
-      <header className="bg-gradient-to-r from-fusion-primary to-fusion-secondary p-4 text-white flex justify-between items-center">
-        <h1 className="text-xl font-bold">Fusion Chat</h1>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-white hover:bg-white/20"
-          onClick={() => navigate('/settings')}
-        >
-          <SettingsIcon className="h-5 w-5" />
-        </Button>
+      <header className="bg-gradient-to-r from-fusion-primary to-fusion-secondary p-4 text-white">
+        <div className="flex justify-between items-center max-w-4xl mx-auto w-full">
+          <div className="space-y-1">
+            <h1 className="text-xl font-bold">Fusion Chat</h1>
+            <CurrentModel />
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-white hover:bg-white/20"
+            onClick={() => navigate('/settings')}
+          >
+            <SettingsIcon className="h-5 w-5" />
+          </Button>
+        </div>
       </header>
       
       <main className="flex-1 flex flex-col max-w-4xl mx-auto w-full bg-white shadow-lg">
