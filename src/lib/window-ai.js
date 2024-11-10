@@ -30,12 +30,21 @@ export const generateResponse = async (message, fusionMode = false) => {
 
       return `Combined responses:\n\nGPT-4: ${response1}\n\nClaude: ${response2}\n\nPaLM: ${response3}`;
     } else {
-      // When fusion mode is disabled, use Window AI
-      const response = await window.ai.generateText({
-        messages: [{ role: "user", content: message }],
-      });
-      
-      return response;
+      // When fusion mode is disabled, use Window AI's default model
+      try {
+        const response = await window.ai.generateText({
+          messages: [{ role: "user", content: message }],
+        });
+        
+        if (!response) {
+          throw new Error("No response received from Window AI");
+        }
+        
+        return response;
+      } catch (error) {
+        console.error("Error generating response with Window AI:", error);
+        throw new Error("Failed to generate response. Please try again.");
+      }
     }
   } catch (error) {
     console.error("Error generating response:", error);
