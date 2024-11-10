@@ -100,7 +100,7 @@ const Settings = () => {
     label: string,
     bgColor: string
   ) => (
-    <div className="space-y-4">
+    <div className="space-y-4" key={provider}>
       <Label htmlFor={`${provider}-key`} className="flex items-center space-x-2">
         <div className={`w-2 h-2 rounded-full ${bgColor}`} />
         <span>{label}</span>
@@ -162,11 +162,11 @@ const Settings = () => {
             </div>
 
             {fusionMode && (
-              <div className="space-y-4 animate-message-in">
-                {renderProviderConfig('openai', 'OpenAI Configuration', 'bg-fusion-openai')}
-                {renderProviderConfig('claude', 'Anthropic Claude Configuration', 'bg-fusion-claude')}
-                {renderProviderConfig('google', 'Google PaLM Configuration', 'bg-fusion-google')}
-                {renderProviderConfig('openrouter', 'OpenRouter Configuration', 'bg-fusion-openrouter')}
+              <div className="space-y-6 animate-in fade-in-50">
+                {renderProviderConfig('openai', 'OpenAI Configuration', 'bg-blue-500')}
+                {renderProviderConfig('claude', 'Anthropic Claude Configuration', 'bg-purple-500')}
+                {renderProviderConfig('google', 'Google PaLM Configuration', 'bg-green-500')}
+                {renderProviderConfig('openrouter', 'OpenRouter Configuration', 'bg-orange-500')}
 
                 <Button 
                   className="w-full"
