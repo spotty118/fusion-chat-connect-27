@@ -9,14 +9,14 @@ export const CurrentModel = () => {
       try {
         await checkWindowAI();
         const model = await window.ai.getCurrentModel();
-        console.log('Current model:', model); // Debug log
+        console.log('Current model:', model);
         return model;
       } catch (error) {
         console.error('Error fetching current model:', error);
         throw error;
       }
     },
-    refetchInterval: 2000, // Refresh every 2 seconds
+    refetchInterval: 2000,
     retry: 3,
     retryDelay: 1000,
   });
@@ -57,9 +57,7 @@ export const CurrentModel = () => {
   return (
     <div className="text-sm text-gray-500 flex items-center space-x-2">
       <div className="w-2 h-2 rounded-full bg-green-500" />
-      <span>Provider: {displayProvider}</span>
-      <span>•</span>
-      <span>Model: {modelName || 'Not selected'}</span>
+      <span>{currentModel}</span>
     </div>
   );
 };
