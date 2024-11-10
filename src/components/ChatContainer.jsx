@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import ChatMessage from './ChatMessage';
 
-const ChatContainer = ({ messages }) => {
+const ChatContainer = ({ messages, isLoading }) => {
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -19,6 +19,7 @@ const ChatContainer = ({ messages }) => {
           key={index}
           message={msg.content}
           isAI={msg.role === 'assistant'}
+          isLoading={isLoading && index === messages.length - 1}
         />
       ))}
       <div ref={messagesEndRef} />

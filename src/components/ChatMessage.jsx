@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-const ChatMessage = ({ message, isAI }) => {
+const ChatMessage = ({ message, isAI, isLoading }) => {
   const getMessageContent = (msg) => {
     if (typeof msg === 'string') return msg;
     if (typeof msg === 'object') {
@@ -37,7 +37,7 @@ const ChatMessage = ({ message, isAI }) => {
           "transform hover:scale-[1.02] transition-transform duration-200"
         )}
       >
-        {isAI ? <TypingIndicator /> : (
+        {isAI && isLoading ? <TypingIndicator /> : (
           <p className="text-sm md:text-base whitespace-pre-wrap leading-relaxed">
             {messageContent}
           </p>

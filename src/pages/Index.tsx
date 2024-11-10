@@ -57,7 +57,7 @@ const Index = () => {
       </header>
       
       <main className="flex-1 flex flex-col max-w-4xl mx-auto w-full bg-white shadow-lg">
-        <ChatContainer messages={messages} />
+        <ChatContainer messages={messages} isLoading={isLoading} />
         <ChatInput onSendMessage={handleSendMessage} disabled={isLoading} />
       </main>
     </div>
