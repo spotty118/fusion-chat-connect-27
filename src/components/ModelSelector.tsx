@@ -16,29 +16,73 @@ interface ModelSelectorProps {
 }
 
 const fetchModels = async (provider: string, apiKey: string) => {
-  if (provider === 'openrouter') {
-    try {
-      const response = await fetch('https://openrouter.ai/api/v1/models', {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-        }
-      });
-      const data = await response.json();
-      return data.data.map((model: any) => model.id);
-    } catch (error) {
-      console.error('Error fetching OpenRouter models:', error);
-      return [];
-    }
-  }
+  if (!apiKey) return [];
 
-  // This is a placeholder implementation for other providers
   switch (provider) {
     case 'openai':
-      return ['gpt-4o', 'gpt-4o-mini'];
+      try {
+        const response = await fetch('https://api.openai.com/v1/models', {
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          }
+        });
+        const data = await response.json();
+        // Filter to only include GPT-4 models
+        return data.data
+          .filter((model: any) => model.id.includes('gpt-4'))
+          .map((model: any) => model.id);
+      } catch (error) {
+        console.error('Error fetching OpenAI models:', error);
+        return ['gpt-4o', 'gpt-4o-mini']; // Fallback to default models
+      }
+
     case 'claude':
-      return ['claude-2', 'claude-instant'];
+      try {
+        const response = await fetch('https://api.anthropic.com/v1/models', {
+          headers: {
+            'x-api-key': apiKey,
+            'Content-Type': 'application/json',
+          }
+        });
+        const data = await response.json();
+        return data.models.map((model: any) => model.id);
+      } catch (error) {
+        console.error('Error fetching Claude models:', error);
+        return ['claude-2', 'claude-instant']; // Fallback to default models
+      }
+
     case 'google':
-      return ['palm-2'];
+      try {
+        const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models', {
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          }
+        });
+        const data = await response.json();
+        return data.models
+          .filter((model: any) => model.name.includes('palm'))
+          .map((model: any) => model.name);
+      } catch (error) {
+        console.error('Error fetching Google models:', error);
+        return ['palm-2']; // Fallback to default models
+      }
+
+    case 'openrouter':
+      try {
+        const response = await fetch('https://openrouter.ai/api/v1/models', {
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+          }
+        });
+        const data = await response.json();
+        return data.data.map((model: any) => model.id);
+      } catch (error) {
+        console.error('Error fetching OpenRouter models:', error);
+        return [];
+      }
+
     default:
       return [];
   }
