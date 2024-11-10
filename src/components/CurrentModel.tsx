@@ -36,10 +36,16 @@ export const CurrentModel = () => {
     );
   }
 
+  // Extract provider and model name
+  const [provider, modelName] = currentModel?.split('/') || ['Unknown', 'Unknown'];
+  const displayProvider = provider.charAt(0).toUpperCase() + provider.slice(1);
+
   return (
     <div className="text-sm text-gray-500 flex items-center space-x-2">
       <div className="w-2 h-2 rounded-full bg-green-500" />
-      <span>Current Model: {currentModel || 'Not selected'}</span>
+      <span>Provider: {displayProvider}</span>
+      <span>•</span>
+      <span>Model: {modelName || 'Not selected'}</span>
     </div>
   );
 };
