@@ -55,6 +55,9 @@ export default {
         fusion: {
           primary: "#8B5CF6",
           secondary: "#6366F1",
+          openai: "#00A67E",
+          claude: "#7C3AED",
+          google: "#4285F4",
         },
       },
       keyframes: {
@@ -62,20 +65,24 @@ export default {
           "0%": { transform: "translateY(10px)", opacity: "0" },
           "100%": { transform: "translateY(0)", opacity: "1" },
         },
-        "fusion-pulse": {
-          "0%, 100%": {
-            transform: "scale(1)",
-            opacity: "0.5",
+        "fusion-glow": {
+          "0%": {
+            opacity: "0.4",
+            filter: "saturate(100%) hue-rotate(0deg)",
           },
           "50%": {
-            transform: "scale(1.05)",
-            opacity: "1",
+            opacity: "0.7",
+            filter: "saturate(150%) hue-rotate(180deg)",
+          },
+          "100%": {
+            opacity: "0.4",
+            filter: "saturate(100%) hue-rotate(360deg)",
           },
         },
       },
       animation: {
         "message-in": "message-in 0.3s ease-out forwards",
-        "fusion-pulse": "fusion-pulse 2s ease-in-out infinite",
+        "fusion-glow": "fusion-glow 8s linear infinite",
       },
     },
   },
