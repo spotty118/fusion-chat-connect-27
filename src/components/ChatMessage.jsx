@@ -24,7 +24,7 @@ const ChatMessage = ({ message, isAI }) => {
   return (
     <div
       className={cn(
-        "flex w-full mb-4 animate-message-in group",
+        "flex w-full mb-4 group",
         isAI ? "justify-start" : "justify-end"
       )}
     >

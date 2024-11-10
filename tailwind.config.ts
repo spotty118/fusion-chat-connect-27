@@ -61,32 +61,12 @@ export default {
         },
       },
       keyframes: {
-        "message-in": {
-          "0%": { transform: "translateY(10px)", opacity: "0" },
-          "100%": { transform: "translateY(0)", opacity: "1" },
-        },
-        "fusion-glow": {
-          "0%": {
-            opacity: "0.4",
-            filter: "saturate(100%) hue-rotate(0deg)",
-          },
-          "50%": {
-            opacity: "0.7",
-            filter: "saturate(150%) hue-rotate(180deg)",
-          },
-          "100%": {
-            opacity: "0.4",
-            filter: "saturate(100%) hue-rotate(360deg)",
-          },
-        },
         "typing-dot": {
           "0%, 100%": { opacity: "0" },
           "50%": { opacity: "1" },
         }
       },
       animation: {
-        "message-in": "message-in 0.3s ease-out forwards",
-        "fusion-glow": "fusion-glow 8s linear infinite",
         "typing-dot-1": "typing-dot 1s infinite 0s",
         "typing-dot-2": "typing-dot 1s infinite 0.2s",
         "typing-dot-3": "typing-dot 1s infinite 0.4s",
