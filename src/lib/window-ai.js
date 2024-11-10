@@ -27,10 +27,10 @@ export const generateResponse = async (message, fusionMode = false) => {
         }),
       ]);
 
-      // Extract text from responses, handling both string and object responses
-      const r1 = typeof response1 === 'string' ? response1 : (response1?.text || 'No response');
-      const r2 = typeof response2 === 'string' ? response2 : (response2?.text || 'No response');
-      const r3 = typeof response3 === 'string' ? response3 : (response3?.text || 'No response');
+      // Handle array of responses and extract text content
+      const r1 = response1?.[0]?.text || response1?.[0]?.message?.content || 'No response';
+      const r2 = response2?.[0]?.text || response2?.[0]?.message?.content || 'No response';
+      const r3 = response3?.[0]?.text || response3?.[0]?.message?.content || 'No response';
 
       return `Combined responses:\n\nGPT-4: ${r1}\n\nClaude: ${r2}\n\nPaLM: ${r3}`;
     } else {
@@ -38,12 +38,17 @@ export const generateResponse = async (message, fusionMode = false) => {
         messages: [{ role: "user", content: message }]
       });
       
-      if (!response) {
+      if (!response || !response.length) {
         throw new Error('No response received from Window AI');
       }
 
-      // Handle both string and object responses
-      return typeof response === 'string' ? response : (response?.text || 'No valid response received');
+      // Extract text content from the first response
+      const textContent = response[0]?.text || response[0]?.message?.content;
+      if (!textContent) {
+        throw new Error('No valid response content received');
+      }
+
+      return textContent;
     }
   } catch (error) {
     console.error("Error generating response:", error);
