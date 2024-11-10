@@ -87,7 +87,7 @@ export default {
       animation: {
         "message-in": "message-in 0.3s ease-out forwards",
         "fusion-glow": "fusion-glow 8s linear infinite",
-        "typing": "typing 1s ease-out",
+        "typing": "typing 1.5s steps(40, end)",
       },
     },
   },

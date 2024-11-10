@@ -29,7 +29,10 @@ const ChatMessage = ({ message, isAI }) => {
           "transform hover:scale-[1.02] transition-transform duration-200"
         )}
       >
-        <p className="text-sm md:text-base whitespace-pre-wrap leading-relaxed">
+        <p className={cn(
+          "text-sm md:text-base whitespace-pre-wrap leading-relaxed",
+          isAI && "animate-typing overflow-hidden whitespace-nowrap border-r-2 border-gray-500"
+        )}>
           {messageContent}
         </p>
       </div>
