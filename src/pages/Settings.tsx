@@ -42,13 +42,18 @@ const Settings = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="flex items-center justify-between space-x-2">
+            <div className="flex items-center justify-between space-x-2 relative">
               <div className="space-y-0.5">
                 <Label htmlFor="fusion-mode">Fusion Mode</Label>
                 <p className="text-sm text-muted-foreground">
                   Combine responses from multiple AI providers
                 </p>
               </div>
+              {fusionMode && (
+                <div className="absolute inset-0 pointer-events-none">
+                  <div className="absolute inset-0 bg-gradient-to-r from-fusion-primary to-fusion-secondary opacity-20 rounded-lg animate-fusion-pulse" />
+                </div>
+              )}
               <Switch
                 id="fusion-mode"
                 checked={fusionMode}
