@@ -31,9 +31,9 @@ export const generateResponse = async (message, fusionMode = false) => {
       return `Combined responses:\n\nGPT-4: ${response1}\n\nClaude: ${response2}\n\nPaLM: ${response3}`;
     } else {
       // When fusion mode is disabled, use a single model
-      const completion = await window.ai.generateText([
-        { role: "user", content: message }
-      ]);
+      const completion = await window.ai.generateText({
+        messages: [{ role: "user", content: message }]
+      });
       
       if (!completion) {
         throw new Error("No response received from Window AI");
