@@ -31,7 +31,6 @@ export const CurrentModel = () => {
   }
 
   if (error) {
-    console.error('Error in CurrentModel component:', error);
     return (
       <div className="text-sm text-gray-500 flex items-center space-x-2">
         <div className="w-2 h-2 rounded-full bg-red-500" />
@@ -57,7 +56,9 @@ export const CurrentModel = () => {
   return (
     <div className="text-sm text-gray-500 flex items-center space-x-2">
       <div className="w-2 h-2 rounded-full bg-green-500" />
-      <span>{currentModel}</span>
+      <span>{displayProvider}</span>
+      <span className="mx-1">•</span>
+      <span>{modelName}</span>
     </div>
   );
 };
