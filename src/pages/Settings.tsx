@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from 'lucide-react';
 import { Input } from "@/components/ui/input";
+import { ModelSelector } from '@/components/ModelSelector';
 
 const Settings = () => {
   const { toast } = useToast();
@@ -17,13 +18,21 @@ const Settings = () => {
     claude: '',
     google: '',
   });
+  const [selectedModels, setSelectedModels] = React.useState({
+    openai: '',
+    claude: '',
+    google: '',
+  });
 
   const handleFusionModeChange = (checked: boolean) => {
     setFusionMode(checked);
+    if (!checked) {
+      setSelectedModels({ openai: '', claude: '', google: '' });
+    }
     toast({
       title: checked ? "Fusion Mode Enabled" : "Fusion Mode Disabled",
       description: checked 
-        ? "Please configure your API keys for all providers" 
+        ? "Please configure your API keys and select models for all providers" 
         : "Using Window.AI provider",
     });
   };
@@ -35,11 +44,27 @@ const Settings = () => {
     }));
   };
 
+  const handleModelSelect = (provider: keyof typeof selectedModels) => (model: string) => {
+    setSelectedModels(prev => ({
+      ...prev,
+      [provider]: model
+    }));
+  };
+
   const handleActivate = () => {
     if (Object.values(apiKeys).some(key => !key)) {
       toast({
         title: "Missing API Keys",
         description: "Please enter all API keys before activating",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (Object.values(selectedModels).some(model => !model)) {
+      toast({
+        title: "Missing Models",
+        description: "Please select models for all providers",
         variant: "destructive",
       });
       return;
@@ -92,10 +117,10 @@ const Settings = () => {
 
             {fusionMode && (
               <div className="space-y-4 animate-message-in">
-                <div className="space-y-2">
+                <div className="space-y-4">
                   <Label htmlFor="openai-key" className="flex items-center space-x-2">
                     <div className="w-2 h-2 rounded-full bg-fusion-openai" />
-                    <span>OpenAI API Key</span>
+                    <span>OpenAI Configuration</span>
                   </Label>
                   <Input
                     id="openai-key"
@@ -103,13 +128,20 @@ const Settings = () => {
                     value={apiKeys.openai}
                     onChange={handleApiKeyChange('openai')}
                     placeholder="sk-..."
+                    className="mb-2"
+                  />
+                  <ModelSelector
+                    provider="openai"
+                    apiKey={apiKeys.openai}
+                    onModelSelect={handleModelSelect('openai')}
+                    selectedModel={selectedModels.openai}
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-4">
                   <Label htmlFor="claude-key" className="flex items-center space-x-2">
                     <div className="w-2 h-2 rounded-full bg-fusion-claude" />
-                    <span>Anthropic Claude API Key</span>
+                    <span>Anthropic Claude Configuration</span>
                   </Label>
                   <Input
                     id="claude-key"
@@ -117,13 +149,20 @@ const Settings = () => {
                     value={apiKeys.claude}
                     onChange={handleApiKeyChange('claude')}
                     placeholder="sk-ant-..."
+                    className="mb-2"
+                  />
+                  <ModelSelector
+                    provider="claude"
+                    apiKey={apiKeys.claude}
+                    onModelSelect={handleModelSelect('claude')}
+                    selectedModel={selectedModels.claude}
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-4">
                   <Label htmlFor="google-key" className="flex items-center space-x-2">
                     <div className="w-2 h-2 rounded-full bg-fusion-google" />
-                    <span>Google PaLM API Key</span>
+                    <span>Google PaLM Configuration</span>
                   </Label>
                   <Input
                     id="google-key"
@@ -131,6 +170,13 @@ const Settings = () => {
                     value={apiKeys.google}
                     onChange={handleApiKeyChange('google')}
                     placeholder="AIza..."
+                    className="mb-2"
+                  />
+                  <ModelSelector
+                    provider="google"
+                    apiKey={apiKeys.google}
+                    onModelSelect={handleModelSelect('google')}
+                    selectedModel={selectedModels.google}
                   />
                 </div>
 
