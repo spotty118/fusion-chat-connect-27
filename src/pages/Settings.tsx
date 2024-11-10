@@ -1,15 +1,13 @@
 import React from 'react';
-import { Toaster } from "@/components/ui/toaster";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, CheckCircle2, XCircle } from 'lucide-react';
-import { Input } from "@/components/ui/input";
-import { ModelSelector } from '@/components/ModelSelector';
+import { ArrowLeft } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
+import FusionModeSettings from '@/components/settings/FusionModeSettings';
 
 const Settings = () => {
   const { toast } = useToast();
@@ -28,8 +26,7 @@ const Settings = () => {
     openrouter: '',
   });
 
-  // Add status checks for each provider
-  const checkProviderStatus = async (provider: string, apiKey: string) => {
+  const checkProviderStatus = async (provider, apiKey) => {
     if (!apiKey) return false;
     try {
       const endpoints = {
@@ -39,7 +36,7 @@ const Settings = () => {
         openrouter: 'https://openrouter.ai/api/v1/models',
       };
       
-      const headers: Record<string, string> = {
+      const headers = {
         'Content-Type': 'application/json',
       };
 
@@ -49,16 +46,13 @@ const Settings = () => {
         headers['Authorization'] = `Bearer ${apiKey}`;
       }
 
-      const response = await fetch(endpoints[provider as keyof typeof endpoints], {
-        headers
-      });
+      const response = await fetch(endpoints[provider], { headers });
       return response.ok;
     } catch (error) {
       return false;
     }
   };
 
-  // Status queries for each provider
   const providerQueries = {
     openai: useQuery({
       queryKey: ['provider-status', 'openai', apiKeys.openai],
@@ -86,9 +80,8 @@ const Settings = () => {
     navigate('/');
   };
 
-  const handleFusionModeChange = (checked: boolean) => {
+  const handleFusionModeChange = (checked) => {
     setFusionMode(checked);
-    
     if (checked) {
       toast({
         title: "Fusion Mode Enabled",
@@ -103,14 +96,14 @@ const Settings = () => {
     }
   };
 
-  const handleApiKeyChange = (provider: keyof typeof apiKeys) => (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleApiKeyChange = (provider) => (value) => {
     setApiKeys(prev => ({
       ...prev,
-      [provider]: e.target.value
+      [provider]: value
     }));
   };
 
-  const handleModelSelect = (provider: keyof typeof selectedModels) => (model: string) => {
+  const handleModelSelect = (provider) => (model) => {
     setSelectedModels(prev => ({
       ...prev,
       [provider]: model
@@ -120,7 +113,7 @@ const Settings = () => {
   const handleActivate = () => {
     const activeProviders = Object.entries(apiKeys).filter(([_, value]) => value.length > 0);
     const activeModels = Object.entries(selectedModels).filter(([provider, model]) => 
-      apiKeys[provider as keyof typeof apiKeys] && model
+      apiKeys[provider] && model
     );
 
     if (activeProviders.length < 3) {
@@ -145,45 +138,6 @@ const Settings = () => {
       title: "Fusion Mode Activated",
       description: "All providers configured successfully",
     });
-  };
-
-  const renderProviderConfig = (
-    provider: keyof typeof apiKeys,
-    label: string,
-    bgColor: string
-  ) => {
-    const status = providerQueries[provider].data;
-    const isLoading = providerQueries[provider].isLoading;
-
-    return (
-      <div className="space-y-4" key={provider}>
-        <div className="flex items-center justify-between">
-          <Label htmlFor={`${provider}-key`} className="flex items-center space-x-2">
-            <div className={`w-2 h-2 rounded-full ${bgColor}`} />
-            <span>{label}</span>
-          </Label>
-          {apiKeys[provider] && !isLoading && (
-            status ? 
-              <CheckCircle2 className="h-5 w-5 text-green-500" /> :
-              <XCircle className="h-5 w-5 text-red-500" />
-          )}
-        </div>
-        <Input
-          id={`${provider}-key`}
-          type="password"
-          value={apiKeys[provider]}
-          onChange={handleApiKeyChange(provider)}
-          placeholder="Enter API key..."
-          className="mb-2"
-        />
-        <ModelSelector
-          provider={provider}
-          apiKey={apiKeys[provider]}
-          onModelSelect={handleModelSelect(provider)}
-          selectedModel={selectedModels[provider]}
-        />
-      </div>
-    );
   };
 
   return (
@@ -221,19 +175,14 @@ const Settings = () => {
             </div>
 
             {fusionMode && (
-              <div className="space-y-6 animate-in fade-in-50">
-                {renderProviderConfig('openai', 'OpenAI Configuration', 'bg-blue-500')}
-                {renderProviderConfig('claude', 'Anthropic Claude Configuration', 'bg-purple-500')}
-                {renderProviderConfig('google', 'Google PaLM Configuration', 'bg-green-500')}
-                {renderProviderConfig('openrouter', 'OpenRouter Configuration', 'bg-orange-500')}
-
-                <Button 
-                  className="w-full"
-                  onClick={handleActivate}
-                >
-                  Activate Fusion Mode
-                </Button>
-              </div>
+              <FusionModeSettings
+                apiKeys={apiKeys}
+                selectedModels={selectedModels}
+                onApiKeyChange={handleApiKeyChange}
+                onModelSelect={handleModelSelect}
+                providerQueries={providerQueries}
+                onActivate={handleActivate}
+              />
             )}
           </CardContent>
         </Card>

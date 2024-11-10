@@ -1,5 +1,5 @@
 export const checkWindowAI = () => {
-  if (!window?.ai) {
+  if (typeof window === 'undefined' || !window?.ai) {
     throw new Error(
       "Window AI not found! Please install the Chrome extension: https://windowai.io"
     );
@@ -35,7 +35,7 @@ export const generateResponse = async (message) => {
       // a more sophisticated combination logic)
       return `Combined responses:\n\nGPT-4: ${response1}\n\nClaude: ${response2}\n\nPaLM: ${response3}`;
     } else {
-      // When fusion mode is disabled, use a single model through OpenRouter
+      // When fusion mode is disabled, use Window AI
       const response = await window.ai.generateText({
         messages: [{ role: "user", content: message }],
         model: "openai/gpt-4", // This would be your default model
