@@ -16,7 +16,7 @@ export const CurrentModel = () => {
         throw error;
       }
     },
-    refetchInterval: 2000, // Refresh every 2 seconds to keep model info updated
+    refetchInterval: 2000, // Refresh every 2 seconds
   });
 
   if (isLoading) {
@@ -37,8 +37,18 @@ export const CurrentModel = () => {
     );
   }
 
+  if (!currentModel) {
+    return (
+      <div className="text-sm text-gray-500 flex items-center space-x-2">
+        <div className="w-2 h-2 rounded-full bg-gray-500" />
+        <span>No model selected</span>
+      </div>
+    );
+  }
+
   // Extract provider and model name
-  const [provider, modelName] = currentModel?.split('/') || ['Unknown', 'Unknown'];
+  const [provider, ...modelParts] = currentModel.split('/');
+  const modelName = modelParts.join('/');
   const displayProvider = provider.charAt(0).toUpperCase() + provider.slice(1);
 
   return (
