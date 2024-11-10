@@ -17,22 +17,36 @@ const Settings = () => {
     openai: '',
     claude: '',
     google: '',
+    openrouter: '',
   });
   const [selectedModels, setSelectedModels] = React.useState({
     openai: '',
     claude: '',
     google: '',
+    openrouter: '',
   });
 
   const handleFusionModeChange = (checked: boolean) => {
+    const activeProviders = Object.entries(apiKeys).filter(([_, value]) => value.length > 0).length;
+    
+    if (checked && activeProviders < 3) {
+      toast({
+        title: "Insufficient Providers",
+        description: "Please configure at least 3 provider API keys to enable Fusion Mode",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setFusionMode(checked);
     if (!checked) {
-      setSelectedModels({ openai: '', claude: '', google: '' });
+      setSelectedModels({ openai: '', claude: '', google: '', openrouter: '' });
     }
+    
     toast({
       title: checked ? "Fusion Mode Enabled" : "Fusion Mode Disabled",
       description: checked 
-        ? "Please configure your API keys and select models for all providers" 
+        ? "Please configure your API keys and select models for providers" 
         : "Using Window.AI provider",
     });
   };
@@ -52,19 +66,24 @@ const Settings = () => {
   };
 
   const handleActivate = () => {
-    if (Object.values(apiKeys).some(key => !key)) {
+    const activeProviders = Object.entries(apiKeys).filter(([_, value]) => value.length > 0);
+    const activeModels = Object.entries(selectedModels).filter(([provider, model]) => 
+      apiKeys[provider as keyof typeof apiKeys] && model
+    );
+
+    if (activeProviders.length < 3) {
       toast({
-        title: "Missing API Keys",
-        description: "Please enter all API keys before activating",
+        title: "Insufficient Providers",
+        description: "Please configure at least 3 provider API keys",
         variant: "destructive",
       });
       return;
     }
 
-    if (Object.values(selectedModels).some(model => !model)) {
+    if (activeModels.length < activeProviders.length) {
       toast({
         title: "Missing Models",
-        description: "Please select models for all providers",
+        description: "Please select models for all configured providers",
         variant: "destructive",
       });
       return;
@@ -75,6 +94,33 @@ const Settings = () => {
       description: "All providers configured successfully",
     });
   };
+
+  const renderProviderConfig = (
+    provider: keyof typeof apiKeys,
+    label: string,
+    bgColor: string
+  ) => (
+    <div className="space-y-4">
+      <Label htmlFor={`${provider}-key`} className="flex items-center space-x-2">
+        <div className={`w-2 h-2 rounded-full ${bgColor}`} />
+        <span>{label}</span>
+      </Label>
+      <Input
+        id={`${provider}-key`}
+        type="password"
+        value={apiKeys[provider]}
+        onChange={handleApiKeyChange(provider)}
+        placeholder="Enter API key..."
+        className="mb-2"
+      />
+      <ModelSelector
+        provider={provider}
+        apiKey={apiKeys[provider]}
+        onModelSelect={handleModelSelect(provider)}
+        selectedModel={selectedModels[provider]}
+      />
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -100,7 +146,7 @@ const Settings = () => {
               <div className="space-y-0.5">
                 <Label htmlFor="fusion-mode">Fusion Mode</Label>
                 <p className="text-sm text-muted-foreground">
-                  Combine responses from multiple AI providers
+                  Combine responses from multiple AI providers (requires at least 3 providers)
                 </p>
               </div>
               {fusionMode && (
@@ -117,68 +163,10 @@ const Settings = () => {
 
             {fusionMode && (
               <div className="space-y-4 animate-message-in">
-                <div className="space-y-4">
-                  <Label htmlFor="openai-key" className="flex items-center space-x-2">
-                    <div className="w-2 h-2 rounded-full bg-fusion-openai" />
-                    <span>OpenAI Configuration</span>
-                  </Label>
-                  <Input
-                    id="openai-key"
-                    type="password"
-                    value={apiKeys.openai}
-                    onChange={handleApiKeyChange('openai')}
-                    placeholder="sk-..."
-                    className="mb-2"
-                  />
-                  <ModelSelector
-                    provider="openai"
-                    apiKey={apiKeys.openai}
-                    onModelSelect={handleModelSelect('openai')}
-                    selectedModel={selectedModels.openai}
-                  />
-                </div>
-
-                <div className="space-y-4">
-                  <Label htmlFor="claude-key" className="flex items-center space-x-2">
-                    <div className="w-2 h-2 rounded-full bg-fusion-claude" />
-                    <span>Anthropic Claude Configuration</span>
-                  </Label>
-                  <Input
-                    id="claude-key"
-                    type="password"
-                    value={apiKeys.claude}
-                    onChange={handleApiKeyChange('claude')}
-                    placeholder="sk-ant-..."
-                    className="mb-2"
-                  />
-                  <ModelSelector
-                    provider="claude"
-                    apiKey={apiKeys.claude}
-                    onModelSelect={handleModelSelect('claude')}
-                    selectedModel={selectedModels.claude}
-                  />
-                </div>
-
-                <div className="space-y-4">
-                  <Label htmlFor="google-key" className="flex items-center space-x-2">
-                    <div className="w-2 h-2 rounded-full bg-fusion-google" />
-                    <span>Google PaLM Configuration</span>
-                  </Label>
-                  <Input
-                    id="google-key"
-                    type="password"
-                    value={apiKeys.google}
-                    onChange={handleApiKeyChange('google')}
-                    placeholder="AIza..."
-                    className="mb-2"
-                  />
-                  <ModelSelector
-                    provider="google"
-                    apiKey={apiKeys.google}
-                    onModelSelect={handleModelSelect('google')}
-                    selectedModel={selectedModels.google}
-                  />
-                </div>
+                {renderProviderConfig('openai', 'OpenAI Configuration', 'bg-fusion-openai')}
+                {renderProviderConfig('claude', 'Anthropic Claude Configuration', 'bg-fusion-claude')}
+                {renderProviderConfig('google', 'Google PaLM Configuration', 'bg-fusion-google')}
+                {renderProviderConfig('openrouter', 'OpenRouter Configuration', 'bg-fusion-openrouter')}
 
                 <Button 
                   className="w-full"

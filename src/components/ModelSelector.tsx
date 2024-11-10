@@ -9,14 +9,29 @@ import {
 import { useQuery } from '@tanstack/react-query';
 
 interface ModelSelectorProps {
-  provider: 'openai' | 'claude' | 'google';
+  provider: 'openai' | 'claude' | 'google' | 'openrouter';
   apiKey: string;
   onModelSelect: (model: string) => void;
   selectedModel?: string;
 }
 
 const fetchModels = async (provider: string, apiKey: string) => {
-  // This is a placeholder implementation. In a real app, you would call the actual API endpoints
+  if (provider === 'openrouter') {
+    try {
+      const response = await fetch('https://openrouter.ai/api/v1/models', {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+        }
+      });
+      const data = await response.json();
+      return data.data.map((model: any) => model.id);
+    } catch (error) {
+      console.error('Error fetching OpenRouter models:', error);
+      return [];
+    }
+  }
+
+  // This is a placeholder implementation for other providers
   switch (provider) {
     case 'openai':
       return ['gpt-4o', 'gpt-4o-mini'];
