@@ -17,6 +17,8 @@ export const CurrentModel = () => {
       }
     },
     refetchInterval: 2000, // Refresh every 2 seconds
+    retry: 3,
+    retryDelay: 1000,
   });
 
   if (isLoading) {
@@ -29,6 +31,7 @@ export const CurrentModel = () => {
   }
 
   if (error) {
+    console.error('Error in CurrentModel component:', error);
     return (
       <div className="text-sm text-gray-500 flex items-center space-x-2">
         <div className="w-2 h-2 rounded-full bg-red-500" />
