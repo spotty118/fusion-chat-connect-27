@@ -7,7 +7,7 @@ const ChatInput = ({ onSendMessage, disabled }) => {
   const [message, setMessage] = useState('');
 
   const handleSubmit = (e) => {
-    e.preventDefault();
+    e.preventDefault(); // Prevent form submission
     if (message.trim() && !disabled) {
       onSendMessage(message);
       setMessage('');

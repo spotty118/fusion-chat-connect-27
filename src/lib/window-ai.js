@@ -12,7 +12,6 @@ export const generateResponse = async (message, fusionMode = false) => {
     checkWindowAI();
     
     if (fusionMode) {
-      // When fusion mode is enabled, make three parallel requests and combine results
       const [response1, response2, response3] = await Promise.all([
         window.ai.generateText({
           messages: [{ role: "user", content: message }],
@@ -28,9 +27,13 @@ export const generateResponse = async (message, fusionMode = false) => {
         }),
       ]);
 
-      return `Combined responses:\n\nGPT-4: ${response1}\n\nClaude: ${response2}\n\nPaLM: ${response3}`;
+      // Ensure responses are strings
+      const r1 = typeof response1 === 'string' ? response1 : response1.toString();
+      const r2 = typeof response2 === 'string' ? response2 : response2.toString();
+      const r3 = typeof response3 === 'string' ? response3 : response3.toString();
+
+      return `Combined responses:\n\nGPT-4: ${r1}\n\nClaude: ${r2}\n\nPaLM: ${r3}`;
     } else {
-      // When fusion mode is disabled, use a single model
       const completion = await window.ai.generateText({
         messages: [{ role: "user", content: message }]
       });
@@ -39,8 +42,7 @@ export const generateResponse = async (message, fusionMode = false) => {
         throw new Error("No response received from Window AI");
       }
       
-      // Window AI returns the response directly as a string
-      return completion;
+      return typeof completion === 'string' ? completion : completion.toString();
     }
   } catch (error) {
     console.error("Error generating response:", error);
