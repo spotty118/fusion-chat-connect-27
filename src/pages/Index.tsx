@@ -18,13 +18,22 @@ const Index = () => {
     try {
       setIsLoading(true);
       // Add user message
-      const userMessage = { role: 'user', content: content };
+      const userMessage = { role: 'user', content };
       setMessages(prev => [...prev, userMessage]);
 
       // Get AI response
       const response = await generateResponse(content, fusionMode);
-      // Ensure response is a string
-      const responseContent = typeof response === 'string' ? response : JSON.stringify(response);
+      
+      // Handle the response based on its type
+      let responseContent;
+      if (typeof response === 'string') {
+        responseContent = response;
+      } else if (response?.text) {
+        responseContent = response.text;
+      } else {
+        responseContent = 'No valid response received';
+      }
+
       const aiMessage = { role: 'assistant', content: responseContent };
       setMessages(prev => [...prev, aiMessage]);
     } catch (error) {
