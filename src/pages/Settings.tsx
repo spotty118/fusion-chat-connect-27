@@ -27,28 +27,20 @@ const Settings = () => {
   });
 
   const handleFusionModeChange = (checked: boolean) => {
-    const activeProviders = Object.entries(apiKeys).filter(([_, value]) => value.length > 0).length;
-    
-    if (checked && activeProviders < 3) {
-      toast({
-        title: "Insufficient Providers",
-        description: "Please configure at least 3 provider API keys to enable Fusion Mode",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     setFusionMode(checked);
-    if (!checked) {
-      setSelectedModels({ openai: '', claude: '', google: '', openrouter: '' });
-    }
     
-    toast({
-      title: checked ? "Fusion Mode Enabled" : "Fusion Mode Disabled",
-      description: checked 
-        ? "Please configure your API keys and select models for providers" 
-        : "Using Window.AI provider",
-    });
+    if (checked) {
+      toast({
+        title: "Fusion Mode Enabled",
+        description: "Please configure your API keys and select models for providers",
+      });
+    } else {
+      setSelectedModels({ openai: '', claude: '', google: '', openrouter: '' });
+      toast({
+        title: "Fusion Mode Disabled",
+        description: "Using Window.AI provider",
+      });
+    }
   };
 
   const handleApiKeyChange = (provider: keyof typeof apiKeys) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -142,18 +134,13 @@ const Settings = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="flex items-center justify-between space-x-2 relative overflow-hidden rounded-lg p-4 transition-all duration-300">
+            <div className="flex items-center justify-between space-x-2">
               <div className="space-y-0.5">
                 <Label htmlFor="fusion-mode">Fusion Mode</Label>
                 <p className="text-sm text-muted-foreground">
                   Combine responses from multiple AI providers (requires at least 3 providers)
                 </p>
               </div>
-              {fusionMode && (
-                <div className="absolute inset-0 pointer-events-none">
-                  <div className="absolute inset-0 bg-gradient-to-r from-fusion-primary via-fusion-secondary to-fusion-primary opacity-10 animate-fusion-glow" />
-                </div>
-              )}
               <Switch
                 id="fusion-mode"
                 checked={fusionMode}
