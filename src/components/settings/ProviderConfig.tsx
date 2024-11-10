@@ -5,8 +5,10 @@ import { ModelSelector } from '@/components/ModelSelector';
 import { CheckCircle2, XCircle } from 'lucide-react';
 import { UseQueryResult } from '@tanstack/react-query';
 
+type Provider = 'openai' | 'claude' | 'google' | 'openrouter';
+
 interface ProviderConfigProps {
-  provider: string;
+  provider: Provider;
   label: string;
   bgColor: string;
   apiKey: string;
