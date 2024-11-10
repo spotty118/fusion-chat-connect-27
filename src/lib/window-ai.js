@@ -27,23 +27,15 @@ export const generateResponse = async (message, fusionMode = false) => {
         }),
       ]);
 
-      // Extract text from responses, handling both string and object responses
-      const r1 = response1?.content || response1?.text || response1 || 'No response';
-      const r2 = response2?.content || response2?.text || response2 || 'No response';
-      const r3 = response3?.content || response3?.text || response3 || 'No response';
-
-      return `Combined responses:\n\nGPT-4: ${r1}\n\nClaude: ${r2}\n\nPaLM: ${r3}`;
+      // Window AI returns the response directly as a string
+      return `Combined responses:\n\nGPT-4: ${response1}\n\nClaude: ${response2}\n\nPaLM: ${response3}`;
     } else {
-      const completion = await window.ai.generateText({
+      const response = await window.ai.generateText({
         messages: [{ role: "user", content: message }]
       });
       
-      if (!completion) {
-        return 'No response received from Window AI';
-      }
-      
-      // Handle both string and object responses
-      return completion?.content || completion?.text || completion || 'No response';
+      // Window AI returns the response directly as a string
+      return response;
     }
   } catch (error) {
     console.error("Error generating response:", error);

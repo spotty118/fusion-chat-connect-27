@@ -24,17 +24,8 @@ const Index = () => {
       // Get AI response
       const response = await generateResponse(content, fusionMode);
       
-      // Handle the response based on its type
-      let responseContent;
-      if (typeof response === 'string') {
-        responseContent = response;
-      } else if (response?.text) {
-        responseContent = response.text;
-      } else {
-        responseContent = 'No valid response received';
-      }
-
-      const aiMessage = { role: 'assistant', content: responseContent };
+      // Window AI returns the response directly as a string
+      const aiMessage = { role: 'assistant', content: response };
       setMessages(prev => [...prev, aiMessage]);
     } catch (error) {
       toast({
