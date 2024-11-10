@@ -37,18 +37,18 @@ const Index = () => {
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
-      <header className="bg-gradient-to-r from-fusion-primary to-fusion-secondary p-4 text-white">
+      <header className="bg-gradient-to-r from-fusion-primary to-fusion-secondary p-4 text-white shadow-lg">
         <div className="flex justify-between items-center max-w-4xl mx-auto w-full">
           <div className="flex flex-col gap-1">
-            <h1 className="text-xl font-bold">Fusion Chat</h1>
-            <div className="flex items-center">
+            <h1 className="text-xl font-bold tracking-tight">Fusion Chat</h1>
+            <div className="flex items-center opacity-90 text-sm">
               <CurrentModel />
             </div>
           </div>
           <Button
             variant="ghost"
             size="icon"
-            className="text-white hover:bg-white/20"
+            className="text-white hover:bg-white/20 transition-colors duration-200"
             onClick={() => navigate('/settings')}
           >
             <SettingsIcon className="h-5 w-5" />
