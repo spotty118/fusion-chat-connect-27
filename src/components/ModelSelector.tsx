@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/select";
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from "@/components/ui/use-toast";
+import { fetchModelsFromBackend } from '../api/modelsApi';
 
 interface ModelSelectorProps {
   provider: 'openai' | 'claude' | 'google' | 'openrouter';
@@ -29,9 +30,14 @@ const fetchModels = async (
   apiKey: string,
   fusionMode: boolean = false
 ): Promise<string[]> => {
-  // For providers with CORS restrictions, return default models
+  // For providers requiring backend proxy
   if (provider === 'claude' || provider === 'openai' || provider === 'google') {
-    return DEFAULT_MODELS[provider];
+    try {
+      return await fetchModelsFromBackend(provider, apiKey);
+    } catch (error) {
+      console.error(`Error fetching models from backend for ${provider}:`, error);
+      return DEFAULT_MODELS[provider];
+    }
   }
 
   // If Window.ai is available and fusion mode is not active, try using it
