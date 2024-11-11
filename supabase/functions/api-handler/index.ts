@@ -7,12 +7,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const handleProviderRequest = async (
-  provider: string,
-  message: string,
-  model: string,
-  apiKey: string
-) => {
+const handleProviderRequest = async (provider: string, message: string, model: string, apiKey: string) => {
   let response;
   let endpoint;
   let headers;
@@ -138,10 +133,13 @@ serve(async (req) => {
       .eq('provider', provider)
       .single();
 
-    if (apiKeyError || !apiKeyData?.api_key) {
-      console.error('API key error:', apiKeyError);
+    if (apiKeyError || !apiKeyData) {
+      console.error(`API key error for ${provider}:`, apiKeyError);
       return new Response(
-        JSON.stringify({ error: `No API key found for provider ${provider}` }),
+        JSON.stringify({ 
+          error: `No API key found for ${provider}. Please add your API key in the settings.`,
+          provider 
+        }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -157,7 +155,7 @@ serve(async (req) => {
           provider,
           model,
           message,
-          response: JSON.stringify(aiResponse),
+          response: JSON.stringify(aiResponse)
         });
 
       if (insertError) {
@@ -172,7 +170,7 @@ serve(async (req) => {
     } catch (error) {
       console.error(`Provider error (${provider}):`, error);
       return new Response(
-        JSON.stringify({ error: `Provider ${provider} error: ${error.message}` }),
+        JSON.stringify({ error: `Provider ${provider} error: ${error.message}`, provider }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
