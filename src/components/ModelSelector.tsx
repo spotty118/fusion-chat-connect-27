@@ -23,6 +23,12 @@ const DEFAULT_MODELS = {
   openrouter: ['openai/gpt-4', 'anthropic/claude-2']
 };
 
+interface WindowAIModel {
+  id: string;
+  name: string;
+  provider: string;
+}
+
 const fetchModels = async (provider: string, apiKey: string) => {
   if (!apiKey && provider !== 'openrouter') {
     throw new Error('API key is required');
@@ -32,13 +38,15 @@ const fetchModels = async (provider: string, apiKey: string) => {
   if (provider === 'openrouter' && typeof window !== 'undefined' && window.ai?.getModels) {
     try {
       // Window.ai returns models in format: { id: string, name: string, provider: string }[]
-      const windowAiModels = await window.ai.getModels();
+      const windowAiModels = await window.ai.getModels() as (WindowAIModel | string)[];
       console.log('Raw Window.ai models:', windowAiModels);
       
       // Transform the models to match our expected format: provider/model
       const formattedModels = windowAiModels.map(model => {
+        if (!model) return '';
+        
         // Some models might already be in provider/model format
-        if (model.includes('/')) return model;
+        if (typeof model === 'string' && model.includes('/')) return model;
         
         // Extract provider and model name if available in object format
         if (typeof model === 'object' && model.provider && model.id) {
@@ -46,8 +54,8 @@ const fetchModels = async (provider: string, apiKey: string) => {
         }
         
         // Fallback for other formats
-        return model;
-      });
+        return typeof model === 'string' ? model : '';
+      }).filter(model => model !== ''); // Remove empty strings
 
       console.log('Formatted models:', formattedModels);
       return formattedModels;
