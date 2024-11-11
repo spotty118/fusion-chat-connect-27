@@ -20,7 +20,6 @@ const combineResponsesWithAI = async (responses: { provider: string; response: s
       .from('response_cache')
       .select('*')
       .eq('cache_key', cacheKey)
-      .returns<ResponseCache>()
       .single();
 
     if (existingResponse) {
