@@ -16,6 +16,13 @@ interface ModelSelectorProps {
   selectedModel?: string;
 }
 
+const DEFAULT_MODELS = {
+  openai: ['gpt-4', 'gpt-4-turbo-preview'],
+  claude: ['claude-2', 'claude-instant'],
+  google: ['palm-2'],
+  openrouter: ['openai/gpt-4', 'anthropic/claude-2']
+};
+
 const fetchModels = async (provider: string, apiKey: string) => {
   if (!apiKey) {
     throw new Error('API key is required');
@@ -47,7 +54,7 @@ const fetchModels = async (provider: string, apiKey: string) => {
     const data = await response.json();
 
     if (!response.ok) {
-      const errorMessage = data.error?.message || 'Failed to fetch models';
+      const errorMessage = data.error?.message || `Failed to fetch ${provider} models`;
       throw new Error(errorMessage);
     }
 
@@ -65,13 +72,22 @@ const fetchModels = async (provider: string, apiKey: string) => {
       case 'openrouter':
         return data.data.map((model: any) => model.id);
       default:
-        return [];
+        return DEFAULT_MODELS[provider] || [];
     }
   } catch (error: any) {
+    // Handle common error cases
     if (error.message.includes('API key')) {
-      throw new Error('Invalid API key. Please check your credentials and try again.');
+      throw new Error(`Invalid ${provider} API key. Please check your credentials and try again.`);
     }
-    throw error;
+    if (error.message.includes('401')) {
+      throw new Error(`Unauthorized: Please check your ${provider} API key.`);
+    }
+    if (error.message.includes('403')) {
+      throw new Error(`Access denied for ${provider}. Please verify your API key permissions.`);
+    }
+    // If we can't fetch models, return default models for the provider
+    console.error(`Error fetching ${provider} models:`, error);
+    return DEFAULT_MODELS[provider] || [];
   }
 };
 
@@ -87,7 +103,7 @@ export const ModelSelector = ({ provider, apiKey, onModelSelect, selectedModel }
     meta: {
       errorHandler: (error: Error) => {
         toast({
-          title: "Error fetching models",
+          title: `Error fetching ${provider} models`,
           description: error.message,
           variant: "destructive",
         });
