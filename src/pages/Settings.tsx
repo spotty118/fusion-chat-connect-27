@@ -69,13 +69,25 @@ const Settings = () => {
 
     // Save API key to Supabase
     if (value) {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Authentication Error",
+          description: "You must be logged in to save API keys.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { error } = await supabase
         .from('api_keys')
         .upsert({
           provider,
           api_key: value,
+          user_id: user.id
         }, {
-          onConflict: 'provider'
+          onConflict: 'provider,user_id'
         });
 
       if (error) {
