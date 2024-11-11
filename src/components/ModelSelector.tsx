@@ -29,41 +29,31 @@ const fetchModels = async (
   apiKey: string,
   fusionMode: boolean = false
 ): Promise<string[]> => {
-  // If fusion mode is active, skip window.ai and use API directly
+  // For Claude, always return default models
+  if (provider === 'claude') {
+    return DEFAULT_MODELS.claude;
+  }
+
+  // If Window.ai is available and fusion mode is not active, try using it
   if (!fusionMode && typeof window !== 'undefined' && window.ai?.getModels) {
     try {
       const windowAiModels = await window.ai.getModels();
-      console.log('Available Window.ai models:', windowAiModels);
-      
       if (Array.isArray(windowAiModels) && windowAiModels.length > 0) {
-        const formattedModels = windowAiModels.map((modelId) => {
-          if (modelId.includes('/')) {
-            return modelId;
-          }
-          return `${provider}/${modelId}`;
-        }).filter(Boolean);
-
-        if (formattedModels.length > 0) {
-          console.log('Formatted Window.ai models:', formattedModels);
-          return formattedModels;
-        }
+        return windowAiModels.map((modelId) => 
+          modelId.includes('/') ? modelId : `${provider}/${modelId}`
+        ).filter(Boolean);
       }
     } catch (error) {
       console.error('Error fetching models from Window.ai:', error);
     }
   }
 
-  // For Claude, always return default models due to CORS restrictions
-  if (provider === 'claude') {
-    return DEFAULT_MODELS.claude;
-  }
-
-  // If Window.ai fails or returns no models, fall back to API endpoints
+  // Return default models if no API key is provided
   if (!apiKey && provider !== 'openrouter') {
-    throw new Error('API key is required');
+    return DEFAULT_MODELS[provider] || [];
   }
 
-  // Fallback to OpenRouter API for OpenRouter provider
+  // Handle OpenRouter separately
   if (provider === 'openrouter') {
     try {
       const response = await fetch('https://openrouter.ai/api/v1/models', {
@@ -78,48 +68,15 @@ const fetchModels = async (
       }
 
       const data = await response.json();
-      return data.data.map((model: { id: string }) => model.id).filter(Boolean);
+      return data.data.map((model: { id: string }) => model.id);
     } catch (error) {
       console.error('Error fetching OpenRouter models:', error);
       return DEFAULT_MODELS.openrouter;
     }
   }
 
-  // Fallback to other provider APIs
-  const endpoints: Record<string, string> = {
-    openai: 'https://api.openai.com/v1/models',
-    google: 'https://generativelanguage.googleapis.com/v1beta/models',
-  };
-
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${apiKey}`
-  };
-
-  try {
-    const response = await fetch(endpoints[provider], { headers });
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error?.message || `Failed to fetch ${provider} models`);
-    }
-
-    switch (provider) {
-      case 'openai':
-        return data.data
-          .filter((model: any) => model.id.includes('gpt'))
-          .map((model: any) => model.id);
-      case 'google':
-        return data.models
-          .filter((model: any) => model.name.includes('palm'))
-          .map((model: any) => model.name);
-      default:
-        return DEFAULT_MODELS[provider] || [];
-    }
-  } catch (error: any) {
-    console.error(`Error fetching ${provider} models:`, error);
-    return DEFAULT_MODELS[provider] || [];
-  }
+  // For other providers, return default models to avoid CORS issues
+  return DEFAULT_MODELS[provider] || [];
 };
 
 export const ModelSelector = ({
