@@ -107,16 +107,22 @@ const fetchModels = async (provider: string, apiKey: string) => {
 
 export const ModelSelector = ({ provider, apiKey, onModelSelect, selectedModel }: ModelSelectorProps) => {
   const { toast } = useToast();
-  const { data: models = [], isLoading, error } = useQuery({
+  const { data: models = [], isLoading } = useQuery({
     queryKey: ['models', provider, apiKey],
     queryFn: () => fetchModels(provider, apiKey),
     enabled: !!apiKey,
-    onError: (error: Error) => {
-      toast({
-        title: "Error fetching models",
-        description: error.message,
-        variant: "destructive",
-      });
+    retry: false,
+    gcTime: 0,
+    staleTime: 30000,
+    throwOnError: true,
+    meta: {
+      errorHandler: (error: Error) => {
+        toast({
+          title: "Error fetching models",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     }
   });
 
