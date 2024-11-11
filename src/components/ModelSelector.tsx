@@ -44,11 +44,8 @@ const fetchModels = async (provider: string, apiKey: string): Promise<string[]> 
       if (Array.isArray(windowAiModels) && windowAiModels.length > 0) {
         const formattedModels = windowAiModels
           .filter(isWindowAIModel)
-          .map((model) => {
-            if ('id' in model) {
-              return model.provider ? `${model.provider}/${model.id}` : `${provider}/${model.id}`;
-            }
-            return '';
+          .map((model: WindowAIModel) => {
+            return model.provider ? `${model.provider}/${model.id}` : `${provider}/${model.id}`;
           })
           .filter(Boolean);
 
