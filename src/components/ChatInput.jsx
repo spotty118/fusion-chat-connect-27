@@ -15,13 +15,13 @@ const ChatInput = ({ onSendMessage, disabled }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2 p-4 border-t bg-white/80 backdrop-blur-sm">
+    <form onSubmit={handleSubmit} className="flex gap-2 p-4 border-t bg-white/80 backdrop-blur-sm sticky bottom-0">
       <Input
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         placeholder="Type your message..."
         disabled={disabled}
-        className="flex-1 rounded-full border-gray-200 focus:border-fusion-primary focus:ring-fusion-primary"
+        className="flex-1 rounded-full border-gray-200 focus:border-fusion-primary focus:ring-fusion-primary bg-gray-50"
       />
       <Button 
         type="submit" 

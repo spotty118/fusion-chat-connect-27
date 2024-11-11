@@ -37,7 +37,7 @@ const Index = () => {
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
-      <header className="bg-gradient-to-r from-fusion-primary to-fusion-secondary p-4 text-white shadow-lg">
+      <header className="bg-gradient-to-r from-fusion-primary to-fusion-secondary p-4 text-white shadow-lg sticky top-0 z-10">
         <div className="flex justify-between items-center max-w-4xl mx-auto w-full">
           <div className="flex flex-col gap-1">
             <h1 className="text-xl font-bold tracking-tight">Fusion Chat</h1>
@@ -56,7 +56,7 @@ const Index = () => {
         </div>
       </header>
       
-      <main className="flex-1 flex flex-col max-w-4xl mx-auto w-full bg-white shadow-lg">
+      <main className="flex-1 flex flex-col max-w-4xl mx-auto w-full bg-white shadow-xl">
         <ChatContainer messages={messages} isLoading={isLoading} />
         <ChatInput onSendMessage={handleSendMessage} disabled={isLoading} />
       </main>
