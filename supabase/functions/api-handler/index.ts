@@ -7,6 +7,86 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const handleProviderRequest = async (
+  provider: string,
+  message: string,
+  model: string,
+  apiKey: string
+) => {
+  let response;
+  let endpoint;
+  let headers;
+  let body;
+
+  switch (provider) {
+    case 'openai':
+      endpoint = 'https://api.openai.com/v1/chat/completions';
+      headers = {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      };
+      body = JSON.stringify({
+        model,
+        messages: [{ role: 'user', content: message }],
+      });
+      break;
+
+    case 'claude':
+      endpoint = 'https://api.anthropic.com/v1/messages';
+      headers = {
+        'x-api-key': apiKey,
+        'Content-Type': 'application/json',
+        'anthropic-version': '2023-06-01'
+      };
+      body = JSON.stringify({
+        model,
+        messages: [{ role: 'user', content: message }],
+      });
+      break;
+
+    case 'google':
+      endpoint = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent`;
+      headers = {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey,
+      };
+      body = JSON.stringify({
+        contents: [{ parts: [{ text: message }] }],
+      });
+      break;
+
+    case 'openrouter':
+      endpoint = 'https://openrouter.ai/api/v1/chat/completions';
+      headers = {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': Deno.env.get('APP_URL') ?? '*',
+      };
+      body = JSON.stringify({
+        model,
+        messages: [{ role: 'user', content: message }],
+      });
+      break;
+
+    default:
+      throw new Error(`Unsupported provider: ${provider}`);
+  }
+
+  const result = await fetch(endpoint, {
+    method: 'POST',
+    headers,
+    body,
+  });
+
+  if (!result.ok) {
+    const errorText = await result.text();
+    console.error(`${provider} API error:`, errorText);
+    throw new Error(`${provider} API returned status ${result.status}: ${errorText}`);
+  }
+
+  return await result.json();
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -41,6 +121,7 @@ serve(async (req) => {
     const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
     
     if (userError || !user) {
+      console.error('Auth error:', userError);
       throw new Error('Invalid authentication token');
     }
 
@@ -53,84 +134,15 @@ serve(async (req) => {
       .single();
 
     if (apiKeyError || !apiKeyData?.api_key) {
+      console.error('API key error:', apiKeyError);
       throw new Error(`No API key found for provider ${provider}`);
     }
 
-    // Make request to AI provider
-    let response;
     try {
-      switch (provider) {
-        case 'openai':
-          response = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${apiKeyData.api_key}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              model,
-              messages: [{ role: 'user', content: message }],
-            }),
-          });
-          break;
-        
-        case 'claude':
-          response = await fetch('https://api.anthropic.com/v1/messages', {
-            method: 'POST',
-            headers: {
-              'x-api-key': apiKeyData.api_key,
-              'Content-Type': 'application/json',
-              'anthropic-version': '2023-06-01'
-            },
-            body: JSON.stringify({
-              model,
-              messages: [{ role: 'user', content: message }],
-            }),
-          });
-          break;
+      const aiResponse = await handleProviderRequest(provider, message, model, apiKeyData.api_key);
 
-        case 'google':
-          response = await fetch(`https://generativelanguage.googleapis.com/v1/models/${model}:generateContent`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-goog-api-key': apiKeyData.api_key,
-            },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: message }] }],
-            }),
-          });
-          break;
-
-        case 'openrouter':
-          response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${apiKeyData.api_key}`,
-              'Content-Type': 'application/json',
-              'HTTP-Referer': Deno.env.get('APP_URL') ?? '*',
-            },
-            body: JSON.stringify({
-              model,
-              messages: [{ role: 'user', content: message }],
-            }),
-          });
-          break;
-        
-        default:
-          throw new Error(`Unsupported provider: ${provider}`);
-      }
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        console.error(`Provider ${provider} error:`, errorData);
-        throw new Error(`Provider ${provider} returned status ${response.status}`);
-      }
-
-      const aiResponse = await response.json();
-      
       // Store the chat message
-      await supabaseAdmin
+      const { error: insertError } = await supabaseAdmin
         .from('chat_messages')
         .insert({
           user_id: user.id,
@@ -140,20 +152,30 @@ serve(async (req) => {
           response: JSON.stringify(aiResponse),
         });
 
+      if (insertError) {
+        console.error('Error storing chat message:', insertError);
+      }
+
       return new Response(JSON.stringify(aiResponse), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
 
     } catch (error) {
-      console.error(`Error with provider ${provider}:`, error);
+      console.error(`Provider error (${provider}):`, error);
       throw new Error(`Provider ${provider} error: ${error.message}`);
     }
 
   } catch (error) {
-    console.error('Error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error('Request error:', error);
+    return new Response(
+      JSON.stringify({ 
+        error: error.message,
+        details: error.stack 
+      }), 
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
   }
 });
