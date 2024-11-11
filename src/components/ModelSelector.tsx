@@ -29,6 +29,12 @@ interface WindowAIModel {
   provider?: string;
 }
 
+const isWindowAIModel = (model: unknown): model is WindowAIModel => {
+  return typeof model === 'object' && 
+         model !== null && 
+         'id' in model;
+};
+
 const fetchModels = async (provider: string, apiKey: string): Promise<string[]> => {
   // First try to fetch models through Window.ai
   if (typeof window !== 'undefined' && window.ai?.getModels) {
@@ -38,13 +44,17 @@ const fetchModels = async (provider: string, apiKey: string): Promise<string[]> 
       
       if (Array.isArray(windowAiModels) && windowAiModels.length > 0) {
         const formattedModels = windowAiModels
-          .filter((model): model is WindowAIModel | string => model !== null)
+          .filter((model): model is WindowAIModel | string => 
+            model !== null && (typeof model === 'string' || isWindowAIModel(model))
+          )
           .map(model => {
             if (typeof model === 'string') {
               return model.includes('/') ? model : `${provider}/${model}`;
             }
-            if (typeof model === 'object' && model.provider && model.id) {
-              return `${model.provider}/${model.id}`;
+            if (isWindowAIModel(model)) {
+              return model.provider && model.id 
+                ? `${model.provider}/${model.id}`
+                : model.id;
             }
             return '';
           })
