@@ -1,3 +1,5 @@
+import { generateFusionResponse } from './fusion-mode';
+
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000;
 const AUTH_COOKIE_NAME = 'window_ai_verified';
@@ -40,7 +42,6 @@ export const checkWindowAI = async () => {
 export const generateResponse = async (message: string, fusionMode = false) => {
   try {
     if (fusionMode) {
-      const { generateFusionResponse } = await import('./fusion-mode');
       return await generateFusionResponse(message);
     }
 
