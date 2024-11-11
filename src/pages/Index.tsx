@@ -66,7 +66,7 @@ const Index = () => {
         <div className="flex justify-between items-center max-w-4xl mx-auto w-full">
           <div className="flex flex-col gap-1.5">
             <h1 className="text-2xl font-bold tracking-tight">
-              {fusionMode ? "Fusion Chat (Multi-AI Mode)" : "Fusion Chat"}
+              {fusionMode ? "ThinkLink (Multi-AI Mode)" : "ThinkLink"}
             </h1>
             <CurrentModel />
           </div>
