@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import ProviderConfig from './ProviderConfig';
 import { UseQueryResult } from '@tanstack/react-query';
+import { Zap } from 'lucide-react';
 
 interface FusionModeSettingsProps {
   apiKeys: Record<string, string>;
@@ -21,8 +22,27 @@ const FusionModeSettings = ({
   providerQueries,
   onActivate
 }: FusionModeSettingsProps) => {
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  const handleActivate = () => {
+    setIsAnimating(true);
+    setTimeout(() => {
+      setIsAnimating(false);
+      onActivate();
+    }, 2000); // Match animation duration
+  };
+
   return (
-    <div className="space-y-6 animate-in fade-in-50">
+    <div className="space-y-6 animate-in fade-in-50 relative">
+      {isAnimating && (
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 bg-blue-500/20 animate-electric-surge rounded-lg" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Zap className="w-24 h-24 text-yellow-400 animate-electric-surge" />
+          </div>
+        </div>
+      )}
+      
       <ProviderConfig
         provider="openai"
         label="OpenAI Configuration"
@@ -65,10 +85,14 @@ const FusionModeSettings = ({
       />
 
       <Button 
-        className="w-full"
-        onClick={onActivate}
+        className="w-full relative overflow-hidden group"
+        onClick={handleActivate}
+        disabled={isAnimating}
       >
-        Activate Fusion Mode
+        <span className="relative z-10 flex items-center justify-center gap-2">
+          Activate Fusion Mode
+          <Zap className="w-4 h-4" />
+        </span>
       </Button>
     </div>
   );

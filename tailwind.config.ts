@@ -67,12 +67,50 @@ export default {
           "50%": { transform: "translateY(0px)", opacity: "0.2" },
           "75%": { transform: "translateY(3px)", opacity: "0.8" },
           "100%": { transform: "translateY(0px)", opacity: "0.2" },
-        }
+        },
+        "electric-surge": {
+          "0%, 100%": {
+            opacity: "0",
+            transform: "scale(1)",
+          },
+          "5%, 95%": {
+            opacity: "0.1",
+          },
+          "10%, 90%": {
+            opacity: "0.2",
+          },
+          "15%, 85%": {
+            opacity: "0.3",
+          },
+          "20%, 80%": {
+            opacity: "0.4",
+          },
+          "25%, 75%": {
+            opacity: "0.5",
+          },
+          "30%, 70%": {
+            opacity: "0.6",
+          },
+          "35%, 65%": {
+            opacity: "0.7",
+          },
+          "40%, 60%": {
+            opacity: "0.8",
+          },
+          "45%, 55%": {
+            opacity: "0.9",
+          },
+          "50%": {
+            opacity: "1",
+            transform: "scale(1.2)",
+          },
+        },
       },
       animation: {
         "typing-dot-1": "typing-dot 1s infinite",
         "typing-dot-2": "typing-dot 1s infinite 0.2s",
         "typing-dot-3": "typing-dot 1s infinite 0.4s",
+        "electric-surge": "electric-surge 2s ease-in-out",
       },
     },
   },
