@@ -20,13 +20,13 @@ const DEFAULT_MODELS = {
   openai: ['gpt-4', 'gpt-3.5-turbo'],
   claude: ['claude-2', 'claude-instant'],
   google: ['palm-2'],
-  openrouter: ['openrouter/auto', 'openai/gpt-4', 'anthropic/claude-2']
+  openrouter: ['openrouter/auto', 'mistralai/mixtral-8x7b-instruct', 'anthropic/claude-2']
 };
 
-interface WindowAIModel {
+interface OpenRouterModel {
   id: string;
-  name: string;
-  provider: string;
+  name?: string;
+  provider?: string;
 }
 
 const fetchModels = async (provider: string, apiKey: string): Promise<string[]> => {
@@ -34,42 +34,33 @@ const fetchModels = async (provider: string, apiKey: string): Promise<string[]> 
     throw new Error('API key is required');
   }
 
-  // For Window.ai integration with OpenRouter
-  if (provider === 'openrouter' && typeof window !== 'undefined' && window.ai?.getModels) {
+  // For OpenRouter API integration
+  if (provider === 'openrouter') {
     try {
-      const windowAiModels = await window.ai.getModels() as (WindowAIModel | string | null)[];
-      console.log('Raw Window.ai models:', windowAiModels);
-      
-      // Transform the models to match our expected format: provider/model
-      const formattedModels = windowAiModels
-        .filter((model): model is WindowAIModel | string => model !== null)
-        .map(model => {
-          if (typeof model === 'string') {
-            return model.includes('/') ? model : '';
-          }
-          
-          if (typeof model === 'object' && model.provider && model.id) {
-            return `${model.provider}/${model.id}`;
-          }
-          
-          return '';
-        })
-        .filter(model => model !== '');
+      const response = await fetch('https://openrouter.ai/api/v1/models', {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
 
-      console.log('Formatted models:', formattedModels);
-      return formattedModels.length > 0 ? formattedModels : DEFAULT_MODELS[provider];
+      if (!response.ok) {
+        throw new Error('Failed to fetch OpenRouter models');
+      }
+
+      const data = await response.json();
+      return data.data.map((model: OpenRouterModel) => model.id).filter(Boolean);
     } catch (error) {
-      console.error('Error fetching models from Window.ai:', error);
-      return DEFAULT_MODELS[provider];
+      console.error('Error fetching OpenRouter models:', error);
+      return DEFAULT_MODELS.openrouter;
     }
   }
 
-  // Fallback to API endpoints if Window.ai is not available
+  // Fallback to API endpoints for other providers
   const endpoints = {
     openai: 'https://api.openai.com/v1/models',
     claude: 'https://api.anthropic.com/v1/models',
     google: 'https://generativelanguage.googleapis.com/v1beta/models',
-    openrouter: 'https://openrouter.ai/api/v1/models',
   };
 
   const headers: Record<string, string> = {
@@ -78,7 +69,7 @@ const fetchModels = async (provider: string, apiKey: string): Promise<string[]> 
 
   if (provider === 'claude') {
     headers['x-api-key'] = apiKey;
-  } else if (provider !== 'openrouter') {
+  } else {
     headers['Authorization'] = `Bearer ${apiKey}`;
   }
 
@@ -87,8 +78,7 @@ const fetchModels = async (provider: string, apiKey: string): Promise<string[]> 
     const data = await response.json();
 
     if (!response.ok) {
-      const errorMessage = data.error?.message || `Failed to fetch ${provider} models`;
-      throw new Error(errorMessage);
+      throw new Error(data.error?.message || `Failed to fetch ${provider} models`);
     }
 
     switch (provider) {
@@ -102,8 +92,6 @@ const fetchModels = async (provider: string, apiKey: string): Promise<string[]> 
         return data.models
           .filter((model: any) => model.name.includes('palm'))
           .map((model: any) => model.name);
-      case 'openrouter':
-        return data.data.map((model: any) => model.id);
       default:
         return DEFAULT_MODELS[provider] || [];
     }
@@ -118,7 +106,7 @@ export const ModelSelector = ({ provider, apiKey, onModelSelect, selectedModel }
   const { data: models = [], isLoading } = useQuery({
     queryKey: ['models', provider, apiKey],
     queryFn: () => fetchModels(provider, apiKey),
-    enabled: provider === 'openrouter' || !!apiKey,
+    enabled: !!apiKey || provider === 'openrouter',
     retry: false,
     gcTime: 0,
     staleTime: 30000,
