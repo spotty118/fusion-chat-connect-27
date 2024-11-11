@@ -131,10 +131,21 @@ serve(async (req) => {
       .select('api_key')
       .eq('user_id', user.id)
       .eq('provider', provider)
-      .single();
+      .maybeSingle(); // Use maybeSingle instead of single to handle missing rows gracefully
 
-    if (apiKeyError || !apiKeyData) {
-      console.error(`API key error for ${provider}:`, apiKeyError);
+    if (apiKeyError) {
+      console.error(`Database error fetching API key for ${provider}:`, apiKeyError);
+      return new Response(
+        JSON.stringify({ 
+          error: `Failed to fetch API key for ${provider}. Database error.`,
+          provider 
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!apiKeyData) {
+      console.warn(`No API key found for ${provider} and user ${user.id}`);
       return new Response(
         JSON.stringify({ 
           error: `No API key found for ${provider}. Please add your API key in the settings.`,
