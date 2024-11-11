@@ -17,7 +17,7 @@ interface ModelSelectorProps {
 }
 
 const DEFAULT_MODELS = {
-  openai: ['gpt-4o', 'gpt-4o-mini'],
+  openai: ['gpt-4', 'gpt-3.5-turbo'],
   claude: ['claude-2', 'claude-instant'],
   google: ['palm-2'],
   openrouter: ['openai/gpt-4', 'anthropic/claude-2']
@@ -28,10 +28,18 @@ const fetchModels = async (provider: string, apiKey: string) => {
     throw new Error('API key is required');
   }
 
-  if (apiKey.length < 32) {
-    throw new Error('Invalid API key format');
+  // For Window.ai integration
+  if (typeof window !== 'undefined' && window.ai?.getModels) {
+    try {
+      const models = await window.ai.getModels();
+      return models;
+    } catch (error) {
+      console.error('Error fetching models from Window.ai:', error);
+      return DEFAULT_MODELS[provider] || [];
+    }
   }
 
+  // Fallback to API endpoints if Window.ai is not available
   const endpoints = {
     openai: 'https://api.openai.com/v1/models',
     claude: 'https://api.anthropic.com/v1/models',
@@ -61,7 +69,7 @@ const fetchModels = async (provider: string, apiKey: string) => {
     switch (provider) {
       case 'openai':
         return data.data
-          .filter((model: any) => model.id.includes('gpt-4'))
+          .filter((model: any) => model.id.includes('gpt'))
           .map((model: any) => model.id);
       case 'claude':
         return data.models.map((model: any) => model.id);
@@ -85,7 +93,7 @@ export const ModelSelector = ({ provider, apiKey, onModelSelect, selectedModel }
   const { data: models = [], isLoading } = useQuery({
     queryKey: ['models', provider, apiKey],
     queryFn: () => fetchModels(provider, apiKey),
-    enabled: !!apiKey,
+    enabled: !!apiKey || (typeof window !== 'undefined' && !!window.ai?.getModels),
     retry: false,
     gcTime: 0,
     staleTime: 30000,
@@ -102,7 +110,7 @@ export const ModelSelector = ({ provider, apiKey, onModelSelect, selectedModel }
 
   return (
     <Select
-      disabled={isLoading || !apiKey}
+      disabled={isLoading}
       value={selectedModel}
       onValueChange={onModelSelect}
     >
