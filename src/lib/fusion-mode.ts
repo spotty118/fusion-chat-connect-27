@@ -1,5 +1,35 @@
 import { supabase } from "@/integrations/supabase/client";
 
+const removeDuplicateSentences = (sentences: string[]): string[] => {
+  const uniqueSentences = new Set<string>();
+  sentences.forEach(sentence => {
+    // Normalize the sentence by removing extra spaces and converting to lowercase for comparison
+    const normalizedSentence = sentence.trim().toLowerCase();
+    if (normalizedSentence && !Array.from(uniqueSentences).some(s => s.toLowerCase() === normalizedSentence)) {
+      uniqueSentences.add(sentence.trim());
+    }
+  });
+  return Array.from(uniqueSentences);
+};
+
+const combineResponses = (responses: { provider: string; response: string }[]): string => {
+  // Extract all sentences from all responses
+  const allSentences = responses
+    .map(r => r.response)
+    .flatMap(response => 
+      response
+        .split(/[.!?]+/)
+        .map(s => s.trim())
+        .filter(s => s.length > 0)
+    );
+
+  // Remove duplicates and near-duplicates
+  const uniqueSentences = removeDuplicateSentences(allSentences);
+
+  // Join sentences back together
+  return uniqueSentences.join('. ') + '.';
+};
+
 export const generateFusionResponse = async (message: string) => {
   const {
     data: { session },
@@ -99,30 +129,14 @@ export const generateFusionResponse = async (message: string) => {
       })
     );
 
-    // Combine responses into a single coherent response
+    // Filter out error responses
     const validResponses = responses.filter(r => !r.response.startsWith('Error:'));
     if (validResponses.length === 0) {
       throw new Error('All providers failed to generate a response');
     }
 
-    // Extract key points from each response
-    const combinedResponse = validResponses.reduce((acc, { response }) => {
-      // Split response into sentences and filter out duplicates
-      const sentences = response.split(/[.!?]+/).filter(Boolean);
-      sentences.forEach(sentence => {
-        const trimmedSentence = sentence.trim();
-        if (trimmedSentence && !acc.includes(trimmedSentence)) {
-          acc.push(trimmedSentence);
-        }
-      });
-      return acc;
-    }, [] as string[]);
-
-    // Join the unique sentences back together
-    return combinedResponse
-      .map(sentence => sentence.trim())
-      .filter(Boolean)
-      .join('. ') + '.';
+    // Combine the responses into a coherent single response
+    return combineResponses(validResponses);
 
   } catch (error) {
     throw new Error(`Fusion mode error: ${error.message}`);
