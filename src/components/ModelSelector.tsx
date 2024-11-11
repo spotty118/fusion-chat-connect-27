@@ -23,18 +23,49 @@ const DEFAULT_MODELS = {
   openrouter: ['openrouter/auto', 'mistralai/mixtral-8x7b-instruct', 'anthropic/claude-2']
 };
 
-interface OpenRouterModel {
+interface WindowAIModel {
   id: string;
   name?: string;
   provider?: string;
 }
 
 const fetchModels = async (provider: string, apiKey: string): Promise<string[]> => {
+  // First try to fetch models through Window.ai
+  if (typeof window !== 'undefined' && window.ai?.getModels) {
+    try {
+      const windowAiModels = await window.ai.getModels();
+      console.log('Available Window.ai models:', windowAiModels);
+      
+      if (Array.isArray(windowAiModels) && windowAiModels.length > 0) {
+        const formattedModels = windowAiModels
+          .filter((model): model is WindowAIModel | string => model !== null)
+          .map(model => {
+            if (typeof model === 'string') {
+              return model.includes('/') ? model : `${provider}/${model}`;
+            }
+            if (typeof model === 'object' && model.provider && model.id) {
+              return `${model.provider}/${model.id}`;
+            }
+            return '';
+          })
+          .filter(model => model !== '');
+
+        if (formattedModels.length > 0) {
+          console.log('Formatted Window.ai models:', formattedModels);
+          return formattedModels;
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching models from Window.ai:', error);
+    }
+  }
+
+  // If Window.ai fails or returns no models, fall back to API endpoints
   if (!apiKey && provider !== 'openrouter') {
     throw new Error('API key is required');
   }
 
-  // For OpenRouter API integration
+  // Fallback to OpenRouter API for OpenRouter provider
   if (provider === 'openrouter') {
     try {
       const response = await fetch('https://openrouter.ai/api/v1/models', {
@@ -49,14 +80,14 @@ const fetchModels = async (provider: string, apiKey: string): Promise<string[]> 
       }
 
       const data = await response.json();
-      return data.data.map((model: OpenRouterModel) => model.id).filter(Boolean);
+      return data.data.map((model: WindowAIModel) => model.id).filter(Boolean);
     } catch (error) {
       console.error('Error fetching OpenRouter models:', error);
       return DEFAULT_MODELS.openrouter;
     }
   }
 
-  // Fallback to API endpoints for other providers
+  // Fallback to other provider APIs
   const endpoints = {
     openai: 'https://api.openai.com/v1/models',
     claude: 'https://api.anthropic.com/v1/models',
@@ -106,7 +137,7 @@ export const ModelSelector = ({ provider, apiKey, onModelSelect, selectedModel }
   const { data: models = [], isLoading } = useQuery({
     queryKey: ['models', provider, apiKey],
     queryFn: () => fetchModels(provider, apiKey),
-    enabled: !!apiKey || provider === 'openrouter',
+    enabled: true, // Always try to fetch models through Window.ai first
     retry: false,
     gcTime: 0,
     staleTime: 30000,
