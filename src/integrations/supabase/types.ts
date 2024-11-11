@@ -95,7 +95,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_cached_response: {
+        Args: {
+          cache_key: string
+        }
+        Returns: {
+          combined_response: string
+        }[]
+      }
+      store_cached_response: {
+        Args: {
+          cache_key: string
+          combined_response: string
+          expires_at: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
