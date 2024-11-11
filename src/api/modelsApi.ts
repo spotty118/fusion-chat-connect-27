@@ -1,40 +1,41 @@
 import Anthropic from "@anthropic-ai/sdk";
 
-const API_BASE_URL = 'https://api.gptengineer.app';
-
 export const fetchModelsFromBackend = async (provider: string, apiKey: string): Promise<string[]> => {
   try {
     if (provider === 'claude' && apiKey) {
       const anthropic = new Anthropic({
         apiKey: apiKey,
+        dangerouslyAllowBrowser: true // Enable browser usage
       });
       
-      // For Claude, we'll return a curated list of models since the SDK doesn't have a direct models endpoint
+      // Return curated list of Claude models
       return ['claude-3-opus-20240229', 'claude-3-sonnet-20240229', 'claude-2.1'];
     }
 
-    const response = await fetch(`${API_BASE_URL}/v1/models/${provider}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        provider,
-      }),
-    });
+    // For OpenRouter, we can use their models endpoint directly
+    if (provider === 'openrouter' && apiKey) {
+      try {
+        const response = await fetch('https://openrouter.ai/api/v1/models', {
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          }
+        });
 
-    if (!response.ok) {
-      if (response.status === 404) {
-        console.warn(`Provider ${provider} not supported by backend, using default models`);
+        if (!response.ok) {
+          return getDefaultModels(provider);
+        }
+
+        const data = await response.json();
+        return data.data.map((model: { id: string }) => model.id);
+      } catch (error) {
+        console.warn('Error fetching OpenRouter models:', error);
         return getDefaultModels(provider);
       }
-      const errorData = await response.json().catch(() => ({ message: response.statusText }));
-      throw new Error(errorData.message || `Failed to fetch models: ${response.statusText}`);
     }
 
-    const data = await response.json();
-    return Array.isArray(data.models) ? data.models : getDefaultModels(provider);
+    // For other providers, return default models
+    return getDefaultModels(provider);
   } catch (error) {
     console.error(`Error fetching models for ${provider}:`, error);
     return getDefaultModels(provider);
