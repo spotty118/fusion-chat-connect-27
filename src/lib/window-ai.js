@@ -1,17 +1,40 @@
 const MAX_RETRIES = 3;
-const RETRY_DELAY = 1000; // 1 second
-
+const RETRY_DELAY = 1000;
 const AUTH_COOKIE_NAME = 'window_ai_verified';
+const CACHE_PREFIX = 'fusion_cache_';
+const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 const isVerified = () => {
   return document.cookie.includes(AUTH_COOKIE_NAME);
 };
 
 const setVerified = () => {
-  // Set cookie to expire in 30 days
   const date = new Date();
   date.setTime(date.getTime() + (30 * 24 * 60 * 60 * 1000));
   document.cookie = `${AUTH_COOKIE_NAME}=true; expires=${date.toUTCString()}; path=/`;
+};
+
+const getCacheKey = (message, model) => {
+  return `${CACHE_PREFIX}${model}_${btoa(message)}`;
+};
+
+const getFromCache = (key) => {
+  const cached = localStorage.getItem(key);
+  if (!cached) return null;
+
+  const { value, timestamp } = JSON.parse(cached);
+  if (Date.now() - timestamp > CACHE_EXPIRY) {
+    localStorage.removeItem(key);
+    return null;
+  }
+  return value;
+};
+
+const setInCache = (key, value) => {
+  localStorage.setItem(key, JSON.stringify({
+    value,
+    timestamp: Date.now()
+  }));
 };
 
 const waitForWindowAI = async (retries = 0) => {
@@ -39,10 +62,38 @@ export const checkWindowAI = async () => {
   return waitForWindowAI();
 };
 
+const addCacheControl = (message, provider) => {
+  if (provider !== 'anthropic' || typeof message !== 'string' || message.length < 1024) {
+    return message;
+  }
+
+  return {
+    role: "user",
+    content: [
+      { type: "text", text: message.substring(0, 100) },
+      {
+        type: "text",
+        text: message.substring(100),
+        cache_control: { type: "ephemeral" }
+      }
+    ]
+  };
+};
+
 const generateSingleResponse = async (message, model) => {
   try {
+    const provider = model.split('/')[0];
+    const cacheKey = getCacheKey(message, model);
+    const cachedResponse = getFromCache(cacheKey);
+    
+    if (cachedResponse) {
+      console.log(`Cache hit for ${model}`);
+      return cachedResponse;
+    }
+
+    const processedMessage = addCacheControl(message, provider);
     const response = await window.ai.generateText({
-      messages: [{ role: "user", content: message }],
+      messages: [{ role: "user", content: processedMessage }],
       model: model,
     });
 
@@ -51,11 +102,19 @@ const generateSingleResponse = async (message, model) => {
     }
 
     const choice = response[0];
-    if (choice.message?.content) return choice.message.content;
-    if (choice.text) return choice.text;
-    if (choice.delta?.content) return choice.delta.content;
+    let result = '';
     
-    throw new Error('Invalid response format');
+    if (choice.message?.content) result = choice.message.content;
+    else if (choice.text) result = choice.text;
+    else if (choice.delta?.content) result = choice.delta.content;
+    else throw new Error('Invalid response format');
+
+    // Cache the response
+    if (result.length > 0) {
+      setInCache(cacheKey, result);
+    }
+
+    return result;
   } catch (error) {
     console.error(`Error with ${model}:`, error);
     return null;
@@ -63,7 +122,6 @@ const generateSingleResponse = async (message, model) => {
 };
 
 const combineResponses = async (responses) => {
-  // Filter out any failed responses
   const validResponses = responses
     .filter(result => result.status === 'fulfilled' && result.value)
     .map(result => result.value);
@@ -72,7 +130,6 @@ const combineResponses = async (responses) => {
     throw new Error('No valid responses received from any AI provider');
   }
 
-  // Create a prompt to combine the responses
   const combinationPrompt = `
     You are a response curator. Below are different responses from AI models to the same prompt.
     Your task is to create ONE perfect response that combines the best insights from all responses.
@@ -83,7 +140,6 @@ const combineResponses = async (responses) => {
 
     Create one perfect response:`;
 
-  // Use the first available model to combine responses
   try {
     const combinedResponse = await window.ai.generateText({
       messages: [{ role: "user", content: combinationPrompt }],
@@ -101,7 +157,6 @@ const combineResponses = async (responses) => {
     throw new Error('Invalid combined response format');
   } catch (error) {
     console.error("Error combining responses:", error);
-    // Fallback to the first valid response if combination fails
     return validResponses[0];
   }
 };
@@ -111,17 +166,14 @@ export const generateResponse = async (message, fusionMode = false) => {
     await checkWindowAI();
     
     if (fusionMode) {
-      // Generate responses from multiple providers in parallel
       const responses = await Promise.allSettled([
         generateSingleResponse(message, "openai/gpt-4"),
         generateSingleResponse(message, "anthropic/claude-2"),
         generateSingleResponse(message, "google/palm-2")
       ]);
 
-      // Combine responses into one perfect response
       return await combineResponses(responses);
     } else {
-      // Single provider mode - use current model
       const response = await window.ai.generateText({
         messages: [{ role: "user", content: message }]
       });
