@@ -9,7 +9,7 @@ const API_BASE_URL = 'https://fusion-chat-connect.gptengineer.app';
 
 const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
   openai: {
-    endpoint: `${API_BASE_URL}/api/openai/chat`,
+    endpoint: `${API_BASE_URL}/v1/chat/openai`,
     headers: {
       'Content-Type': 'application/json'
     },
@@ -21,7 +21,7 @@ const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
     extractResponse: data => data.choices[0].message.content
   },
   claude: {
-    endpoint: `${API_BASE_URL}/api/claude/chat`,
+    endpoint: `${API_BASE_URL}/v1/chat/claude`,
     headers: {
       'Content-Type': 'application/json'
     },
@@ -33,7 +33,7 @@ const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
     extractResponse: data => data.content[0].text
   },
   google: {
-    endpoint: `${API_BASE_URL}/api/google/chat`,
+    endpoint: `${API_BASE_URL}/v1/chat/google`,
     headers: {
       'Content-Type': 'application/json'
     },
@@ -46,7 +46,7 @@ const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
     extractResponse: data => data.candidates[0].output
   },
   openrouter: {
-    endpoint: `${API_BASE_URL}/api/openrouter/chat`,
+    endpoint: `${API_BASE_URL}/v1/chat/openrouter`,
     headers: {
       'Content-Type': 'application/json'
     },
@@ -69,7 +69,8 @@ export const makeProviderRequest = async (
 
   const headers = {
     ...config.headers,
-    'Authorization': `Bearer ${apiKey}`
+    'Authorization': `Bearer ${apiKey}`,
+    'x-requested-with': 'XMLHttpRequest'
   };
 
   try {
@@ -81,7 +82,8 @@ export const makeProviderRequest = async (
     });
 
     if (!response.ok) {
-      throw new Error(`${provider} API request failed: ${response.statusText}`);
+      const errorText = await response.text();
+      throw new Error(`${provider} API request failed: ${response.status} ${errorText}`);
     }
 
     const data = await response.json();
