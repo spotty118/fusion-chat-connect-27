@@ -3,10 +3,11 @@ import { useToast } from '@/components/ui/use-toast';
 import ChatContainer from '@/components/ChatContainer';
 import ChatInput from '@/components/ChatInput';
 import { generateResponse, checkWindowAI } from '@/lib/window-ai';
-import { Settings as SettingsIcon } from 'lucide-react';
+import { Settings as SettingsIcon, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { CurrentModel } from '@/components/CurrentModel';
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const [messages, setMessages] = useState([]);
@@ -33,6 +34,11 @@ const Index = () => {
         });
     }
   }, [toast, fusionMode]);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate('/login');
+  };
 
   const handleSendMessage = async (content) => {
     try {
@@ -64,14 +70,24 @@ const Index = () => {
             </h1>
             <CurrentModel />
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-white hover:bg-white/20 transition-colors duration-200 rounded-2xl w-12 h-12"
-            onClick={() => navigate('/settings')}
-          >
-            <SettingsIcon className="h-5 w-5" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-white/20 transition-colors duration-200 rounded-2xl w-12 h-12"
+              onClick={() => navigate('/settings')}
+            >
+              <SettingsIcon className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-white/20 transition-colors duration-200 rounded-2xl w-12 h-12"
+              onClick={handleSignOut}
+            >
+              <LogOut className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
       </header>
       
