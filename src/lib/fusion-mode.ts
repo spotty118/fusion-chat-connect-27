@@ -5,6 +5,19 @@ const combineResponsesWithAI = async (responses: { provider: string; response: s
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Authentication required');
 
+    // Check cache first
+    const cacheKey = JSON.stringify(responses.map(r => ({ provider: r.provider, response: r.response.substring(0, 100) })));
+    const { data: existingResponse } = await supabase
+      .from('response_cache')
+      .select('combined_response')
+      .eq('cache_key', cacheKey)
+      .single();
+
+    if (existingResponse) {
+      console.log('Cache hit! Returning cached response');
+      return existingResponse.combined_response;
+    }
+
     const { data, error } = await supabase.functions.invoke('combine-responses', {
       body: { responses },
       headers: {
@@ -13,10 +26,17 @@ const combineResponsesWithAI = async (responses: { provider: string; response: s
     });
 
     if (error) throw error;
+
+    // Cache the combined response
+    await supabase.from('response_cache').insert({
+      cache_key: cacheKey,
+      combined_response: data.response,
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000) // Cache for 24 hours
+    });
+
     return data.response;
   } catch (error) {
     console.error('Error combining responses with AI:', error);
-    // Fallback to simple combination if AI processing fails
     return responses.map(r => r.response).join('\n\n');
   }
 };
