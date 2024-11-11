@@ -29,6 +29,8 @@ interface WindowAIModel {
   provider?: string;
 }
 
+type Model = string | WindowAIModel;
+
 const isWindowAIModel = (model: unknown): model is WindowAIModel => {
   return typeof model === 'object' && 
          model !== null && 
@@ -43,7 +45,7 @@ const fetchModels = async (provider: string, apiKey: string): Promise<string[]> 
       
       if (Array.isArray(windowAiModels) && windowAiModels.length > 0) {
         const formattedModels = windowAiModels
-          .filter((model): model is string | WindowAIModel => 
+          .filter((model): model is Model => 
             model !== null && (typeof model === 'string' || isWindowAIModel(model))
           )
           .map((model) => {
