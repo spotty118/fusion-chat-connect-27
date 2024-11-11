@@ -1,5 +1,5 @@
 interface ProviderConfig {
-  endpoint: string;
+  endpoint: string | ((model: string) => string);
   headers: Record<string, string>;
   formatBody: (message: string, model: string) => any;
   extractResponse: (data: any) => string;
