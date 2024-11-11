@@ -44,7 +44,7 @@ const fetchModels = async (provider: string, apiKey: string): Promise<string[]> 
       
       if (Array.isArray(windowAiModels) && windowAiModels.length > 0) {
         const formattedModels = windowAiModels
-          .filter((model): model is WindowAIModel | string => 
+          .filter((model): model is string | WindowAIModel => 
             model !== null && (typeof model === 'string' || isWindowAIModel(model))
           )
           .map(model => {
@@ -147,7 +147,7 @@ export const ModelSelector = ({ provider, apiKey, onModelSelect, selectedModel }
   const { data: models = [], isLoading } = useQuery({
     queryKey: ['models', provider, apiKey],
     queryFn: () => fetchModels(provider, apiKey),
-    enabled: true, // Always try to fetch models through Window.ai first
+    enabled: true,
     retry: false,
     gcTime: 0,
     staleTime: 30000,
