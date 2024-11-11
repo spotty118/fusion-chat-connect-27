@@ -10,21 +10,35 @@ export const generateFusionResponse = async (message: string) => {
     throw new Error('Please sign in to use Fusion Mode');
   }
 
-  // Fetch API keys from Supabase
+  // Fetch API keys from Supabase with explicit typing
   const { data: apiKeysData, error: apiKeysError } = await supabase
     .from('api_keys')
     .select('provider, api_key')
     .eq('user_id', session.user.id);
 
   if (apiKeysError) {
+    console.error('Failed to fetch API keys:', apiKeysError);
     throw new Error('Failed to fetch API keys');
   }
 
-  // Convert array of API keys to object format and validate they exist
-  const apiKeys = apiKeysData.reduce((acc, { provider, api_key }) => ({
-    ...acc,
-    [provider]: api_key
-  }), {} as Record<string, string>);
+  if (!apiKeysData || apiKeysData.length === 0) {
+    throw new Error('No API keys found. Please add your API keys in the settings.');
+  }
+
+  // Initialize apiKeys object with all providers set to empty strings
+  const apiKeys: Record<string, string> = {
+    openai: '',
+    claude: '',
+    google: '',
+    openrouter: ''
+  };
+
+  // Update apiKeys with the values from the database
+  apiKeysData.forEach(({ provider, api_key }) => {
+    if (provider in apiKeys) {
+      apiKeys[provider] = api_key;
+    }
+  });
 
   const selectedModels = {
     openai: localStorage.getItem('openai_model'),
@@ -34,20 +48,22 @@ export const generateFusionResponse = async (message: string) => {
   };
 
   // Filter active providers (those with both API key and model selected)
-  const activeProviders = Object.keys(selectedModels).filter(
-    provider => {
-      const hasApiKey = apiKeys[provider] && apiKeys[provider].length > 0;
-      const hasModel = selectedModels[provider] && selectedModels[provider].length > 0;
-      return hasApiKey && hasModel;
-    }
-  );
+  const activeProviders = Object.keys(apiKeys).filter(provider => {
+    const hasApiKey = apiKeys[provider] && apiKeys[provider].length > 0;
+    const hasModel = selectedModels[provider] && selectedModels[provider].length > 0;
+    return hasApiKey && hasModel;
+  });
 
   console.log('Active providers:', activeProviders);
-  console.log('API Keys:', Object.keys(apiKeys).map(k => ({ [k]: !!apiKeys[k] })));
+  console.log('API Keys:', apiKeysData);
   console.log('Selected Models:', selectedModels);
 
   if (activeProviders.length < 3) {
-    throw new Error(`Fusion mode requires at least 3 active providers. Currently active: ${activeProviders.length}. Please ensure you have both API keys and models selected for at least 3 providers.`);
+    throw new Error(
+      `Fusion mode requires at least 3 active providers. Currently active: ${activeProviders.length}. ` +
+      `Active providers: ${activeProviders.join(', ')}. ` +
+      'Please ensure you have both API keys and models selected for at least 3 providers.'
+    );
   }
 
   try {
@@ -60,7 +76,7 @@ export const generateFusionResponse = async (message: string) => {
               provider,
               message,
               model: selectedModels[provider],
-              apiKey: apiKeys[provider] // Pass the API key to the edge function
+              apiKey: apiKeys[provider]
             },
             headers: {
               Authorization: `Bearer ${session.access_token}`,
