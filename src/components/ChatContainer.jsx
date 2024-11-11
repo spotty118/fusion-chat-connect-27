@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import ChatMessage from './ChatMessage';
+import { Bot } from 'lucide-react';
 
 const ChatContainer = ({ messages, isLoading }) => {
   const messagesEndRef = useRef(null);
