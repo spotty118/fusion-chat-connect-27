@@ -40,11 +40,19 @@ export const generateFusionResponse = async (message: string) => {
 
   // Filter active providers (those with both API key and model selected)
   const activeProviders = Object.keys(apiKeys).filter(
-    provider => apiKeys[provider] && selectedModels[provider]
+    provider => {
+      const hasApiKey = apiKeys[provider] && apiKeys[provider].length > 0;
+      const hasModel = selectedModels[provider] && selectedModels[provider].length > 0;
+      return hasApiKey && hasModel;
+    }
   );
 
+  console.log('Active providers:', activeProviders);
+  console.log('API Keys:', Object.keys(apiKeys).map(k => ({ [k]: !!apiKeys[k] })));
+  console.log('Selected Models:', selectedModels);
+
   if (activeProviders.length < 3) {
-    throw new Error('Fusion mode requires at least 3 active providers');
+    throw new Error(`Fusion mode requires at least 3 active providers. Currently active: ${activeProviders.length}`);
   }
 
   try {
