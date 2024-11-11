@@ -15,7 +15,7 @@ const ChatInput = ({ onSendMessage, disabled }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-3 p-6 border-t bg-white/80 backdrop-blur-xl sticky bottom-0 shadow-lg shadow-black/[0.03]">
+    <form onSubmit={handleSubmit} className="flex gap-4 p-6 border-t bg-white/80 backdrop-blur-xl sticky bottom-0 shadow-lg shadow-black/[0.03]">
       <Input
         value={message}
         onChange={(e) => setMessage(e.target.value)}
@@ -26,7 +26,7 @@ const ChatInput = ({ onSendMessage, disabled }) => {
       <Button 
         type="submit" 
         disabled={disabled || !message.trim()}
-        className="rounded-2xl bg-gradient-to-br from-fusion-primary to-fusion-secondary hover:opacity-90 transition-all duration-200 px-6 shadow-lg shadow-fusion-primary/20"
+        className="rounded-2xl bg-gradient-to-br from-fusion-primary to-fusion-secondary hover:opacity-90 transition-all duration-200 px-8 shadow-lg shadow-fusion-primary/20"
       >
         <Send className="h-5 w-5" />
       </Button>

@@ -14,13 +14,18 @@ const ChatContainer = ({ messages, isLoading }) => {
   }, [messages]);
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 py-8 space-y-4 bg-gradient-to-b from-gray-50/50 to-white">
+    <div className="flex-1 overflow-y-auto px-6 py-8 space-y-6 bg-gradient-to-b from-gray-50/50 to-white">
       {messages.length === 0 && (
-        <div className="flex flex-col items-center justify-center h-full space-y-4 text-gray-400">
-          <div className="w-16 h-16 rounded-3xl rotate-6 flex items-center justify-center bg-gradient-to-br from-fusion-primary/10 to-fusion-secondary/10 text-fusion-primary">
-            <Bot size={32} />
+        <div className="flex flex-col items-center justify-center h-full space-y-6 text-gray-400">
+          <div className="w-20 h-20 rounded-3xl rotate-6 flex items-center justify-center bg-gradient-to-br from-fusion-primary/10 to-fusion-secondary/10 text-fusion-primary animate-pulse">
+            <Bot size={40} />
           </div>
-          <p className="text-lg font-light">Start a conversation...</p>
+          <div className="space-y-2 text-center">
+            <p className="text-xl font-semibold text-gray-700">Welcome to Fusion Chat</p>
+            <p className="text-sm text-gray-500 max-w-sm">
+              Start a conversation with AI models and experience the power of unified chat intelligence
+            </p>
+          </div>
         </div>
       )}
       {messages.map((msg, index) => (
@@ -31,7 +36,7 @@ const ChatContainer = ({ messages, isLoading }) => {
           isLoading={isLoading && index === messages.length - 1}
         />
       ))}
-      <div ref={messagesEndRef} />
+      <div ref={messagesEndRef} className="h-4" />
     </div>
   );
 };
