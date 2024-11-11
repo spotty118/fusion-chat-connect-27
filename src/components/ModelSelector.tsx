@@ -17,91 +17,61 @@ interface ModelSelectorProps {
 }
 
 const fetchModels = async (provider: string, apiKey: string) => {
-  if (!apiKey) return [];
+  if (!apiKey) {
+    throw new Error('API key is required');
+  }
 
-  const handleApiError = (error: any, defaultModels: string[]) => {
-    if (error.status === 401) {
-      throw new Error('Invalid API key. Please check your credentials.');
-    }
-    console.error(`Error fetching ${provider} models:`, error);
-    return defaultModels;
+  if (apiKey.length < 32) {
+    throw new Error('Invalid API key format');
+  }
+
+  const endpoints = {
+    openai: 'https://api.openai.com/v1/models',
+    claude: 'https://api.anthropic.com/v1/models',
+    google: 'https://generativelanguage.googleapis.com/v1beta/models',
+    openrouter: 'https://openrouter.ai/api/v1/models',
   };
 
-  switch (provider) {
-    case 'openai':
-      try {
-        const response = await fetch('https://api.openai.com/v1/models', {
-          headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
-          }
-        });
-        if (!response.ok) {
-          const error = await response.json();
-          throw { status: response.status, message: error.error?.message };
-        }
-        const data = await response.json();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  if (provider === 'claude') {
+    headers['x-api-key'] = apiKey;
+  } else {
+    headers['Authorization'] = `Bearer ${apiKey}`;
+  }
+
+  try {
+    const response = await fetch(endpoints[provider], { headers });
+    const data = await response.json();
+
+    if (!response.ok) {
+      const errorMessage = data.error?.message || 'Failed to fetch models';
+      throw new Error(errorMessage);
+    }
+
+    switch (provider) {
+      case 'openai':
         return data.data
           .filter((model: any) => model.id.includes('gpt-4'))
           .map((model: any) => model.id);
-      } catch (error) {
-        return handleApiError(error, ['gpt-4', 'gpt-4-turbo-preview']);
-      }
-
-    case 'claude':
-      try {
-        const response = await fetch('https://api.anthropic.com/v1/models', {
-          headers: {
-            'x-api-key': apiKey,
-            'Content-Type': 'application/json',
-          }
-        });
-        if (!response.ok) {
-          throw { status: response.status };
-        }
-        const data = await response.json();
+      case 'claude':
         return data.models.map((model: any) => model.id);
-      } catch (error) {
-        return handleApiError(error, ['claude-2', 'claude-instant']);
-      }
-
-    case 'google':
-      try {
-        const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models', {
-          headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
-          }
-        });
-        if (!response.ok) {
-          throw { status: response.status };
-        }
-        const data = await response.json();
+      case 'google':
         return data.models
           .filter((model: any) => model.name.includes('palm'))
           .map((model: any) => model.name);
-      } catch (error) {
-        return handleApiError(error, ['palm-2']);
-      }
-
-    case 'openrouter':
-      try {
-        const response = await fetch('https://openrouter.ai/api/v1/models', {
-          headers: {
-            'Authorization': `Bearer ${apiKey}`,
-          }
-        });
-        if (!response.ok) {
-          throw { status: response.status };
-        }
-        const data = await response.json();
+      case 'openrouter':
         return data.data.map((model: any) => model.id);
-      } catch (error) {
-        return handleApiError(error, []);
-      }
-
-    default:
-      return [];
+      default:
+        return [];
+    }
+  } catch (error: any) {
+    if (error.message.includes('API key')) {
+      throw new Error('Invalid API key. Please check your credentials and try again.');
+    }
+    throw error;
   }
 };
 
@@ -114,7 +84,6 @@ export const ModelSelector = ({ provider, apiKey, onModelSelect, selectedModel }
     retry: false,
     gcTime: 0,
     staleTime: 30000,
-    throwOnError: true,
     meta: {
       errorHandler: (error: Error) => {
         toast({
