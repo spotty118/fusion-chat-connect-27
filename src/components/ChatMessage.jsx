@@ -15,12 +15,10 @@ const ChatMessage = ({ message, isAI, isLoading }) => {
   const messageContent = getMessageContent(message);
 
   const TypingIndicator = () => (
-    <div className="flex items-center justify-center h-8 w-16 bg-gray-100 rounded-2xl px-3">
-      <div className="flex space-x-1">
-        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-      </div>
+    <div className="flex space-x-1.5 px-3 py-2">
+      <div className="w-2 h-2 bg-fusion-primary/60 rounded-full animate-typing-dot-1"></div>
+      <div className="w-2 h-2 bg-fusion-primary/60 rounded-full animate-typing-dot-2"></div>
+      <div className="w-2 h-2 bg-fusion-primary/60 rounded-full animate-typing-dot-3"></div>
     </div>
   );
 
