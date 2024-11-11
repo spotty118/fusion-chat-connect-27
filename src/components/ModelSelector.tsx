@@ -29,9 +29,9 @@ const fetchModels = async (
   apiKey: string,
   fusionMode: boolean = false
 ): Promise<string[]> => {
-  // For Claude, always return default models
-  if (provider === 'claude') {
-    return DEFAULT_MODELS.claude;
+  // For providers with CORS restrictions, return default models
+  if (provider === 'claude' || provider === 'openai' || provider === 'google') {
+    return DEFAULT_MODELS[provider];
   }
 
   // If Window.ai is available and fusion mode is not active, try using it
@@ -48,13 +48,8 @@ const fetchModels = async (
     }
   }
 
-  // Return default models if no API key is provided
-  if (!apiKey && provider !== 'openrouter') {
-    return DEFAULT_MODELS[provider] || [];
-  }
-
-  // Handle OpenRouter separately
-  if (provider === 'openrouter') {
+  // Handle OpenRouter separately as it supports CORS
+  if (provider === 'openrouter' && apiKey) {
     try {
       const response = await fetch('https://openrouter.ai/api/v1/models', {
         headers: {
@@ -75,7 +70,7 @@ const fetchModels = async (
     }
   }
 
-  // For other providers, return default models to avoid CORS issues
+  // Return default models for any other case
   return DEFAULT_MODELS[provider] || [];
 };
 
