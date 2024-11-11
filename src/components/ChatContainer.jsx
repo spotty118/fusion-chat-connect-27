@@ -21,7 +21,7 @@ const ChatContainer = ({ messages, isLoading }) => {
             <Bot size={40} />
           </div>
           <div className="space-y-2 text-center">
-            <p className="text-xl font-semibold text-gray-700">Welcome to Fusion Chat</p>
+            <p className="text-xl font-semibold text-gray-700">Welcome to ThinkLink</p>
             <p className="text-sm text-gray-500 max-w-sm">
               Start a conversation with AI models and experience the power of unified chat intelligence
             </p>
