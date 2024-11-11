@@ -40,7 +40,7 @@ export const checkWindowAI = async () => {
 export const generateResponse = async (message: string, fusionMode = false) => {
   try {
     if (fusionMode) {
-      const { generateFusionResponse } = await import('./fusion-mode');
+      const { generateFusionResponse } = await import('../lib/fusion-mode');
       return await generateFusionResponse(message);
     }
 
