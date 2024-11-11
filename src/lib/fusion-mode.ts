@@ -1,5 +1,13 @@
 import { supabase } from "@/integrations/supabase/client";
 
+interface ResponseCache {
+  id: string;
+  cache_key: string;
+  combined_response: string;
+  created_at?: string;
+  expires_at: string;
+}
+
 const combineResponsesWithAI = async (responses: { provider: string; response: string }[]): Promise<string> => {
   try {
     const { data: { session } } = await supabase.auth.getSession();
@@ -7,10 +15,12 @@ const combineResponsesWithAI = async (responses: { provider: string; response: s
 
     // Check cache first
     const cacheKey = JSON.stringify(responses.map(r => ({ provider: r.provider, response: r.response.substring(0, 100) })));
+    
     const { data: existingResponse } = await supabase
       .from('response_cache')
-      .select('combined_response')
+      .select('*')
       .eq('cache_key', cacheKey)
+      .returns<ResponseCache>()
       .single();
 
     if (existingResponse) {
@@ -28,11 +38,17 @@ const combineResponsesWithAI = async (responses: { provider: string; response: s
     if (error) throw error;
 
     // Cache the combined response
-    await supabase.from('response_cache').insert({
-      cache_key: cacheKey,
-      combined_response: data.response,
-      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000) // Cache for 24 hours
-    });
+    const { error: cacheError } = await supabase
+      .from('response_cache')
+      .insert({
+        cache_key: cacheKey,
+        combined_response: data.response,
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // Cache for 24 hours
+      });
+
+    if (cacheError) {
+      console.error('Error caching response:', cacheError);
+    }
 
     return data.response;
   } catch (error) {
