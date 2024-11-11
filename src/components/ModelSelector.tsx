@@ -28,12 +28,29 @@ const fetchModels = async (provider: string, apiKey: string) => {
     throw new Error('API key is required');
   }
 
-  // For Window.ai integration
+  // For Window.ai integration with OpenRouter
   if (provider === 'openrouter' && typeof window !== 'undefined' && window.ai?.getModels) {
     try {
-      const models = await window.ai.getModels();
-      console.log('Window.ai models:', models); // Debug log
-      return models;
+      // Window.ai returns models in format: { id: string, name: string, provider: string }[]
+      const windowAiModels = await window.ai.getModels();
+      console.log('Raw Window.ai models:', windowAiModels);
+      
+      // Transform the models to match our expected format: provider/model
+      const formattedModels = windowAiModels.map(model => {
+        // Some models might already be in provider/model format
+        if (model.includes('/')) return model;
+        
+        // Extract provider and model name if available in object format
+        if (typeof model === 'object' && model.provider && model.id) {
+          return `${model.provider}/${model.id}`;
+        }
+        
+        // Fallback for other formats
+        return model;
+      });
+
+      console.log('Formatted models:', formattedModels);
+      return formattedModels;
     } catch (error) {
       console.error('Error fetching models from Window.ai:', error);
       return DEFAULT_MODELS[provider] || [];
