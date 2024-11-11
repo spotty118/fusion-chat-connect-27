@@ -1,12 +1,28 @@
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
 
+const AUTH_COOKIE_NAME = 'window_ai_verified';
+
+const isVerified = () => {
+  return document.cookie.includes(AUTH_COOKIE_NAME);
+};
+
+const setVerified = () => {
+  // Set cookie to expire in 30 days
+  const date = new Date();
+  date.setTime(date.getTime() + (30 * 24 * 60 * 60 * 1000));
+  document.cookie = `${AUTH_COOKIE_NAME}=true; expires=${date.toUTCString()}; path=/`;
+};
+
 const waitForWindowAI = async (retries = 0) => {
   if (typeof window !== 'undefined' && window?.ai) {
+    if (!isVerified()) {
+      setVerified();
+    }
     return true;
   }
 
-  if (retries >= MAX_RETRIES) {
+  if (retries >= MAX_RETRIES && !isVerified()) {
     throw new Error(
       "Window AI not found! Please install the Chrome extension: https://windowai.io"
     );
@@ -17,6 +33,9 @@ const waitForWindowAI = async (retries = 0) => {
 };
 
 export const checkWindowAI = async () => {
+  if (isVerified()) {
+    return true;
+  }
   return waitForWindowAI();
 };
 
