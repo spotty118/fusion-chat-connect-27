@@ -10,12 +10,26 @@ export const generateFusionResponse = async (message: string) => {
     throw new Error('Please sign in to use Fusion Mode');
   }
 
-  const apiKeys = {
-    openai: localStorage.getItem('openai_key'),
-    claude: localStorage.getItem('claude_key'),
-    google: localStorage.getItem('google_key'),
-    openrouter: localStorage.getItem('openrouter_key')
-  };
+  // Fetch API keys from Supabase
+  const { data: apiKeysData, error: apiKeysError } = await supabase
+    .from('api_keys')
+    .select('provider, api_key')
+    .eq('user_id', session.user.id);
+
+  if (apiKeysError) {
+    throw new Error('Failed to fetch API keys');
+  }
+
+  // Convert array of API keys to object format
+  const apiKeys = apiKeysData.reduce((acc, { provider, api_key }) => ({
+    ...acc,
+    [provider]: api_key
+  }), {
+    openai: '',
+    claude: '',
+    google: '',
+    openrouter: ''
+  });
 
   const selectedModels = {
     openai: localStorage.getItem('openai_model'),
