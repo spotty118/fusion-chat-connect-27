@@ -3,25 +3,30 @@ import Anthropic from "@anthropic-ai/sdk";
 export const fetchModelsFromBackend = async (provider: string, apiKey: string): Promise<string[]> => {
   try {
     if (provider === 'claude' && apiKey) {
-      const anthropic = new Anthropic({
-        apiKey: apiKey,
-        dangerouslyAllowBrowser: true
-      });
-
-      // Test the API key with a simple message request
       try {
-        await anthropic.messages.create({
-          model: "claude-3-opus-20240229",
-          max_tokens: 1,
-          messages: [{ role: "user", content: "test" }]
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'anthropic-api-key': apiKey,
+            'anthropic-version': '2023-06-01'
+          },
+          body: JSON.stringify({
+            model: 'claude-3-opus-20240229',
+            max_tokens: 1,
+            messages: [{ role: 'user', content: 'test' }]
+          })
         });
         
-        // If successful, return the curated list of available models
-        return [
-          'claude-3-opus-20240229',
-          'claude-3-sonnet-20240229',
-          'claude-2.1'
-        ];
+        if (response.ok) {
+          // If successful, return the curated list of available models
+          return [
+            'claude-3-opus-20240229',
+            'claude-3-sonnet-20240229',
+            'claude-2.1'
+          ];
+        }
+        return getDefaultModels(provider);
       } catch (error: any) {
         console.warn('Error testing Claude API:', error?.message);
         return getDefaultModels(provider);

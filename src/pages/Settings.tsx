@@ -26,27 +26,45 @@ const Settings = () => {
     openrouter: '',
   });
 
-  const checkProviderStatus = async (provider, apiKey) => {
+  const checkProviderStatus = async (provider: string, apiKey: string) => {
     if (!apiKey) return false;
+    
+    // For Claude, we'll use the messages endpoint directly with the correct header
+    if (provider === 'claude') {
+      try {
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'anthropic-api-key': apiKey,
+            'anthropic-version': '2023-06-01'
+          },
+          body: JSON.stringify({
+            model: 'claude-3-opus-20240229',
+            max_tokens: 1,
+            messages: [{ role: 'user', content: 'test' }]
+          })
+        });
+        return response.ok;
+      } catch (error) {
+        return false;
+      }
+    }
+
+    // For other providers
     try {
       const endpoints = {
         openai: 'https://api.openai.com/v1/models',
-        claude: 'https://api.anthropic.com/v1/models',
         google: 'https://generativelanguage.googleapis.com/v1beta/models',
         openrouter: 'https://openrouter.ai/api/v1/models',
       };
       
-      const headers = {
+      const headers: Record<string, string> = {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
       };
 
-      if (provider === 'claude') {
-        headers['x-api-key'] = apiKey;
-      } else {
-        headers['Authorization'] = `Bearer ${apiKey}`;
-      }
-
-      const response = await fetch(endpoints[provider], { headers });
+      const response = await fetch(endpoints[provider as keyof typeof endpoints], { headers });
       return response.ok;
     } catch (error) {
       return false;
