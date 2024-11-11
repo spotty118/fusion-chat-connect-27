@@ -21,42 +21,52 @@ export const checkWindowAI = async () => {
   return waitForWindowAI();
 };
 
+const generateSingleResponse = async (message, model) => {
+  try {
+    const response = await window.ai.generateText({
+      messages: [{ role: "user", content: message }],
+      model: model,
+    });
+
+    if (!response?.length) {
+      throw new Error('No response received');
+    }
+
+    const choice = response[0];
+    if (choice.message?.content) return choice.message.content;
+    if (choice.text) return choice.text;
+    if (choice.delta?.content) return choice.delta.content;
+    
+    throw new Error('Invalid response format');
+  } catch (error) {
+    console.error(`Error with ${model}:`, error);
+    return `Error from ${model}: ${error.message}`;
+  }
+};
+
 export const generateResponse = async (message, fusionMode = false) => {
   try {
     await checkWindowAI();
     
     if (fusionMode) {
-      const [response1, response2, response3] = await Promise.all([
-        window.ai.generateText({
-          messages: [{ role: "user", content: message }],
-          model: "openai/gpt-4",
-        }),
-        window.ai.generateText({
-          messages: [{ role: "user", content: message }],
-          model: "anthropic/claude-2",
-        }),
-        window.ai.generateText({
-          messages: [{ role: "user", content: message }],
-          model: "google/palm-2",
-        }),
+      // Generate responses from multiple providers in parallel
+      const responses = await Promise.allSettled([
+        generateSingleResponse(message, "openai/gpt-4o"),
+        generateSingleResponse(message, "anthropic/claude-2"),
+        generateSingleResponse(message, "google/palm-2")
       ]);
 
-      // Extract content from standardized response format
-      const extractContent = (response) => {
-        if (!response?.length) return 'No response';
-        const choice = response[0];
-        if (choice.message?.content) return choice.message.content;
-        if (choice.text) return choice.text;
-        if (choice.delta?.content) return choice.delta.content;
-        return 'No valid content';
-      };
+      // Format the combined response
+      const formattedResponses = responses.map((result, index) => {
+        const provider = ["GPT-4", "Claude", "PaLM"][index];
+        const content = result.status === 'fulfilled' ? result.value : `Error: ${result.reason}`;
+        return `${provider}:\n${content}`;
+      });
 
-      const r1 = extractContent(response1);
-      const r2 = extractContent(response2);
-      const r3 = extractContent(response3);
-
-      return `Combined responses:\n\nGPT-4: ${r1}\n\nClaude: ${r2}\n\nPaLM: ${r3}`;
+      // Combine all responses with clear separation
+      return formattedResponses.join('\n\n---\n\n');
     } else {
+      // Single provider mode - use current model
       const response = await window.ai.generateText({
         messages: [{ role: "user", content: message }]
       });
@@ -66,21 +76,11 @@ export const generateResponse = async (message, fusionMode = false) => {
       }
 
       const choice = response[0];
-      let content = null;
-
-      if (choice.message?.content) {
-        content = choice.message.content;
-      } else if (choice.text) {
-        content = choice.text;
-      } else if (choice.delta?.content) {
-        content = choice.delta.content;
-      }
-
-      if (!content) {
-        throw new Error('No valid response content received');
-      }
-
-      return content;
+      if (choice.message?.content) return choice.message.content;
+      if (choice.text) return choice.text;
+      if (choice.delta?.content) return choice.delta.content;
+      
+      throw new Error('Invalid response format');
     }
   } catch (error) {
     console.error("Error generating response:", error);

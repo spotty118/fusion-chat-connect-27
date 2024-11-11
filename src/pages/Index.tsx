@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import ChatContainer from '@/components/ChatContainer';
 import ChatInput from '@/components/ChatInput';
@@ -11,9 +11,15 @@ import { CurrentModel } from '@/components/CurrentModel';
 const Index = () => {
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [fusionMode, setFusionMode] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [fusionMode, setFusionMode] = useState(false);
+
+  // Load fusion mode state from localStorage on mount
+  useEffect(() => {
+    const savedFusionMode = localStorage.getItem('fusionMode') === 'true';
+    setFusionMode(savedFusionMode);
+  }, []);
 
   const handleSendMessage = async (content) => {
     try {
@@ -40,7 +46,9 @@ const Index = () => {
       <header className="bg-gradient-to-br from-fusion-primary to-fusion-secondary p-6 text-white shadow-xl sticky top-0 z-10">
         <div className="flex justify-between items-center max-w-4xl mx-auto w-full">
           <div className="flex flex-col gap-1.5">
-            <h1 className="text-2xl font-bold tracking-tight">Fusion Chat</h1>
+            <h1 className="text-2xl font-bold tracking-tight">
+              {fusionMode ? "Fusion Chat (Multi-AI Mode)" : "Fusion Chat"}
+            </h1>
             <div className="flex items-center opacity-90 text-sm font-light">
               <CurrentModel />
             </div>
