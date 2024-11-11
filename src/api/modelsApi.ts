@@ -4,13 +4,65 @@ export const fetchModelsFromBackend = async (provider: string, apiKey: string): 
       return getDefaultModels(provider);
     }
 
-    // For Claude, we'll return the default models if the API key format is valid
+    // For OpenAI, fetch models from their API
+    if (provider === 'openai' && apiKey) {
+      try {
+        const response = await fetch('https://api.openai.com/v1/models', {
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          return getDefaultModels(provider);
+        }
+
+        const data = await response.json();
+        // Filter for chat models and sort by newest first
+        const chatModels = data.data
+          .filter((model: { id: string }) => 
+            model.id.includes('gpt') && 
+            (model.id.includes('4') || model.id.includes('3.5'))
+          )
+          .map((model: { id: string }) => model.id)
+          .sort()
+          .reverse();
+
+        return chatModels.length > 0 ? chatModels : getDefaultModels(provider);
+      } catch (error) {
+        console.warn('Error fetching OpenAI models:', error);
+        return getDefaultModels(provider);
+      }
+    }
+
+    // For Claude, fetch available models from their API
     if (provider === 'claude' && apiKey.startsWith('sk-ant-')) {
-      return [
-        'claude-3-opus-20240229',
-        'claude-3-sonnet-20240229',
-        'claude-2.1'
-      ];
+      try {
+        const response = await fetch('https://api.anthropic.com/v1/models', {
+          headers: {
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          return getDefaultModels(provider);
+        }
+
+        const data = await response.json();
+        // Sort models by newest first
+        const models = data.models
+          .map((model: { name: string }) => model.name)
+          .sort()
+          .reverse();
+
+        return models.length > 0 ? models : getDefaultModels(provider);
+      } catch (error) {
+        console.warn('Error fetching Claude models:', error);
+        return getDefaultModels(provider);
+      }
     }
 
     // For OpenRouter, we can use their models endpoint directly
