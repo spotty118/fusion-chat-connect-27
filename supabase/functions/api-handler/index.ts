@@ -88,7 +88,6 @@ const handleProviderRequest = async (
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -104,11 +103,10 @@ serve(async (req) => {
       );
     }
 
-    // Create Supabase admin client with error handling for environment variables
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-    if (!supabaseUrl || !supabaseKey) {
+    if (!supabaseUrl || !supabaseServiceKey) {
       console.error('Missing Supabase configuration');
       return new Response(
         JSON.stringify({ error: 'Server configuration error' }),
@@ -116,26 +114,22 @@ serve(async (req) => {
       );
     }
 
-    const supabaseAdmin = createClient(supabaseUrl, supabaseKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    });
-
-    // Get user ID from JWT with proper error handling
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
     const token = authHeader.replace('Bearer ', '');
+
     const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
     
     if (userError || !user) {
       console.error('Auth error:', userError);
       return new Response(
-        JSON.stringify({ error: 'Invalid authentication token', details: userError }),
+        JSON.stringify({ 
+          error: 'Invalid authentication token', 
+          details: userError?.message 
+        }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Get API key from database with error handling
     const { data: apiKeyData, error: apiKeyError } = await supabaseAdmin
       .from('api_keys')
       .select('api_key')
@@ -154,7 +148,6 @@ serve(async (req) => {
     try {
       const aiResponse = await handleProviderRequest(provider, message, model, apiKeyData.api_key);
 
-      // Store the chat message with error handling
       const { error: insertError } = await supabaseAdmin
         .from('chat_messages')
         .insert({
@@ -185,13 +178,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('Request error:', error);
     return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        details: error.stack 
-      }), 
-      {
+      JSON.stringify({ error: error.message }),
+      { 
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
   }
