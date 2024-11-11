@@ -5,35 +5,19 @@ const combineResponsesWithAI = async (responses: { provider: string; response: s
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Authentication required');
 
-    const prompt = `You are an expert at analyzing and combining AI responses. Here are ${responses.length} different AI responses to the same prompt. Please analyze them and create one coherent, accurate, and well-written response that captures the best elements from all responses while maintaining a natural flow:
-
-Responses to analyze:
-${responses.map((r, i) => `Response ${i + 1} from ${r.provider}:\n${r.response}`).join('\n\n')}
-
-Create one optimal response that:
-1. Combines the most accurate and relevant information
-2. Eliminates redundancy
-3. Maintains a natural, conversational flow
-4. Preserves the most insightful elements from each response`;
-
-    const { data, error } = await supabase.functions.invoke('api-handler', {
-      body: {
-        provider: 'openai',
-        message: prompt,
-        model: 'gpt-4o-mini',
-        apiKey: localStorage.getItem('openai_key')
-      },
+    const { data, error } = await supabase.functions.invoke('combine-responses', {
+      body: { responses },
       headers: {
         Authorization: `Bearer ${session.access_token}`,
       }
     });
 
     if (error) throw error;
-    return data.choices[0].message.content;
+    return data.response;
   } catch (error) {
     console.error('Error combining responses with AI:', error);
     // Fallback to simple combination if AI processing fails
-    return responses.map(r => r.response).join(' ');
+    return responses.map(r => r.response).join('\n\n');
   }
 };
 
