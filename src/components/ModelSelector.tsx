@@ -36,7 +36,6 @@ const isWindowAIModel = (model: unknown): model is WindowAIModel => {
 };
 
 const fetchModels = async (provider: string, apiKey: string): Promise<string[]> => {
-  // First try to fetch models through Window.ai
   if (typeof window !== 'undefined' && window.ai?.getModels) {
     try {
       const windowAiModels = await window.ai.getModels();
@@ -47,7 +46,7 @@ const fetchModels = async (provider: string, apiKey: string): Promise<string[]> 
           .filter((model): model is string | WindowAIModel => 
             model !== null && (typeof model === 'string' || isWindowAIModel(model))
           )
-          .map(model => {
+          .map((model): string => {
             if (typeof model === 'string') {
               return model.includes('/') ? model : `${provider}/${model}`;
             }
@@ -58,7 +57,7 @@ const fetchModels = async (provider: string, apiKey: string): Promise<string[]> 
             }
             return '';
           })
-          .filter(model => model !== '');
+          .filter(Boolean);
 
         if (formattedModels.length > 0) {
           console.log('Formatted Window.ai models:', formattedModels);
