@@ -24,16 +24,6 @@ const DEFAULT_MODELS = {
   openrouter: ['openrouter/auto', 'mistralai/mixtral-8x7b-instruct', 'anthropic/claude-2']
 };
 
-interface WindowAI {
-  getModels: () => Promise<string[]>;
-}
-
-declare global {
-  interface Window {
-    ai?: WindowAI;
-  }
-}
-
 const fetchModels = async (
   provider: string,
   apiKey: string,
