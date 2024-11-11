@@ -25,7 +25,7 @@ const combineResponsesWithAI = async (responses: { provider: string; response: s
     
     // Use RPC call instead of direct query to handle large cache keys
     const { data: existingResponse, error: cacheError } = await supabase
-      .rpc<CacheResponse>('get_cached_response', { cache_key: cacheKey });
+      .rpc<CacheResponse[]>('get_cached_response', { cache_key: cacheKey });
 
     if (cacheError) {
       console.error('Error checking cache:', cacheError);
@@ -174,5 +174,3 @@ export const generateFusionResponse = async (message: string) => {
     throw new Error(`Fusion mode error: ${error.message}`);
   }
 };
-
-export { generateFusionResponse };
