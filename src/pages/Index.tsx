@@ -37,18 +37,18 @@ const Index = () => {
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
-      <header className="bg-gradient-to-r from-fusion-primary to-fusion-secondary p-4 text-white shadow-lg sticky top-0 z-10">
+      <header className="bg-gradient-to-br from-fusion-primary to-fusion-secondary p-6 text-white shadow-xl sticky top-0 z-10">
         <div className="flex justify-between items-center max-w-4xl mx-auto w-full">
-          <div className="flex flex-col gap-1">
-            <h1 className="text-xl font-bold tracking-tight">Fusion Chat</h1>
-            <div className="flex items-center opacity-90 text-sm">
+          <div className="flex flex-col gap-1.5">
+            <h1 className="text-2xl font-bold tracking-tight">Fusion Chat</h1>
+            <div className="flex items-center opacity-90 text-sm font-light">
               <CurrentModel />
             </div>
           </div>
           <Button
             variant="ghost"
             size="icon"
-            className="text-white hover:bg-white/20 transition-colors duration-200"
+            className="text-white hover:bg-white/20 transition-colors duration-200 rounded-2xl w-12 h-12"
             onClick={() => navigate('/settings')}
           >
             <SettingsIcon className="h-5 w-5" />
@@ -56,7 +56,7 @@ const Index = () => {
         </div>
       </header>
       
-      <main className="flex-1 flex flex-col max-w-4xl mx-auto w-full bg-white shadow-xl">
+      <main className="flex-1 flex flex-col max-w-4xl mx-auto w-full bg-white shadow-2xl rounded-3xl my-6 overflow-hidden">
         <ChatContainer messages={messages} isLoading={isLoading} />
         <ChatInput onSendMessage={handleSendMessage} disabled={isLoading} />
       </main>

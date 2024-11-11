@@ -15,20 +15,20 @@ const ChatInput = ({ onSendMessage, disabled }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2 p-4 border-t bg-white/80 backdrop-blur-sm sticky bottom-0">
+    <form onSubmit={handleSubmit} className="flex gap-3 p-6 border-t bg-white/80 backdrop-blur-xl sticky bottom-0 shadow-lg shadow-black/[0.03]">
       <Input
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         placeholder="Type your message..."
         disabled={disabled}
-        className="flex-1 rounded-full border-gray-200 focus:border-fusion-primary focus:ring-fusion-primary bg-gray-50"
+        className="flex-1 rounded-2xl border-gray-200 focus:border-fusion-primary focus:ring-fusion-primary bg-gray-50/50 px-6 py-6 text-[15px] shadow-inner"
       />
       <Button 
         type="submit" 
         disabled={disabled || !message.trim()}
-        className="rounded-full bg-gradient-to-r from-fusion-primary to-fusion-secondary hover:opacity-90 transition-all duration-200 px-4"
+        className="rounded-2xl bg-gradient-to-br from-fusion-primary to-fusion-secondary hover:opacity-90 transition-all duration-200 px-6 shadow-lg shadow-fusion-primary/20"
       >
-        <Send className="h-4 w-4" />
+        <Send className="h-5 w-5" />
       </Button>
     </form>
   );
