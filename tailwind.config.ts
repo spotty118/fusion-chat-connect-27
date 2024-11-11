@@ -53,10 +53,10 @@ export default {
           foreground: "hsl(var(--card-foreground))",
         },
         fusion: {
-          primary: "#8B5CF6",
-          secondary: "#6366F1",
+          primary: "#2563EB", // Changed from purple to a professional blue
+          secondary: "#3B82F6", // Lighter blue for gradient
           openai: "#00A67E",
-          claude: "#7C3AED",
+          claude: "#0EA5E9", // Changed to sky blue
           google: "#4285F4",
         },
       },
