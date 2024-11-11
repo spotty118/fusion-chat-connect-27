@@ -1,5 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,6 +7,8 @@ const corsHeaders = {
 };
 
 const handleProviderRequest = async (provider: string, message: string, model: string, apiKey: string) => {
+  console.log(`Making request to ${provider} with model ${model}`);
+  
   let response;
   let endpoint;
   let headers;
@@ -22,32 +24,35 @@ const handleProviderRequest = async (provider: string, message: string, model: s
       body = JSON.stringify({
         model,
         messages: [{ role: 'user', content: message }],
+        max_tokens: 1000,
       });
       break;
 
     case 'claude':
       endpoint = 'https://api.anthropic.com/v1/messages';
       headers = {
-        'anthropic-api-key': apiKey,
+        'x-api-key': apiKey,
         'Content-Type': 'application/json',
         'anthropic-version': '2023-06-01'
       };
       body = JSON.stringify({
         model,
         messages: [{ role: 'user', content: message }],
-        max_tokens: 1024,
+        max_tokens: 1000,
       });
       break;
 
     case 'google':
-      endpoint = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
+      // Updated to use the correct model name format for PaLM API
+      endpoint = `https://generativelanguage.googleapis.com/v1beta3/models/text-bison-001:generateText?key=${apiKey}`;
       headers = {
         'Content-Type': 'application/json',
       };
       body = JSON.stringify({
-        contents: [{
-          parts: [{ text: message }]
-        }]
+        prompt: { text: message },
+        temperature: 0.7,
+        candidate_count: 1,
+        max_output_tokens: 1000,
       });
       break;
 
@@ -69,7 +74,7 @@ const handleProviderRequest = async (provider: string, message: string, model: s
   }
 
   try {
-    console.log(`Making request to ${provider} API...`);
+    console.log(`Sending request to ${endpoint}`);
     const result = await fetch(endpoint, {
       method: 'POST',
       headers,
@@ -105,7 +110,7 @@ const handleProviderRequest = async (provider: string, message: string, model: s
       case 'google':
         return {
           candidates: [{
-            output: data.candidates[0].content.parts[0].text
+            output: data.candidates[0].text
           }]
         };
       default:
