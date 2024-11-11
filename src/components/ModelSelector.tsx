@@ -29,10 +29,12 @@ interface WindowAIModel {
   provider?: string;
 }
 
+type ModelType = string | WindowAIModel;
+
 const isWindowAIModel = (model: unknown): model is WindowAIModel => {
-  return typeof model === 'object' && 
-         model !== null && 
-         'id' in model;
+  if (typeof model !== 'object' || model === null) return false;
+  const modelObj = model as Record<string, unknown>;
+  return 'id' in modelObj && typeof modelObj.id === 'string';
 };
 
 const fetchModels = async (provider: string, apiKey: string): Promise<string[]> => {
@@ -43,7 +45,7 @@ const fetchModels = async (provider: string, apiKey: string): Promise<string[]> 
       
       if (Array.isArray(windowAiModels) && windowAiModels.length > 0) {
         const formattedModels = windowAiModels
-          .filter((model): model is WindowAIModel | string => 
+          .filter((model): model is ModelType => 
             model !== null && (typeof model === 'string' || isWindowAIModel(model))
           )
           .map((model) => {
@@ -54,9 +56,9 @@ const fetchModels = async (provider: string, apiKey: string): Promise<string[]> 
               const modelProvider = model.provider || provider;
               return `${modelProvider}/${model.id}`;
             }
-            return null;
+            return '';
           })
-          .filter((model): model is string => typeof model === 'string');
+          .filter((model): model is string => model !== '');
 
         if (formattedModels.length > 0) {
           console.log('Formatted Window.ai models:', formattedModels);
