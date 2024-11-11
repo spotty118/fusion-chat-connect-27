@@ -1,3 +1,5 @@
+import { generateFusionResponse } from './fusion';
+
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000;
 const AUTH_COOKIE_NAME = 'window_ai_verified';
