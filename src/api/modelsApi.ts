@@ -5,7 +5,7 @@ export const fetchModelsFromBackend = async (provider: string, apiKey: string): 
     }
 
     // For Claude, we'll return the default models if the API key format is valid
-    if (provider === 'claude') {
+    if (provider === 'claude' && apiKey.startsWith('sk-ant-')) {
       return [
         'claude-3-opus-20240229',
         'claude-3-sonnet-20240229',

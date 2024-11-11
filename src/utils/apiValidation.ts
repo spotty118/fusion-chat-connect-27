@@ -2,24 +2,12 @@ export const validateProviderApiKey = async (provider: string, apiKey: string): 
   if (!apiKey) return false;
 
   try {
+    // For Claude, check if the API key format is valid (starts with 'sk-ant-' and has sufficient length)
     if (provider === 'claude') {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'anthropic-api-key': apiKey,
-          'anthropic-version': '2023-06-01'
-        },
-        body: JSON.stringify({
-          model: 'claude-3-opus-20240229',
-          max_tokens: 1,
-          messages: [{ role: 'user', content: 'test' }]
-        })
-      });
-      return response.ok;
+      return apiKey.startsWith('sk-ant-') && apiKey.length > 25;
     }
 
-    // For OpenRouter, we'll just check if the API key format is valid
+    // For OpenRouter, check if the API key format is valid
     if (provider === 'openrouter') {
       return apiKey.startsWith('sk-or-') && apiKey.length > 20;
     }
