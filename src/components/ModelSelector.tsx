@@ -24,14 +24,15 @@ const DEFAULT_MODELS = {
 };
 
 const fetchModels = async (provider: string, apiKey: string) => {
-  if (!apiKey) {
+  if (!apiKey && provider !== 'openrouter') {
     throw new Error('API key is required');
   }
 
   // For Window.ai integration
-  if (typeof window !== 'undefined' && window.ai?.getModels) {
+  if (provider === 'openrouter' && typeof window !== 'undefined' && window.ai?.getModels) {
     try {
       const models = await window.ai.getModels();
+      console.log('Window.ai models:', models); // Debug log
       return models;
     } catch (error) {
       console.error('Error fetching models from Window.ai:', error);
@@ -53,7 +54,7 @@ const fetchModels = async (provider: string, apiKey: string) => {
 
   if (provider === 'claude') {
     headers['x-api-key'] = apiKey;
-  } else {
+  } else if (provider !== 'openrouter') {
     headers['Authorization'] = `Bearer ${apiKey}`;
   }
 
@@ -93,7 +94,7 @@ export const ModelSelector = ({ provider, apiKey, onModelSelect, selectedModel }
   const { data: models = [], isLoading } = useQuery({
     queryKey: ['models', provider, apiKey],
     queryFn: () => fetchModels(provider, apiKey),
-    enabled: !!apiKey || (typeof window !== 'undefined' && !!window.ai?.getModels),
+    enabled: provider === 'openrouter' || !!apiKey,
     retry: false,
     gcTime: 0,
     staleTime: 30000,
