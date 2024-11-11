@@ -44,7 +44,7 @@ const fetchModels = async (provider: string, apiKey: string): Promise<string[]> 
       if (Array.isArray(windowAiModels) && windowAiModels.length > 0) {
         const formattedModels = windowAiModels
           .filter(isWindowAIModel)
-          .map((model) => {
+          .map((model: WindowAIModel) => {
             if (typeof model === 'string') {
               return model.includes('/') ? model : `${provider}/${model}`;
             }
