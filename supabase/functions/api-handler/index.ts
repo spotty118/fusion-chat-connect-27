@@ -43,7 +43,7 @@ const handleProviderRequest = async (provider: string, message: string, model: s
       break;
 
     case 'google':
-      endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
+      endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
       headers = {
         'Content-Type': 'application/json',
       };
@@ -79,19 +79,19 @@ const handleProviderRequest = async (provider: string, message: string, model: s
 
   try {
     console.log(`Sending request to ${endpoint}`);
-    const result = await fetch(endpoint, {
+    response = await fetch(endpoint, {
       method: 'POST',
       headers,
       body,
     });
 
-    if (!result.ok) {
-      const errorText = await result.text();
-      console.error(`${provider} API error:`, errorText);
-      throw new Error(`${provider} API returned status ${result.status}: ${errorText}`);
+    if (!response.ok) {
+      const error = await response.text();
+      console.error(`${provider} API error:`, error);
+      throw new Error(`${provider} API error: ${error}`);
     }
 
-    const data = await result.json();
+    const data = await response.json();
     console.log(`${provider} API response:`, data);
 
     // Transform response based on provider
@@ -135,30 +135,21 @@ serve(async (req) => {
   try {
     const { provider, message, model, apiKey } = await req.json();
     
-    if (!provider || !message || !model || !apiKey) {
-      return new Response(
-        JSON.stringify({ error: 'Missing required parameters' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (!provider || !message || !model) {
+      throw new Error('Missing required parameters');
     }
 
-    console.log(`Processing request for ${provider} with model ${model}`);
+    const data = await handleProviderRequest(provider, message, model, apiKey);
 
-    const response = await handleProviderRequest(provider, message, model, apiKey);
-
-    return new Response(
-      JSON.stringify(response),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify(data), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
 
   } catch (error) {
-    console.error('Request error:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
+    console.error('Error in api-handler function:', error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });
