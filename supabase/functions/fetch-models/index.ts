@@ -51,7 +51,7 @@ serve(async (req) => {
 
         // Test the API key with a simple request
         const msg = await anthropic.messages.create({
-          model: "claude-3-opus-20240229",
+          model: "claude-3.5-sonnet-20240321",
           max_tokens: 1000,
           temperature: 0,
           messages: [{ role: 'user', content: 'Hi' }]
@@ -59,12 +59,12 @@ serve(async (req) => {
 
         console.log('Claude API test response:', msg);
 
-        // Return the latest Claude-3 models
+        // Return the Claude 3.5 models
         models = [
-          'claude-3-opus-20240229',    // Most capable model
-          'claude-3-sonnet-20240229',  // Balanced model
-          'claude-3-haiku-20240307',   // Fastest model
-          'claude-2.1'                 // Legacy model
+          'claude-3.5-opus-20240321',    // Most capable model
+          'claude-3.5-sonnet-20240321',  // Balanced model
+          'claude-3.5-haiku-20240321',   // Fastest model
+          'claude-2.1'                   // Legacy model
         ];
 
         console.log('Available Claude models:', models);
