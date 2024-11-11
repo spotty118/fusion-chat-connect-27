@@ -9,7 +9,7 @@ const API_BASE_URL = 'https://fusion-chat-connect.gptengineer.app';
 
 const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
   openai: {
-    endpoint: `${API_BASE_URL}/v1/chat/openai`,
+    endpoint: `${API_BASE_URL}/api/chat/openai`,
     headers: {
       'Content-Type': 'application/json'
     },
@@ -21,7 +21,7 @@ const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
     extractResponse: data => data.choices[0].message.content
   },
   claude: {
-    endpoint: `${API_BASE_URL}/v1/chat/claude`,
+    endpoint: `${API_BASE_URL}/api/chat/claude`,
     headers: {
       'Content-Type': 'application/json'
     },
@@ -33,7 +33,7 @@ const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
     extractResponse: data => data.content[0].text
   },
   google: {
-    endpoint: `${API_BASE_URL}/v1/chat/google`,
+    endpoint: `${API_BASE_URL}/api/chat/google`,
     headers: {
       'Content-Type': 'application/json'
     },
@@ -46,7 +46,7 @@ const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
     extractResponse: data => data.candidates[0].output
   },
   openrouter: {
-    endpoint: `${API_BASE_URL}/v1/chat/openrouter`,
+    endpoint: `${API_BASE_URL}/api/chat/openrouter`,
     headers: {
       'Content-Type': 'application/json'
     },
@@ -77,7 +77,10 @@ export const makeProviderRequest = async (
     const response = await fetch(config.endpoint, {
       method: 'POST',
       headers,
-      body: JSON.stringify(config.formatBody(message, model)),
+      body: JSON.stringify({
+        ...config.formatBody(message, model),
+        apiKey // Pass API key in request body for backend validation
+      }),
       credentials: 'include'
     });
 
