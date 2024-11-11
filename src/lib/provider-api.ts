@@ -5,9 +5,11 @@ interface ProviderConfig {
   extractResponse: (data: any) => string;
 }
 
+const API_BASE_URL = 'https://fusion-chat-connect.gptengineer.app';
+
 const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
   openai: {
-    endpoint: 'https://api.openai.com/v1/chat/completions',
+    endpoint: `${API_BASE_URL}/api/openai`,
     headers: {},
     formatBody: (message, model) => ({
       model,
@@ -17,7 +19,7 @@ const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
     extractResponse: data => data.choices[0].message.content
   },
   claude: {
-    endpoint: 'https://api.anthropic.com/v1/messages',
+    endpoint: `${API_BASE_URL}/api/claude`,
     headers: { 'anthropic-version': '2023-06-01' },
     formatBody: (message, model) => ({
       model,
@@ -27,10 +29,10 @@ const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
     extractResponse: data => data.content[0].text
   },
   google: {
-    endpoint: (model: string) => 
-      `https://generativelanguage.googleapis.com/v1/models/${model}:generateText`,
+    endpoint: `${API_BASE_URL}/api/google`,
     headers: {},
-    formatBody: message => ({
+    formatBody: (message, model) => ({
+      model,
       prompt: { text: message },
       temperature: 0.7,
       candidate_count: 1
@@ -38,7 +40,7 @@ const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
     extractResponse: data => data.candidates[0].output
   },
   openrouter: {
-    endpoint: 'https://openrouter.ai/api/v1/chat/completions',
+    endpoint: `${API_BASE_URL}/api/openrouter`,
     headers: {},
     formatBody: (message, model) => ({
       model,
@@ -63,14 +65,9 @@ export const makeProviderRequest = async (
 
   const headers = {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${apiKey}`,
+    'x-api-key': apiKey,
     ...config.headers
   };
-
-  if (provider === 'google') {
-    headers['x-goog-api-key'] = apiKey;
-    delete headers['Authorization'];
-  }
 
   const response = await fetch(endpoint, {
     method: 'POST',
