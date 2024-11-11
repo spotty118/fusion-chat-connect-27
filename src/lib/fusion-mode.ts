@@ -1,6 +1,15 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export const generateFusionResponse = async (message: string) => {
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  if (sessionError || !session) {
+    throw new Error('Please sign in to use Fusion Mode');
+  }
+
   const apiKeys = {
     openai: localStorage.getItem('openai_key'),
     claude: localStorage.getItem('claude_key'),
@@ -25,14 +34,6 @@ export const generateFusionResponse = async (message: string) => {
   }
 
   try {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    if (!session?.access_token) {
-      throw new Error('No active session found');
-    }
-
     // Make parallel requests to all active providers through our Edge Function
     const responses = await Promise.all(
       activeProviders.map(async provider => {
