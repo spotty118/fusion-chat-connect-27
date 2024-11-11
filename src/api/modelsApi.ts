@@ -13,7 +13,7 @@ export const fetchModelsFromBackend = async (provider: string, apiKey: string): 
     }
 
     // For OpenAI and Claude, fetch models through our Edge Function
-    if ((provider === 'openai' && apiKey) || (provider === 'claude' && apiKey.startsWith('sk-ant-'))) {
+    if ((provider === 'openai' && apiKey) || (provider === 'claude' && apiKey)) {
       try {
         const { data, error } = await supabase.functions.invoke('fetch-models', {
           body: { provider, apiKey },
