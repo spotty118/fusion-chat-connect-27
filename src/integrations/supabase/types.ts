@@ -105,9 +105,9 @@ export type Database = {
       }
       store_cached_response: {
         Args: {
-          cache_key: string
-          combined_response: string
-          expires_at: string
+          input_cache_key: string
+          input_combined_response: string
+          input_expires_at: string
         }
         Returns: undefined
       }
