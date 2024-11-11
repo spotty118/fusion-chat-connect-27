@@ -23,14 +23,35 @@ const FusionModeSettings = ({
   onActivate
 }: FusionModeSettingsProps) => {
   const [isAnimating, setIsAnimating] = useState(false);
+  const { toast } = useToast();
+
+  const getConfiguredProvidersCount = () => {
+    return Object.entries(apiKeys).filter(([provider, key]) => 
+      key && key.length > 0 && selectedModels[provider] && selectedModels[provider].length > 0
+    ).length;
+  };
 
   const handleActivate = () => {
+    const configuredCount = getConfiguredProvidersCount();
+    
+    if (configuredCount < 3) {
+      toast({
+        title: "Cannot Activate Fusion Mode",
+        description: `At least 3 providers must be configured. Currently configured: ${configuredCount}/4`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsAnimating(true);
     setTimeout(() => {
       setIsAnimating(false);
       onActivate();
-    }, 2000); // Match animation duration
+    }, 2000);
   };
+
+  const configuredCount = getConfiguredProvidersCount();
+  const isActivatable = configuredCount >= 3;
 
   return (
     <div className="space-y-6 animate-in fade-in-50 relative">
@@ -84,16 +105,21 @@ const FusionModeSettings = ({
         statusQuery={providerQueries.openrouter}
       />
 
-      <Button 
-        className="w-full relative overflow-hidden group"
-        onClick={handleActivate}
-        disabled={isAnimating}
-      >
-        <span className="relative z-10 flex items-center justify-center gap-2">
-          Activate Fusion Mode
-          <Zap className="w-4 h-4" />
-        </span>
-      </Button>
+      <div className="space-y-2">
+        <Button 
+          className={`w-full relative overflow-hidden group ${!isActivatable ? 'opacity-50 cursor-not-allowed' : ''}`}
+          onClick={handleActivate}
+          disabled={!isActivatable || isAnimating}
+        >
+          <span className="relative z-10 flex items-center justify-center gap-2">
+            Activate Fusion Mode
+            <Zap className="w-4 h-4" />
+          </span>
+        </Button>
+        <p className="text-sm text-gray-500 text-center">
+          {configuredCount}/4 providers configured ({isActivatable ? 'Ready to activate' : `Need ${3 - configuredCount} more`})
+        </p>
+      </div>
     </div>
   );
 };
