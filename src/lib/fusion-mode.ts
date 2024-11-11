@@ -8,6 +8,10 @@ interface ResponseCache {
   expires_at: string;
 }
 
+interface CacheResponse {
+  combined_response: string;
+}
+
 const combineResponsesWithAI = async (responses: { provider: string; response: string }[]): Promise<string> => {
   try {
     const { data: { session } } = await supabase.auth.getSession();
@@ -21,13 +25,13 @@ const combineResponsesWithAI = async (responses: { provider: string; response: s
     
     // Use RPC call instead of direct query to handle large cache keys
     const { data: existingResponse, error: cacheError } = await supabase
-      .rpc('get_cached_response', { cache_key: cacheKey });
+      .rpc<CacheResponse>('get_cached_response', { cache_key: cacheKey });
 
     if (cacheError) {
       console.error('Error checking cache:', cacheError);
-    } else if (existingResponse) {
+    } else if (existingResponse && existingResponse.length > 0) {
       console.log('Cache hit! Returning cached response');
-      return existingResponse.combined_response;
+      return existingResponse[0].combined_response;
     }
 
     const { data, error } = await supabase.functions.invoke('combine-responses', {
@@ -170,3 +174,5 @@ export const generateFusionResponse = async (message: string) => {
     throw new Error(`Fusion mode error: ${error.message}`);
   }
 };
+
+export { generateFusionResponse };
