@@ -1,13 +1,13 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { useNavigate } from 'react-router-dom';
-import { Button } from "@/components/ui/button";
 import { ArrowLeft } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { useToast } from "@/components/ui/use-toast";
 import FusionModeSettings from '@/components/settings/FusionModeSettings';
+import { useProviderStatus } from '@/hooks/useProviderStatus';
 
 const Settings = () => {
   const { toast } = useToast();
@@ -26,79 +26,16 @@ const Settings = () => {
     openrouter: '',
   });
 
-  const checkProviderStatus = async (provider: string, apiKey: string) => {
-    if (!apiKey) return false;
-    
-    // For Claude, we'll use the messages endpoint directly with the correct header
-    if (provider === 'claude') {
-      try {
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'anthropic-api-key': apiKey,
-            'anthropic-version': '2023-06-01'
-          },
-          body: JSON.stringify({
-            model: 'claude-3-opus-20240229',
-            max_tokens: 1,
-            messages: [{ role: 'user', content: 'test' }]
-          })
-        });
-        return response.ok;
-      } catch (error) {
-        return false;
-      }
-    }
-
-    // For other providers
-    try {
-      const endpoints = {
-        openai: 'https://api.openai.com/v1/models',
-        google: 'https://generativelanguage.googleapis.com/v1beta/models',
-        openrouter: 'https://openrouter.ai/api/v1/models',
-      };
-      
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      };
-
-      const response = await fetch(endpoints[provider as keyof typeof endpoints], { headers });
-      return response.ok;
-    } catch (error) {
-      return false;
-    }
-  };
-
   const providerQueries = {
-    openai: useQuery({
-      queryKey: ['provider-status', 'openai', apiKeys.openai],
-      queryFn: () => checkProviderStatus('openai', apiKeys.openai),
-      enabled: !!apiKeys.openai,
-    }),
-    claude: useQuery({
-      queryKey: ['provider-status', 'claude', apiKeys.claude],
-      queryFn: () => checkProviderStatus('claude', apiKeys.claude),
-      enabled: !!apiKeys.claude,
-    }),
-    google: useQuery({
-      queryKey: ['provider-status', 'google', apiKeys.google],
-      queryFn: () => checkProviderStatus('google', apiKeys.google),
-      enabled: !!apiKeys.google,
-    }),
-    openrouter: useQuery({
-      queryKey: ['provider-status', 'openrouter', apiKeys.openrouter],
-      queryFn: () => checkProviderStatus('openrouter', apiKeys.openrouter),
-      enabled: !!apiKeys.openrouter,
-    }),
+    openai: useProviderStatus('openai', apiKeys.openai),
+    claude: useProviderStatus('claude', apiKeys.claude),
+    google: useProviderStatus('google', apiKeys.google),
+    openrouter: useProviderStatus('openrouter', apiKeys.openrouter),
   };
 
-  const handleBack = () => {
-    navigate('/');
-  };
+  const handleBack = () => navigate('/');
 
-  const handleFusionModeChange = (checked) => {
+  const handleFusionModeChange = (checked: boolean) => {
     setFusionMode(checked);
     if (checked) {
       toast({
@@ -114,14 +51,14 @@ const Settings = () => {
     }
   };
 
-  const handleApiKeyChange = (provider) => (value) => {
+  const handleApiKeyChange = (provider: string) => (value: string) => {
     setApiKeys(prev => ({
       ...prev,
       [provider]: value
     }));
   };
 
-  const handleModelSelect = (provider) => (model) => {
+  const handleModelSelect = (provider: string) => (model: string) => {
     setSelectedModels(prev => ({
       ...prev,
       [provider]: model
@@ -131,7 +68,7 @@ const Settings = () => {
   const handleActivate = () => {
     const activeProviders = Object.entries(apiKeys).filter(([_, value]) => value.length > 0);
     const activeModels = Object.entries(selectedModels).filter(([provider, model]) => 
-      apiKeys[provider] && model
+      apiKeys[provider as keyof typeof apiKeys] && model
     );
 
     if (activeProviders.length < 3) {

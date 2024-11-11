@@ -1,5 +1,3 @@
-import Anthropic from "@anthropic-ai/sdk";
-
 export const fetchModelsFromBackend = async (provider: string, apiKey: string): Promise<string[]> => {
   try {
     if (provider === 'claude' && apiKey) {
@@ -19,7 +17,6 @@ export const fetchModelsFromBackend = async (provider: string, apiKey: string): 
         });
         
         if (response.ok) {
-          // If successful, return the curated list of available models
           return [
             'claude-3-opus-20240229',
             'claude-3-sonnet-20240229',
@@ -55,7 +52,6 @@ export const fetchModelsFromBackend = async (provider: string, apiKey: string): 
       }
     }
 
-    // For other providers, return default models
     return getDefaultModels(provider);
   } catch (error) {
     console.error(`Error fetching models for ${provider}:`, error);
