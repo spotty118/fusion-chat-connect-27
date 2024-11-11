@@ -10,7 +10,6 @@ export const generateFusionResponse = async (message: string) => {
     throw new Error('Please sign in to use Fusion Mode');
   }
 
-  // Fetch API keys from Supabase with explicit typing
   const { data: apiKeysData, error: apiKeysError } = await supabase
     .from('api_keys')
     .select('provider, api_key')
@@ -25,7 +24,6 @@ export const generateFusionResponse = async (message: string) => {
     throw new Error('No API keys found. Please add your API keys in the settings.');
   }
 
-  // Initialize apiKeys object with all providers set to empty strings
   const apiKeys: Record<string, string> = {
     openai: '',
     claude: '',
@@ -33,7 +31,6 @@ export const generateFusionResponse = async (message: string) => {
     openrouter: ''
   };
 
-  // Update apiKeys with the values from the database
   apiKeysData.forEach(({ provider, api_key }) => {
     if (provider in apiKeys) {
       apiKeys[provider] = api_key;
@@ -47,16 +44,11 @@ export const generateFusionResponse = async (message: string) => {
     openrouter: localStorage.getItem('openrouter_model')
   };
 
-  // Filter active providers (those with both API key and model selected)
   const activeProviders = Object.keys(apiKeys).filter(provider => {
     const hasApiKey = apiKeys[provider] && apiKeys[provider].length > 0;
     const hasModel = selectedModels[provider] && selectedModels[provider].length > 0;
     return hasApiKey && hasModel;
   });
-
-  console.log('Active providers:', activeProviders);
-  console.log('API Keys:', apiKeysData);
-  console.log('Selected Models:', selectedModels);
 
   if (activeProviders.length < 3) {
     throw new Error(
@@ -67,7 +59,6 @@ export const generateFusionResponse = async (message: string) => {
   }
 
   try {
-    // Make parallel requests to all active providers through our Edge Function
     const responses = await Promise.all(
       activeProviders.map(async provider => {
         try {
@@ -85,7 +76,6 @@ export const generateFusionResponse = async (message: string) => {
 
           if (error) throw error;
 
-          // Extract response based on provider
           let response;
           switch (provider) {
             case 'openai':
@@ -101,18 +91,39 @@ export const generateFusionResponse = async (message: string) => {
             default:
               throw new Error(`Unsupported provider: ${provider}`);
           }
-          return response;
+          return { provider, response };
         } catch (error) {
           console.error(`Error with ${provider}:`, error);
-          return `[${provider} error: ${error.message}]`;
+          return { provider, response: `Error: ${error.message}` };
         }
       })
     );
 
-    // Combine responses with provider names
-    return activeProviders
-      .map((provider, index) => `${provider.toUpperCase()}: ${responses[index]}`)
-      .join('\n\n');
+    // Combine responses into a single coherent response
+    const validResponses = responses.filter(r => !r.response.startsWith('Error:'));
+    if (validResponses.length === 0) {
+      throw new Error('All providers failed to generate a response');
+    }
+
+    // Extract key points from each response
+    const combinedResponse = validResponses.reduce((acc, { response }) => {
+      // Split response into sentences and filter out duplicates
+      const sentences = response.split(/[.!?]+/).filter(Boolean);
+      sentences.forEach(sentence => {
+        const trimmedSentence = sentence.trim();
+        if (trimmedSentence && !acc.includes(trimmedSentence)) {
+          acc.push(trimmedSentence);
+        }
+      });
+      return acc;
+    }, [] as string[]);
+
+    // Join the unique sentences back together
+    return combinedResponse
+      .map(sentence => sentence.trim())
+      .filter(Boolean)
+      .join('. ') + '.';
+
   } catch (error) {
     throw new Error(`Fusion mode error: ${error.message}`);
   }
