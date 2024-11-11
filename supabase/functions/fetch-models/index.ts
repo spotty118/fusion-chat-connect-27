@@ -43,7 +43,6 @@ serve(async (req) => {
     }
 
     if (provider === 'claude') {
-      // For Claude, we'll return the latest available models
       models = [
         'claude-3-opus-20240229',
         'claude-3-sonnet-20240229',
@@ -51,7 +50,6 @@ serve(async (req) => {
         'claude-2.1'
       ];
       
-      // Verify the API key with a simple request
       try {
         const response = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',
@@ -74,6 +72,36 @@ serve(async (req) => {
       } catch (error) {
         console.error('Error verifying Claude API key:', error);
         throw new Error('Failed to verify Claude API key');
+      }
+    }
+
+    if (provider === 'google') {
+      try {
+        const response = await fetch(
+          'https://generativelanguage.googleapis.com/v1/models?key=' + apiKey
+        );
+
+        if (!response.ok) {
+          console.error('Google AI API error:', await response.text());
+          throw new Error('Failed to fetch Google AI models');
+        }
+
+        const data = await response.json();
+        models = data.models
+          .filter((model: { name: string }) => 
+            model.name.includes('gemini') && 
+            !model.name.includes('vision')
+          )
+          .map((model: { name: string }) => {
+            return model.name.replace('models/', '');
+          })
+          .sort()
+          .reverse();
+
+        console.log('Available Google AI models:', models);
+      } catch (error) {
+        console.error('Error fetching Google AI models:', error);
+        throw new Error('Failed to fetch Google AI models');
       }
     }
 
