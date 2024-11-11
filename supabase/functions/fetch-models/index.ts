@@ -1,6 +1,5 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import Anthropic from 'npm:@anthropic-ai/sdk';
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,6 +13,8 @@ serve(async (req) => {
 
   try {
     const { provider, apiKey } = await req.json();
+    console.log(`Fetching models for provider: ${provider}`);
+    
     let models: string[] = [];
 
     if (provider === 'openai') {
@@ -42,38 +43,41 @@ serve(async (req) => {
     }
 
     if (provider === 'claude') {
-      console.log('Fetching Claude models with API key:', apiKey ? 'Present' : 'Missing');
+      // For Claude, we'll return the fixed list of available models
+      // since there's no direct models endpoint
+      models = [
+        'claude-3-opus-20240229',
+        'claude-3-sonnet-20240229',
+        'claude-2.1'
+      ];
       
+      // Verify the API key with a simple request
       try {
-        const anthropic = new Anthropic({
-          apiKey: apiKey,
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'x-api-key': apiKey,
+            'content-type': 'application/json',
+            'anthropic-version': '2023-06-01'
+          },
+          body: JSON.stringify({
+            model: 'claude-3-sonnet-20240229',
+            max_tokens: 1,
+            messages: [{ role: 'user', content: 'Hi' }]
+          })
         });
 
-        // Test the API key with a simple request
-        const msg = await anthropic.messages.create({
-          model: "claude-3.5-sonnet-20240321",
-          max_tokens: 1000,
-          temperature: 0,
-          messages: [{ role: 'user', content: 'Hi' }]
-        });
-
-        console.log('Claude API test response:', msg);
-
-        // Return the Claude 3.5 models
-        models = [
-          'claude-3.5-opus-20240321',    // Most capable model
-          'claude-3.5-sonnet-20240321',  // Balanced model
-          'claude-3.5-haiku-20240321',   // Fastest model
-          'claude-2.1'                   // Legacy model
-        ];
-
-        console.log('Available Claude models:', models);
+        if (!response.ok) {
+          console.error('Claude API verification failed:', await response.text());
+          throw new Error('Invalid Claude API key');
+        }
       } catch (error) {
-        console.error('Error testing Claude API key:', error);
-        throw new Error(`Failed to verify Claude API key: ${error.message}`);
+        console.error('Error verifying Claude API key:', error);
+        throw new Error('Failed to verify Claude API key');
       }
     }
 
+    console.log(`Successfully fetched ${models.length} models for ${provider}`);
     return new Response(
       JSON.stringify({ models }),
       { 
