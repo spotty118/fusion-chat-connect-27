@@ -47,12 +47,12 @@ const combineResponsesWithAI = async (responses: { provider: string; response: s
 
     if (error) throw error;
 
-    // Cache the combined response using RPC
+    // Cache the combined response using RPC with updated parameter names
     const { error: cacheStoreError } = await supabase
       .rpc('store_cached_response', {
-        cache_key: cacheKey,
-        combined_response: data.response,
-        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+        input_cache_key: cacheKey,
+        input_combined_response: data.response,
+        input_expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
       });
 
     if (cacheStoreError) {
@@ -65,6 +65,8 @@ const combineResponsesWithAI = async (responses: { provider: string; response: s
     return responses.map(r => r.response).join('\n\n');
   }
 };
+
+// ... keep existing code (generateFusionResponse function)
 
 export const generateFusionResponse = async (message: string) => {
   const {
