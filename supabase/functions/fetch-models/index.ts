@@ -43,11 +43,11 @@ serve(async (req) => {
     }
 
     if (provider === 'claude') {
-      // For Claude, we'll return the fixed list of available models
-      // since there's no direct models endpoint
+      // For Claude, we'll return the latest available models
       models = [
         'claude-3-opus-20240229',
         'claude-3-sonnet-20240229',
+        'claude-3-haiku-20240307',
         'claude-2.1'
       ];
       
