@@ -8,6 +8,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
 import FusionModeSettings from '@/components/settings/FusionModeSettings';
 import { useProviderStatus } from '@/hooks/useProviderStatus';
+import { supabase } from "@/integrations/supabase/client";
 
 const Settings = () => {
   const { toast } = useToast();
@@ -16,7 +17,6 @@ const Settings = () => {
     return localStorage.getItem('fusionMode') === 'true';
   });
   
-  // Load saved API keys and models from localStorage
   const [apiKeys, setApiKeys] = React.useState(() => ({
     openai: localStorage.getItem('openai_key') || '',
     claude: localStorage.getItem('claude_key') || '',
@@ -49,7 +49,6 @@ const Settings = () => {
         description: "Please configure your API keys and select models for providers",
       });
     } else {
-      // Clear selected models when disabling fusion mode
       setSelectedModels({ openai: '', claude: '', google: '', openrouter: '' });
       Object.keys(selectedModels).forEach(provider => {
         localStorage.removeItem(`${provider}_model`);
@@ -61,12 +60,38 @@ const Settings = () => {
     }
   };
 
-  const handleApiKeyChange = (provider: string) => (value: string) => {
+  const handleApiKeyChange = (provider: string) => async (value: string) => {
     setApiKeys(prev => ({
       ...prev,
       [provider]: value
     }));
     localStorage.setItem(`${provider}_key`, value);
+
+    // Save API key to Supabase
+    if (value) {
+      const { error } = await supabase
+        .from('api_keys')
+        .upsert({
+          provider,
+          api_key: value,
+        }, {
+          onConflict: 'provider'
+        });
+
+      if (error) {
+        console.error('Error saving API key:', error);
+        toast({
+          title: "Error Saving API Key",
+          description: `Failed to save ${provider} API key. Please try again.`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "API Key Saved",
+          description: `${provider} API key has been saved successfully.`,
+        });
+      }
+    }
   };
 
   const handleModelSelect = (provider: string) => (model: string) => {
@@ -114,7 +139,7 @@ const Settings = () => {
           <CardHeader>
             <CardTitle>Settings</CardTitle>
             <CardDescription>
-              Configure your AI chat experience
+              Configure your AI chat experience. Make sure to save your API keys to use the providers.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
