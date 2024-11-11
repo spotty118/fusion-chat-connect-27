@@ -24,30 +24,34 @@ const DEFAULT_MODELS = {
   openrouter: ['openrouter/auto', 'mistralai/mixtral-8x7b-instruct', 'anthropic/claude-2']
 };
 
-interface WindowAIModel {
-  id: string;
-  provider?: string;
-  name?: string;
+interface WindowAI {
+  getModels: () => Promise<string[]>;
 }
 
-const isWindowAIModel = (model: any): model is WindowAIModel => {
-  return typeof model === 'object' && model !== null && typeof model.id === 'string';
-};
+declare global {
+  interface Window {
+    ai?: WindowAI;
+  }
+}
 
-const fetchModels = async (provider: string, apiKey: string, fusionMode: boolean = false): Promise<string[]> => {
+const fetchModels = async (
+  provider: string,
+  apiKey: string,
+  fusionMode: boolean = false
+): Promise<string[]> => {
   // If fusion mode is active, skip window.ai and use API directly
   if (!fusionMode && typeof window !== 'undefined' && window.ai?.getModels) {
     try {
-      const windowAiModels: WindowAIModel[] = await window.ai.getModels();
+      const windowAiModels = await window.ai.getModels();
       console.log('Available Window.ai models:', windowAiModels);
       
       if (Array.isArray(windowAiModels) && windowAiModels.length > 0) {
-        const formattedModels = windowAiModels
-          .filter(isWindowAIModel)
-          .map((model: WindowAIModel) => {
-            return model.provider ? `${model.provider}/${model.id}` : `${provider}/${model.id}`;
-          })
-          .filter(Boolean);
+        const formattedModels = windowAiModels.map((modelId) => {
+          if (modelId.includes('/')) {
+            return modelId;
+          }
+          return `${provider}/${modelId}`;
+        }).filter(Boolean);
 
         if (formattedModels.length > 0) {
           console.log('Formatted Window.ai models:', formattedModels);
@@ -128,7 +132,13 @@ const fetchModels = async (provider: string, apiKey: string, fusionMode: boolean
   }
 };
 
-export const ModelSelector = ({ provider, apiKey, onModelSelect, selectedModel, fusionMode = false }: ModelSelectorProps) => {
+export const ModelSelector = ({
+  provider,
+  apiKey,
+  onModelSelect,
+  selectedModel,
+  fusionMode = false,
+}: ModelSelectorProps) => {
   const { toast } = useToast();
   const { data: models = [], isLoading } = useQuery({
     queryKey: ['models', provider, apiKey, fusionMode],
