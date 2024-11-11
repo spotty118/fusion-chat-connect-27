@@ -25,7 +25,7 @@ const Login = () => {
               <Bot size={32} />
             </div>
             <h1 className="text-3xl font-bold text-center bg-gradient-to-br from-fusion-primary to-fusion-secondary bg-clip-text text-transparent">
-              Fusion Chat
+              ThinkLink
             </h1>
             <p className="text-gray-500 text-center max-w-sm">
               Connect with advanced AI models through a unified chat interface
