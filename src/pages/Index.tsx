@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import ChatContainer from '@/components/ChatContainer';
 import ChatInput from '@/components/ChatInput';
-import { generateResponse } from '@/lib/window-ai';
+import { generateResponse, checkWindowAI } from '@/lib/window-ai';
 import { Settings as SettingsIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -15,23 +15,41 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [fusionMode, setFusionMode] = useState(false);
   const [selectedModel, setSelectedModel] = useState('');
+  const [isWindowAIReady, setIsWindowAIReady] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Load fusion mode state from localStorage on mount
   useEffect(() => {
     const savedFusionMode = localStorage.getItem('fusionMode') === 'true';
     setFusionMode(savedFusionMode);
-  }, []);
+
+    // Check if Window AI is available
+    checkWindowAI()
+      .then(() => setIsWindowAIReady(true))
+      .catch((error) => {
+        toast({
+          title: "Window AI Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      });
+  }, [toast]);
 
   const { data: availableModels = [] } = useQuery({
     queryKey: ['available-models'],
     queryFn: async () => {
-      if (!window.ai) return [];
-      const models = await window.ai.getModels();
-      return models || [];
+      if (!window.ai?.getModels) return [];
+      try {
+        const models = await window.ai.getModels();
+        return models || [];
+      } catch (error) {
+        console.error('Error fetching models:', error);
+        return [];
+      }
     },
-    enabled: !!window.ai,
+    enabled: isWindowAIReady,
+    staleTime: 30000, // Cache for 30 seconds
+    retry: false,
   });
 
   const handleModelSelect = async (model) => {
@@ -87,6 +105,7 @@ const Index = () => {
                 <Select
                   value={selectedModel}
                   onValueChange={handleModelSelect}
+                  disabled={!isWindowAIReady}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select a model" />
