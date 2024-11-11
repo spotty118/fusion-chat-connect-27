@@ -38,13 +38,13 @@ const fetchModels = async (provider: string, apiKey: string, fusionMode: boolean
   // If fusion mode is active, skip window.ai and use API directly
   if (!fusionMode && typeof window !== 'undefined' && window.ai?.getModels) {
     try {
-      const windowAiModels = await window.ai.getModels();
+      const windowAiModels: WindowAIModel[] = await window.ai.getModels();
       console.log('Available Window.ai models:', windowAiModels);
       
       if (Array.isArray(windowAiModels) && windowAiModels.length > 0) {
         const formattedModels = windowAiModels
           .filter(isWindowAIModel)
-          .map(model => {
+          .map((model: WindowAIModel) => {
             return model.provider ? `${model.provider}/${model.id}` : `${provider}/${model.id}`;
           })
           .filter(Boolean);
@@ -92,7 +92,7 @@ const fetchModels = async (provider: string, apiKey: string, fusionMode: boolean
   }
 
   // Fallback to other provider APIs
-  const endpoints = {
+  const endpoints: Record<string, string> = {
     openai: 'https://api.openai.com/v1/models',
     google: 'https://generativelanguage.googleapis.com/v1beta/models',
   };
