@@ -25,14 +25,13 @@ const DEFAULT_MODELS = {
 
 interface WindowAIModel {
   id: string;
-  name?: string;
   provider?: string;
+  name?: string;
 }
 
 const isWindowAIModel = (model: unknown): model is WindowAIModel => {
   if (typeof model !== 'object' || model === null) return false;
-  const modelObj = model as Record<string, unknown>;
-  return typeof modelObj.id === 'string';
+  return typeof (model as WindowAIModel).id === 'string';
 };
 
 const fetchModels = async (provider: string, apiKey: string): Promise<string[]> => {
@@ -56,7 +55,7 @@ const fetchModels = async (provider: string, apiKey: string): Promise<string[]> 
             }
             return '';
           })
-          .filter((model): model is string => typeof model === 'string' && model !== '');
+          .filter((model): model is string => model !== '');
 
         if (formattedModels.length > 0) {
           console.log('Formatted Window.ai models:', formattedModels);
