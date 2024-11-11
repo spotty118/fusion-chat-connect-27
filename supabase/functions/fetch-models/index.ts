@@ -50,11 +50,14 @@ serve(async (req) => {
         });
 
         // Test the API key with a simple request
-        await anthropic.messages.create({
-          model: 'claude-3-sonnet-20240229',
-          max_tokens: 1,
-          messages: [{ role: 'user', content: 'Hi' }],
+        const msg = await anthropic.messages.create({
+          model: "claude-3-sonnet-20240229",
+          max_tokens: 1000,
+          temperature: 0,
+          messages: [{ role: 'user', content: 'Hi' }]
         });
+
+        console.log('Claude API test response:', msg);
 
         // Since we can't fetch models directly, we'll return the known Claude-3 models
         models = [
