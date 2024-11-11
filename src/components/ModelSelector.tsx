@@ -31,7 +31,8 @@ interface WindowAIModel {
 
 const isWindowAIModel = (model: unknown): model is WindowAIModel => {
   if (typeof model !== 'object' || model === null) return false;
-  return typeof (model as WindowAIModel).id === 'string';
+  const windowModel = model as WindowAIModel;
+  return typeof windowModel.id === 'string';
 };
 
 const fetchModels = async (provider: string, apiKey: string): Promise<string[]> => {
@@ -42,20 +43,14 @@ const fetchModels = async (provider: string, apiKey: string): Promise<string[]> 
       
       if (Array.isArray(windowAiModels) && windowAiModels.length > 0) {
         const formattedModels = windowAiModels
-          .filter((model): model is (string | WindowAIModel) => 
-            model !== null && (typeof model === 'string' || isWindowAIModel(model))
-          )
+          .filter(isWindowAIModel)
           .map((model) => {
             if (typeof model === 'string') {
               return model.includes('/') ? model : `${provider}/${model}`;
             }
-            if (isWindowAIModel(model)) {
-              const modelProvider = model.provider || provider;
-              return `${modelProvider}/${model.id}`;
-            }
-            return '';
+            return `${model.provider || provider}/${model.id}`;
           })
-          .filter((model): model is string => model !== '');
+          .filter(Boolean);
 
         if (formattedModels.length > 0) {
           console.log('Formatted Window.ai models:', formattedModels);
@@ -65,6 +60,11 @@ const fetchModels = async (provider: string, apiKey: string): Promise<string[]> 
     } catch (error) {
       console.error('Error fetching models from Window.ai:', error);
     }
+  }
+
+  // For Claude, always return default models due to CORS restrictions
+  if (provider === 'claude') {
+    return DEFAULT_MODELS.claude;
   }
 
   // If Window.ai fails or returns no models, fall back to API endpoints
@@ -87,7 +87,7 @@ const fetchModels = async (provider: string, apiKey: string): Promise<string[]> 
       }
 
       const data = await response.json();
-      return data.data.map((model: WindowAIModel) => model.id).filter(Boolean);
+      return data.data.map((model: { id: string }) => model.id).filter(Boolean);
     } catch (error) {
       console.error('Error fetching OpenRouter models:', error);
       return DEFAULT_MODELS.openrouter;
@@ -97,19 +97,13 @@ const fetchModels = async (provider: string, apiKey: string): Promise<string[]> 
   // Fallback to other provider APIs
   const endpoints = {
     openai: 'https://api.openai.com/v1/models',
-    claude: 'https://api.anthropic.com/v1/models',
     google: 'https://generativelanguage.googleapis.com/v1beta/models',
   };
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    'Authorization': `Bearer ${apiKey}`
   };
-
-  if (provider === 'claude') {
-    headers['x-api-key'] = apiKey;
-  } else {
-    headers['Authorization'] = `Bearer ${apiKey}`;
-  }
 
   try {
     const response = await fetch(endpoints[provider], { headers });
@@ -124,8 +118,6 @@ const fetchModels = async (provider: string, apiKey: string): Promise<string[]> 
         return data.data
           .filter((model: any) => model.id.includes('gpt'))
           .map((model: any) => model.id);
-      case 'claude':
-        return data.models.map((model: any) => model.id);
       case 'google':
         return data.models
           .filter((model: any) => model.name.includes('palm'))
