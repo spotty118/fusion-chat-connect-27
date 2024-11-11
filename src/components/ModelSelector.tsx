@@ -14,6 +14,7 @@ interface ModelSelectorProps {
   apiKey: string;
   onModelSelect: (model: string) => void;
   selectedModel?: string;
+  fusionMode?: boolean;
 }
 
 const DEFAULT_MODELS = {
@@ -29,14 +30,13 @@ interface WindowAIModel {
   name?: string;
 }
 
-const isWindowAIModel = (model: unknown): model is WindowAIModel => {
-  if (typeof model !== 'object' || model === null) return false;
-  const windowModel = model as WindowAIModel;
-  return typeof windowModel.id === 'string';
+const isWindowAIModel = (model: any): model is WindowAIModel => {
+  return typeof model === 'object' && model !== null && typeof model.id === 'string';
 };
 
-const fetchModels = async (provider: string, apiKey: string): Promise<string[]> => {
-  if (typeof window !== 'undefined' && window.ai?.getModels) {
+const fetchModels = async (provider: string, apiKey: string, fusionMode: boolean = false): Promise<string[]> => {
+  // If fusion mode is active, skip window.ai and use API directly
+  if (!fusionMode && typeof window !== 'undefined' && window.ai?.getModels) {
     try {
       const windowAiModels = await window.ai.getModels();
       console.log('Available Window.ai models:', windowAiModels);
@@ -44,7 +44,7 @@ const fetchModels = async (provider: string, apiKey: string): Promise<string[]> 
       if (Array.isArray(windowAiModels) && windowAiModels.length > 0) {
         const formattedModels = windowAiModels
           .filter(isWindowAIModel)
-          .map((model: WindowAIModel) => {
+          .map(model => {
             return model.provider ? `${model.provider}/${model.id}` : `${provider}/${model.id}`;
           })
           .filter(Boolean);
@@ -128,11 +128,11 @@ const fetchModels = async (provider: string, apiKey: string): Promise<string[]> 
   }
 };
 
-export const ModelSelector = ({ provider, apiKey, onModelSelect, selectedModel }: ModelSelectorProps) => {
+export const ModelSelector = ({ provider, apiKey, onModelSelect, selectedModel, fusionMode = false }: ModelSelectorProps) => {
   const { toast } = useToast();
   const { data: models = [], isLoading } = useQuery({
-    queryKey: ['models', provider, apiKey],
-    queryFn: () => fetchModels(provider, apiKey),
+    queryKey: ['models', provider, apiKey, fusionMode],
+    queryFn: () => fetchModels(provider, apiKey, fusionMode),
     enabled: true,
     retry: false,
     gcTime: 0,
