@@ -1,5 +1,5 @@
 interface ProviderConfig {
-  endpoint: string | ((model: string) => string);
+  endpoint: string;
   headers: Record<string, string>;
   formatBody: (message: string, model: string) => any;
   extractResponse: (data: any) => string;
@@ -10,7 +10,10 @@ const API_BASE_URL = 'https://fusion-chat-connect.gptengineer.app';
 const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
   openai: {
     endpoint: `${API_BASE_URL}/api/openai`,
-    headers: {},
+    headers: {
+      'Accept': 'application/json',
+      'Access-Control-Allow-Origin': '*'
+    },
     formatBody: (message, model) => ({
       model,
       messages: [{ role: 'user', content: message }],
@@ -20,7 +23,10 @@ const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
   },
   claude: {
     endpoint: `${API_BASE_URL}/api/claude`,
-    headers: { 'anthropic-version': '2023-06-01' },
+    headers: {
+      'Accept': 'application/json',
+      'Access-Control-Allow-Origin': '*'
+    },
     formatBody: (message, model) => ({
       model,
       messages: [{ role: 'user', content: message }],
@@ -30,7 +36,10 @@ const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
   },
   google: {
     endpoint: `${API_BASE_URL}/api/google`,
-    headers: {},
+    headers: {
+      'Accept': 'application/json',
+      'Access-Control-Allow-Origin': '*'
+    },
     formatBody: (message, model) => ({
       model,
       prompt: { text: message },
@@ -41,7 +50,10 @@ const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
   },
   openrouter: {
     endpoint: `${API_BASE_URL}/api/openrouter`,
-    headers: {},
+    headers: {
+      'Accept': 'application/json',
+      'Access-Control-Allow-Origin': '*'
+    },
     formatBody: (message, model) => ({
       model,
       messages: [{ role: 'user', content: message }]
@@ -59,26 +71,29 @@ export const makeProviderRequest = async (
   const config = PROVIDER_CONFIGS[provider];
   if (!config) throw new Error(`Unsupported provider: ${provider}`);
 
-  const endpoint = typeof config.endpoint === 'function' 
-    ? config.endpoint(model)
-    : config.endpoint;
-
   const headers = {
     'Content-Type': 'application/json',
     'x-api-key': apiKey,
     ...config.headers
   };
 
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(config.formatBody(message, model))
-  });
+  try {
+    const response = await fetch(config.endpoint, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(config.formatBody(message, model)),
+      mode: 'cors',
+      credentials: 'include'
+    });
 
-  if (!response.ok) {
-    throw new Error(`${provider} API request failed: ${response.statusText}`);
+    if (!response.ok) {
+      throw new Error(`${provider} API request failed: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return config.extractResponse(data);
+  } catch (error) {
+    console.error(`Error with ${provider}:`, error);
+    throw error;
   }
-
-  const data = await response.json();
-  return config.extractResponse(data);
 };
