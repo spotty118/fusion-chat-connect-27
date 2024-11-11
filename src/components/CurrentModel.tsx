@@ -4,9 +4,15 @@ import { checkWindowAI } from '@/lib/window-ai';
 import { Database } from 'lucide-react';
 
 export const CurrentModel = () => {
+  const fusionMode = localStorage.getItem('fusionMode') === 'true';
+
   const { data: currentModel, isLoading, error } = useQuery({
     queryKey: ['current-model'],
     queryFn: async () => {
+      if (fusionMode) {
+        return 'fusion/multi-provider';
+      }
+
       if (typeof window === 'undefined') {
         throw new Error('Window is not defined');
       }
@@ -53,6 +59,18 @@ export const CurrentModel = () => {
         <div className="w-2 h-2 rounded-full bg-gray-500" />
         <Database className="h-4 w-4" />
         <span>No model selected</span>
+      </div>
+    );
+  }
+
+  if (fusionMode) {
+    return (
+      <div className="text-sm text-white/80 flex items-center gap-2">
+        <div className="w-2 h-2 rounded-full bg-purple-500" />
+        <Database className="h-4 w-4" />
+        <span>Fusion Mode</span>
+        <span className="mx-1">•</span>
+        <span>Multi-Provider</span>
       </div>
     );
   }

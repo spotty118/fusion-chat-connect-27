@@ -33,6 +33,11 @@ const waitForWindowAI = async (retries = 0): Promise<boolean> => {
 };
 
 export const checkWindowAI = async () => {
+  // Don't check Window.ai if fusion mode is active
+  if (localStorage.getItem('fusionMode') === 'true') {
+    return false;
+  }
+  
   if (isVerified()) {
     return true;
   }
@@ -41,7 +46,8 @@ export const checkWindowAI = async () => {
 
 export const generateResponse = async (message: string, fusionMode = false) => {
   try {
-    if (fusionMode) {
+    // If fusion mode is active, bypass Window.ai completely
+    if (fusionMode || localStorage.getItem('fusionMode') === 'true') {
       return await generateFusionResponse(message);
     }
 

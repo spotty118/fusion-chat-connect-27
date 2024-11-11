@@ -18,53 +18,7 @@ interface ModelSelectorProps {
   fusionMode?: boolean;
 }
 
-const fetchModels = async (
-  provider: string,
-  apiKey: string,
-  fusionMode: boolean = false
-): Promise<string[]> => {
-  // For providers requiring backend proxy
-  if (provider === 'claude' || provider === 'openai' || provider === 'google') {
-    return await fetchModelsFromBackend(provider, apiKey);
-  }
-
-  // If Window.ai is available and fusion mode is not active, try using it
-  if (!fusionMode && typeof window !== 'undefined' && window.ai?.getModels) {
-    try {
-      const windowAiModels = await window.ai.getModels();
-      if (Array.isArray(windowAiModels) && windowAiModels.length > 0) {
-        return windowAiModels.map((modelId) => 
-          modelId.includes('/') ? modelId : `${provider}/${modelId}`
-        ).filter(Boolean);
-      }
-    } catch (error) {
-      console.error('Error fetching models from Window.ai:', error);
-    }
-  }
-
-  // Handle OpenRouter separately as it supports CORS
-  if (provider === 'openrouter' && apiKey) {
-    try {
-      const response = await fetch('https://openrouter.ai/api/v1/models', {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch OpenRouter models');
-      }
-
-      const data = await response.json();
-      return data.data.map((model: { id: string }) => model.id);
-    } catch (error) {
-      console.error('Error fetching OpenRouter models:', error);
-      return await fetchModelsFromBackend(provider, apiKey);
-    }
-  }
-
-  // If all else fails, fetch from backend
+const fetchModels = async (provider: string, apiKey: string): Promise<string[]> => {
   return await fetchModelsFromBackend(provider, apiKey);
 };
 
@@ -78,7 +32,7 @@ export const ModelSelector = ({
   const { toast } = useToast();
   const { data: models = [], isLoading } = useQuery({
     queryKey: ['models', provider, apiKey, fusionMode],
-    queryFn: () => fetchModels(provider, apiKey, fusionMode),
+    queryFn: () => fetchModels(provider, apiKey),
     enabled: true,
     retry: 1,
     gcTime: 0,
