@@ -1,33 +1,40 @@
 import { supabase } from "@/integrations/supabase/client";
 
-const removeDuplicateSentences = (sentences: string[]): string[] => {
-  const uniqueSentences = new Set<string>();
-  sentences.forEach(sentence => {
-    // Normalize the sentence by removing extra spaces and converting to lowercase for comparison
-    const normalizedSentence = sentence.trim().toLowerCase();
-    if (normalizedSentence && !Array.from(uniqueSentences).some(s => s.toLowerCase() === normalizedSentence)) {
-      uniqueSentences.add(sentence.trim());
-    }
-  });
-  return Array.from(uniqueSentences);
-};
+const combineResponsesWithAI = async (responses: { provider: string; response: string }[]): Promise<string> => {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Authentication required');
 
-const combineResponses = (responses: { provider: string; response: string }[]): string => {
-  // Extract all sentences from all responses
-  const allSentences = responses
-    .map(r => r.response)
-    .flatMap(response => 
-      response
-        .split(/[.!?]+/)
-        .map(s => s.trim())
-        .filter(s => s.length > 0)
-    );
+    const prompt = `You are an expert at analyzing and combining AI responses. Here are ${responses.length} different AI responses to the same prompt. Please analyze them and create one coherent, accurate, and well-written response that captures the best elements from all responses while maintaining a natural flow:
 
-  // Remove duplicates and near-duplicates
-  const uniqueSentences = removeDuplicateSentences(allSentences);
+Responses to analyze:
+${responses.map((r, i) => `Response ${i + 1} from ${r.provider}:\n${r.response}`).join('\n\n')}
 
-  // Join sentences back together
-  return uniqueSentences.join('. ') + '.';
+Create one optimal response that:
+1. Combines the most accurate and relevant information
+2. Eliminates redundancy
+3. Maintains a natural, conversational flow
+4. Preserves the most insightful elements from each response`;
+
+    const { data, error } = await supabase.functions.invoke('api-handler', {
+      body: {
+        provider: 'openai',
+        message: prompt,
+        model: 'gpt-4o-mini',
+        apiKey: localStorage.getItem('openai_key')
+      },
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      }
+    });
+
+    if (error) throw error;
+    return data.choices[0].message.content;
+  } catch (error) {
+    console.error('Error combining responses with AI:', error);
+    // Fallback to simple combination if AI processing fails
+    return responses.map(r => r.response).join(' ');
+  }
 };
 
 export const generateFusionResponse = async (message: string) => {
@@ -135,8 +142,8 @@ export const generateFusionResponse = async (message: string) => {
       throw new Error('All providers failed to generate a response');
     }
 
-    // Combine the responses into a coherent single response
-    return combineResponses(validResponses);
+    // Use OpenAI to combine and optimize the responses
+    return await combineResponsesWithAI(validResponses);
 
   } catch (error) {
     throw new Error(`Fusion mode error: ${error.message}`);
