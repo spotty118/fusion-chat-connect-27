@@ -1,5 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import Anthropic from 'npm:@anthropic-ai/sdk';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,7 +8,6 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -44,36 +44,30 @@ serve(async (req) => {
     if (provider === 'claude') {
       console.log('Fetching Claude models with API key:', apiKey ? 'Present' : 'Missing');
       
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'content-type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: "claude-3-sonnet-20240229",
+      try {
+        const anthropic = new Anthropic({
+          apiKey: apiKey,
+        });
+
+        // Test the API key with a simple request
+        await anthropic.messages.create({
+          model: 'claude-3-sonnet-20240229',
           max_tokens: 1,
-          messages: [
-            { role: "user", content: "Hi" }
-          ]
-        })
-      });
+          messages: [{ role: 'user', content: 'Hi' }],
+        });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Claude API error:', errorText);
-        throw new Error(`Failed to fetch Claude models: ${errorText}`);
+        // Since we can't fetch models directly, we'll return the known Claude-3 models
+        models = [
+          'claude-3-opus-20240229',
+          'claude-3-sonnet-20240229',
+          'claude-2.1'
+        ];
+
+        console.log('Available Claude models:', models);
+      } catch (error) {
+        console.error('Error testing Claude API key:', error);
+        throw new Error(`Failed to verify Claude API key: ${error.message}`);
       }
-
-      // Since we can't fetch models directly, we'll return the known Claude-3 models
-      models = [
-        'claude-3-opus-20240229',
-        'claude-3-sonnet-20240229',
-        'claude-2.1'
-      ];
-
-      console.log('Available Claude models:', models);
     }
 
     return new Response(
