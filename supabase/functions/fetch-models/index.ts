@@ -25,6 +25,7 @@ serve(async (req) => {
       });
 
       if (!response.ok) {
+        console.error('OpenAI API error:', await response.text());
         throw new Error('Failed to fetch OpenAI models');
       }
 
@@ -41,6 +42,8 @@ serve(async (req) => {
     }
 
     if (provider === 'claude') {
+      console.log('Fetching Claude models with API key:', apiKey ? 'Present' : 'Missing');
+      
       const response = await fetch('https://api.anthropic.com/v1/models', {
         headers: {
           'x-api-key': apiKey,
@@ -50,10 +53,19 @@ serve(async (req) => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch Claude models');
+        const errorText = await response.text();
+        console.error('Claude API error:', errorText);
+        throw new Error(`Failed to fetch Claude models: ${errorText}`);
       }
 
       const data = await response.json();
+      console.log('Claude API response:', data);
+
+      if (!data.models || !Array.isArray(data.models)) {
+        console.error('Unexpected Claude API response format:', data);
+        throw new Error('Invalid response format from Claude API');
+      }
+
       models = data.models
         .map((model: { name: string }) => model.name)
         .filter((name: string) => 
@@ -62,6 +74,8 @@ serve(async (req) => {
         )
         .sort()
         .reverse();
+
+      console.log('Filtered Claude models:', models);
     }
 
     return new Response(
@@ -76,7 +90,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in fetch-models function:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        details: error.toString()
+      }),
       { 
         status: 500,
         headers: { 
