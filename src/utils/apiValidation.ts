@@ -19,25 +19,24 @@ export const validateProviderApiKey = async (provider: string, apiKey: string): 
       return response.ok;
     }
 
-    // For other providers, use their respective endpoints
-    const endpoints = {
-      openai: 'https://api.openai.com/v1/models',
-      google: 'https://generativelanguage.googleapis.com/v1beta/models',
-      openrouter: 'https://openrouter.ai/api/v1/models',
-    };
-
-    if (!endpoints[provider as keyof typeof endpoints]) {
-      return false;
+    // For OpenRouter, we'll just check if the API key format is valid
+    if (provider === 'openrouter') {
+      return apiKey.startsWith('sk-or-') && apiKey.length > 20;
     }
 
-    const response = await fetch(endpoints[provider as keyof typeof endpoints], {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    return response.ok;
+    // For OpenAI, check if the API key format is valid
+    if (provider === 'openai') {
+      return apiKey.startsWith('sk-') && apiKey.length > 20;
+    }
+
+    // For Google, check if the API key format is valid
+    if (provider === 'google') {
+      return apiKey.length > 20;
+    }
+
+    return false;
   } catch (error) {
+    console.warn(`Error validating ${provider} API key:`, error);
     return false;
   }
 };

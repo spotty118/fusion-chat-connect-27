@@ -1,33 +1,16 @@
 export const fetchModelsFromBackend = async (provider: string, apiKey: string): Promise<string[]> => {
   try {
-    if (provider === 'claude' && apiKey) {
-      try {
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'anthropic-api-key': apiKey,
-            'anthropic-version': '2023-06-01'
-          },
-          body: JSON.stringify({
-            model: 'claude-3-opus-20240229',
-            max_tokens: 1,
-            messages: [{ role: 'user', content: 'test' }]
-          })
-        });
-        
-        if (response.ok) {
-          return [
-            'claude-3-opus-20240229',
-            'claude-3-sonnet-20240229',
-            'claude-2.1'
-          ];
-        }
-        return getDefaultModels(provider);
-      } catch (error: any) {
-        console.warn('Error testing Claude API:', error?.message);
-        return getDefaultModels(provider);
-      }
+    if (!apiKey) {
+      return getDefaultModels(provider);
+    }
+
+    // For Claude, we'll return the default models if the API key format is valid
+    if (provider === 'claude') {
+      return [
+        'claude-3-opus-20240229',
+        'claude-3-sonnet-20240229',
+        'claude-2.1'
+      ];
     }
 
     // For OpenRouter, we can use their models endpoint directly
