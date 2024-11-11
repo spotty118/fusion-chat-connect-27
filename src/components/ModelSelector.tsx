@@ -83,12 +83,14 @@ export const ModelSelector = ({
     retry: 1,
     gcTime: 0,
     staleTime: 30000,
-    onError: (error: Error) => {
-      toast({
-        title: `Error fetching ${provider} models`,
-        description: error.message,
-        variant: "destructive",
-      });
+    meta: {
+      onError: (error: Error) => {
+        toast({
+          title: `Error fetching ${provider} models`,
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     }
   });
 
