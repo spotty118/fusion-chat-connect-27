@@ -12,7 +12,6 @@ const waitForWindowAI = async (retries = 0) => {
     );
   }
 
-  // Wait for 1 second
   await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
   return waitForWindowAI(retries + 1);
 };
@@ -40,7 +39,51 @@ const generateSingleResponse = async (message, model) => {
     throw new Error('Invalid response format');
   } catch (error) {
     console.error(`Error with ${model}:`, error);
-    return `Error from ${model}: ${error.message}`;
+    return null;
+  }
+};
+
+const combineResponses = async (responses) => {
+  // Filter out any failed responses
+  const validResponses = responses
+    .filter(result => result.status === 'fulfilled' && result.value)
+    .map(result => result.value);
+
+  if (validResponses.length === 0) {
+    throw new Error('No valid responses received from any AI provider');
+  }
+
+  // Create a prompt to combine the responses
+  const combinationPrompt = `
+    You are a response curator. Below are different responses from AI models to the same prompt.
+    Your task is to create ONE perfect response that combines the best insights from all responses.
+    The response should be clear, concise, and well-structured.
+
+    Responses to combine:
+    ${validResponses.join('\n\n---\n\n')}
+
+    Create one perfect response:`;
+
+  // Use the first available model to combine responses
+  try {
+    const combinedResponse = await window.ai.generateText({
+      messages: [{ role: "user", content: combinationPrompt }],
+    });
+
+    if (!combinedResponse?.length) {
+      throw new Error('No combined response received');
+    }
+
+    const choice = combinedResponse[0];
+    if (choice.message?.content) return choice.message.content;
+    if (choice.text) return choice.text;
+    if (choice.delta?.content) return choice.delta.content;
+
+    throw new Error('Invalid combined response format');
+  } catch (error) {
+    console.error("Error combining responses:", error);
+    // Fallback to the first valid response if combination fails
+    return validResponses[0];
   }
 };
 
@@ -51,20 +94,13 @@ export const generateResponse = async (message, fusionMode = false) => {
     if (fusionMode) {
       // Generate responses from multiple providers in parallel
       const responses = await Promise.allSettled([
-        generateSingleResponse(message, "openai/gpt-4o"),
+        generateSingleResponse(message, "openai/gpt-4"),
         generateSingleResponse(message, "anthropic/claude-2"),
         generateSingleResponse(message, "google/palm-2")
       ]);
 
-      // Format the combined response
-      const formattedResponses = responses.map((result, index) => {
-        const provider = ["GPT-4", "Claude", "PaLM"][index];
-        const content = result.status === 'fulfilled' ? result.value : `Error: ${result.reason}`;
-        return `${provider}:\n${content}`;
-      });
-
-      // Combine all responses with clear separation
-      return formattedResponses.join('\n\n---\n\n');
+      // Combine responses into one perfect response
+      return await combineResponses(responses);
     } else {
       // Single provider mode - use current model
       const response = await window.ai.generateText({
