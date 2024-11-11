@@ -141,8 +141,10 @@ const generateFusionResponse = async (message) => {
 
 export const checkWindowAI = async () => {
   const fusionMode = localStorage.getItem('fusionMode') === 'true';
+  
+  // If fusion mode is active, prevent window.ai from being used
   if (fusionMode) {
-    return true;
+    throw new Error('Window AI is disabled while Fusion Mode is active');
   }
   
   if (isVerified()) {
@@ -152,6 +154,13 @@ export const checkWindowAI = async () => {
 };
 
 const waitForWindowAI = async (retries = 0) => {
+  const fusionMode = localStorage.getItem('fusionMode') === 'true';
+  
+  // If fusion mode is active, prevent window.ai from being used
+  if (fusionMode) {
+    throw new Error('Window AI is disabled while Fusion Mode is active');
+  }
+
   if (typeof window !== 'undefined' && window?.ai) {
     if (!isVerified()) {
       setVerified();
@@ -173,6 +182,11 @@ export const generateResponse = async (message, fusionMode = false) => {
   try {
     if (fusionMode) {
       return await generateFusionResponse(message);
+    }
+
+    // Check if fusion mode is active before attempting to use window.ai
+    if (localStorage.getItem('fusionMode') === 'true') {
+      throw new Error('Window AI is disabled while Fusion Mode is active');
     }
 
     await checkWindowAI();
