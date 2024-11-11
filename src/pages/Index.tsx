@@ -7,11 +7,13 @@ import { Settings as SettingsIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { CurrentModel } from '@/components/CurrentModel';
+import { ModelSelector } from '@/components/ModelSelector';
 
 const Index = () => {
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [fusionMode, setFusionMode] = useState(false);
+  const [selectedModel, setSelectedModel] = useState('');
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -20,6 +22,25 @@ const Index = () => {
     const savedFusionMode = localStorage.getItem('fusionMode') === 'true';
     setFusionMode(savedFusionMode);
   }, []);
+
+  const handleModelSelect = async (model) => {
+    try {
+      if (window.ai?.setCurrentModel) {
+        await window.ai.setCurrentModel(model);
+        setSelectedModel(model);
+        toast({
+          title: "Model Updated",
+          description: `Switched to ${model}`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to switch model. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleSendMessage = async (content) => {
     try {
@@ -49,8 +70,16 @@ const Index = () => {
             <h1 className="text-2xl font-bold tracking-tight">
               {fusionMode ? "Fusion Chat (Multi-AI Mode)" : "Fusion Chat"}
             </h1>
-            <div className="flex items-center opacity-90 text-sm font-light">
+            <div className="flex items-center gap-4">
               <CurrentModel />
+              <div className="w-64">
+                <ModelSelector
+                  provider="openrouter"
+                  apiKey=""
+                  onModelSelect={handleModelSelect}
+                  selectedModel={selectedModel}
+                />
+              </div>
             </div>
           </div>
           <Button
