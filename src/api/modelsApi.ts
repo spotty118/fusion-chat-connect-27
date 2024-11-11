@@ -9,7 +9,7 @@ export const fetchModelsFromBackend = async (provider: string, apiKey: string): 
       });
       
       // Return curated list of Claude models with correct names
-      return ['claude-3-opus-20240229', 'claude-3-sonnet-20240229', 'claude-2.1'];
+      return ['claude-3-opus', 'claude-3-sonnet', 'claude-2.1'];
     }
 
     // For OpenRouter, we can use their models endpoint directly
@@ -45,7 +45,7 @@ export const fetchModelsFromBackend = async (provider: string, apiKey: string): 
 const getDefaultModels = (provider: string): string[] => {
   const DEFAULT_MODELS = {
     openai: ['gpt-4', 'gpt-3.5-turbo'],
-    claude: ['claude-3-opus-20240229', 'claude-3-sonnet-20240229', 'claude-2.1'],
+    claude: ['claude-3-opus', 'claude-3-sonnet', 'claude-2.1'],
     google: ['palm-2'],
     openrouter: ['openrouter/auto', 'mistralai/mixtral-8x7b-instruct', 'anthropic/claude-2']
   };
