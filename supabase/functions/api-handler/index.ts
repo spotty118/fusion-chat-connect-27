@@ -98,15 +98,22 @@ serve(async (req) => {
     const authHeader = req.headers.get('Authorization');
     
     if (!authHeader) {
-      throw new Error('Missing authorization header');
+      return new Response(
+        JSON.stringify({ error: 'Missing authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    // Create Supabase admin client
+    // Create Supabase admin client with error handling for environment variables
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
     if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Missing Supabase configuration');
+      console.error('Missing Supabase configuration');
+      return new Response(
+        JSON.stringify({ error: 'Server configuration error' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseKey, {
@@ -116,16 +123,19 @@ serve(async (req) => {
       }
     });
 
-    // Get user ID from JWT
+    // Get user ID from JWT with proper error handling
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
     
     if (userError || !user) {
       console.error('Auth error:', userError);
-      throw new Error('Invalid authentication token');
+      return new Response(
+        JSON.stringify({ error: 'Invalid authentication token', details: userError }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    // Get API key from database
+    // Get API key from database with error handling
     const { data: apiKeyData, error: apiKeyError } = await supabaseAdmin
       .from('api_keys')
       .select('api_key')
@@ -135,13 +145,16 @@ serve(async (req) => {
 
     if (apiKeyError || !apiKeyData?.api_key) {
       console.error('API key error:', apiKeyError);
-      throw new Error(`No API key found for provider ${provider}`);
+      return new Response(
+        JSON.stringify({ error: `No API key found for provider ${provider}` }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     try {
       const aiResponse = await handleProviderRequest(provider, message, model, apiKeyData.api_key);
 
-      // Store the chat message
+      // Store the chat message with error handling
       const { error: insertError } = await supabaseAdmin
         .from('chat_messages')
         .insert({
@@ -156,13 +169,17 @@ serve(async (req) => {
         console.error('Error storing chat message:', insertError);
       }
 
-      return new Response(JSON.stringify(aiResponse), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return new Response(
+        JSON.stringify(aiResponse),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
 
     } catch (error) {
       console.error(`Provider error (${provider}):`, error);
-      throw new Error(`Provider ${provider} error: ${error.message}`);
+      return new Response(
+        JSON.stringify({ error: `Provider ${provider} error: ${error.message}` }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
   } catch (error) {
