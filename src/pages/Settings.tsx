@@ -15,18 +15,21 @@ const Settings = () => {
   const [fusionMode, setFusionMode] = React.useState(() => {
     return localStorage.getItem('fusionMode') === 'true';
   });
-  const [apiKeys, setApiKeys] = React.useState({
-    openai: '',
-    claude: '',
-    google: '',
-    openrouter: '',
-  });
-  const [selectedModels, setSelectedModels] = React.useState({
-    openai: '',
-    claude: '',
-    google: '',
-    openrouter: '',
-  });
+  
+  // Load saved API keys and models from localStorage
+  const [apiKeys, setApiKeys] = React.useState(() => ({
+    openai: localStorage.getItem('openai_key') || '',
+    claude: localStorage.getItem('claude_key') || '',
+    google: localStorage.getItem('google_key') || '',
+    openrouter: localStorage.getItem('openrouter_key') || '',
+  }));
+  
+  const [selectedModels, setSelectedModels] = React.useState(() => ({
+    openai: localStorage.getItem('openai_model') || '',
+    claude: localStorage.getItem('claude_model') || '',
+    google: localStorage.getItem('google_model') || '',
+    openrouter: localStorage.getItem('openrouter_model') || '',
+  }));
 
   const providerQueries = {
     openai: useProviderStatus('openai', apiKeys.openai),
@@ -46,7 +49,11 @@ const Settings = () => {
         description: "Please configure your API keys and select models for providers",
       });
     } else {
+      // Clear selected models when disabling fusion mode
       setSelectedModels({ openai: '', claude: '', google: '', openrouter: '' });
+      Object.keys(selectedModels).forEach(provider => {
+        localStorage.removeItem(`${provider}_model`);
+      });
       toast({
         title: "Fusion Mode Disabled",
         description: "Using Window.AI provider",
@@ -59,6 +66,7 @@ const Settings = () => {
       ...prev,
       [provider]: value
     }));
+    localStorage.setItem(`${provider}_key`, value);
   };
 
   const handleModelSelect = (provider: string) => (model: string) => {
@@ -66,32 +74,23 @@ const Settings = () => {
       ...prev,
       [provider]: model
     }));
+    localStorage.setItem(`${provider}_model`, model);
   };
 
   const handleActivate = () => {
-    const activeProviders = Object.entries(apiKeys).filter(([_, value]) => value.length > 0);
-    const activeModels = Object.entries(selectedModels).filter(([provider, model]) => 
-      apiKeys[provider as keyof typeof apiKeys] && model
+    const activeProviders = Object.entries(apiKeys).filter(([provider, value]) => 
+      value.length > 0 && selectedModels[provider as keyof typeof selectedModels]
     );
 
     if (activeProviders.length < 3) {
       toast({
         title: "Insufficient Providers",
-        description: "Please configure at least 3 provider API keys",
+        description: "Please configure at least 3 provider API keys and select their models",
         variant: "destructive",
       });
       return;
     }
 
-    if (activeModels.length < activeProviders.length) {
-      toast({
-        title: "Missing Models",
-        description: "Please select models for all configured providers",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     toast({
       title: "Fusion Mode Activated",
       description: "All providers configured successfully",
