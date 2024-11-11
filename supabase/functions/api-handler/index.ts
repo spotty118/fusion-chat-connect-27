@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -87,6 +88,7 @@ const handleProviderRequest = async (
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -102,6 +104,7 @@ serve(async (req) => {
       );
     }
 
+    // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
@@ -116,19 +119,18 @@ serve(async (req) => {
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
     const token = authHeader.replace('Bearer ', '');
 
+    // Verify user token
     const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
     
     if (userError || !user) {
       console.error('Auth error:', userError);
       return new Response(
-        JSON.stringify({ 
-          error: 'Invalid authentication token', 
-          details: userError?.message 
-        }),
+        JSON.stringify({ error: 'Invalid authentication token' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    // Get API key for the provider
     const { data: apiKeyData, error: apiKeyError } = await supabaseAdmin
       .from('api_keys')
       .select('api_key')
@@ -147,6 +149,7 @@ serve(async (req) => {
     try {
       const aiResponse = await handleProviderRequest(provider, message, model, apiKeyData.api_key);
 
+      // Store the chat message and response
       const { error: insertError } = await supabaseAdmin
         .from('chat_messages')
         .insert({
@@ -178,10 +181,7 @@ serve(async (req) => {
     console.error('Request error:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
