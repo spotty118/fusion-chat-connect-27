@@ -122,7 +122,7 @@ const handleProviderRequest = async (provider: string, message: string, model: s
           candidates: [{
             content: {
               parts: [{
-                text: data.candidates[0].text
+                text: data.candidates[0].content.parts[0].text
               }]
             }
           }]
