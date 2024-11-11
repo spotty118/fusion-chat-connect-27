@@ -9,10 +9,9 @@ const API_BASE_URL = 'https://fusion-chat-connect.gptengineer.app';
 
 const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
   openai: {
-    endpoint: `${API_BASE_URL}/api/openai`,
+    endpoint: `${API_BASE_URL}/api/openai/chat`,
     headers: {
-      'Accept': 'application/json',
-      'Access-Control-Allow-Origin': '*'
+      'Content-Type': 'application/json'
     },
     formatBody: (message, model) => ({
       model,
@@ -22,10 +21,9 @@ const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
     extractResponse: data => data.choices[0].message.content
   },
   claude: {
-    endpoint: `${API_BASE_URL}/api/claude`,
+    endpoint: `${API_BASE_URL}/api/claude/chat`,
     headers: {
-      'Accept': 'application/json',
-      'Access-Control-Allow-Origin': '*'
+      'Content-Type': 'application/json'
     },
     formatBody: (message, model) => ({
       model,
@@ -35,10 +33,9 @@ const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
     extractResponse: data => data.content[0].text
   },
   google: {
-    endpoint: `${API_BASE_URL}/api/google`,
+    endpoint: `${API_BASE_URL}/api/google/chat`,
     headers: {
-      'Accept': 'application/json',
-      'Access-Control-Allow-Origin': '*'
+      'Content-Type': 'application/json'
     },
     formatBody: (message, model) => ({
       model,
@@ -49,10 +46,9 @@ const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
     extractResponse: data => data.candidates[0].output
   },
   openrouter: {
-    endpoint: `${API_BASE_URL}/api/openrouter`,
+    endpoint: `${API_BASE_URL}/api/openrouter/chat`,
     headers: {
-      'Accept': 'application/json',
-      'Access-Control-Allow-Origin': '*'
+      'Content-Type': 'application/json'
     },
     formatBody: (message, model) => ({
       model,
@@ -72,9 +68,8 @@ export const makeProviderRequest = async (
   if (!config) throw new Error(`Unsupported provider: ${provider}`);
 
   const headers = {
-    'Content-Type': 'application/json',
-    'x-api-key': apiKey,
-    ...config.headers
+    ...config.headers,
+    'Authorization': `Bearer ${apiKey}`
   };
 
   try {
@@ -82,7 +77,6 @@ export const makeProviderRequest = async (
       method: 'POST',
       headers,
       body: JSON.stringify(config.formatBody(message, model)),
-      mode: 'cors',
       credentials: 'include'
     });
 
