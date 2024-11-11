@@ -7,6 +7,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useQuery } from '@tanstack/react-query';
+import { useToast } from "@/components/ui/use-toast";
 
 interface ModelSelectorProps {
   provider: 'openai' | 'claude' | 'google' | 'openrouter';
@@ -18,6 +19,14 @@ interface ModelSelectorProps {
 const fetchModels = async (provider: string, apiKey: string) => {
   if (!apiKey) return [];
 
+  const handleApiError = (error: any, defaultModels: string[]) => {
+    if (error.status === 401) {
+      throw new Error('Invalid API key. Please check your credentials.');
+    }
+    console.error(`Error fetching ${provider} models:`, error);
+    return defaultModels;
+  };
+
   switch (provider) {
     case 'openai':
       try {
@@ -27,14 +36,16 @@ const fetchModels = async (provider: string, apiKey: string) => {
             'Content-Type': 'application/json',
           }
         });
+        if (!response.ok) {
+          const error = await response.json();
+          throw { status: response.status, message: error.error?.message };
+        }
         const data = await response.json();
-        // Filter to only include GPT-4 models
         return data.data
           .filter((model: any) => model.id.includes('gpt-4'))
           .map((model: any) => model.id);
       } catch (error) {
-        console.error('Error fetching OpenAI models:', error);
-        return ['gpt-4o', 'gpt-4o-mini']; // Fallback to default models
+        return handleApiError(error, ['gpt-4', 'gpt-4-turbo-preview']);
       }
 
     case 'claude':
@@ -45,11 +56,13 @@ const fetchModels = async (provider: string, apiKey: string) => {
             'Content-Type': 'application/json',
           }
         });
+        if (!response.ok) {
+          throw { status: response.status };
+        }
         const data = await response.json();
         return data.models.map((model: any) => model.id);
       } catch (error) {
-        console.error('Error fetching Claude models:', error);
-        return ['claude-2', 'claude-instant']; // Fallback to default models
+        return handleApiError(error, ['claude-2', 'claude-instant']);
       }
 
     case 'google':
@@ -60,13 +73,15 @@ const fetchModels = async (provider: string, apiKey: string) => {
             'Content-Type': 'application/json',
           }
         });
+        if (!response.ok) {
+          throw { status: response.status };
+        }
         const data = await response.json();
         return data.models
           .filter((model: any) => model.name.includes('palm'))
           .map((model: any) => model.name);
       } catch (error) {
-        console.error('Error fetching Google models:', error);
-        return ['palm-2']; // Fallback to default models
+        return handleApiError(error, ['palm-2']);
       }
 
     case 'openrouter':
@@ -76,11 +91,13 @@ const fetchModels = async (provider: string, apiKey: string) => {
             'Authorization': `Bearer ${apiKey}`,
           }
         });
+        if (!response.ok) {
+          throw { status: response.status };
+        }
         const data = await response.json();
         return data.data.map((model: any) => model.id);
       } catch (error) {
-        console.error('Error fetching OpenRouter models:', error);
-        return [];
+        return handleApiError(error, []);
       }
 
     default:
@@ -89,10 +106,18 @@ const fetchModels = async (provider: string, apiKey: string) => {
 };
 
 export const ModelSelector = ({ provider, apiKey, onModelSelect, selectedModel }: ModelSelectorProps) => {
-  const { data: models = [], isLoading } = useQuery({
+  const { toast } = useToast();
+  const { data: models = [], isLoading, error } = useQuery({
     queryKey: ['models', provider, apiKey],
     queryFn: () => fetchModels(provider, apiKey),
     enabled: !!apiKey,
+    onError: (error: Error) => {
+      toast({
+        title: "Error fetching models",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   });
 
   return (
