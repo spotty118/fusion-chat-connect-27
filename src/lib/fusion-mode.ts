@@ -107,7 +107,7 @@ export const generateFusionResponse = async (message: string) => {
               response = data.content[0].text;
               break;
             case 'google':
-              response = data.candidates[0].output;
+              response = data.candidates[0].content.parts[0].text;
               break;
             default:
               throw new Error(`Unsupported provider: ${provider}`);

@@ -43,7 +43,6 @@ const handleProviderRequest = async (provider: string, message: string, model: s
       break;
 
     case 'google':
-      // Google's Gemini API requires 'gemini-pro' as the model name
       endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
       headers = {
         'Content-Type': 'application/json',
@@ -116,7 +115,11 @@ const handleProviderRequest = async (provider: string, message: string, model: s
       case 'google':
         return {
           candidates: [{
-            output: data.candidates[0].content.parts[0].text
+            content: {
+              parts: [{
+                text: data.candidates[0].content.parts[0].text
+              }]
+            }
           }]
         };
       default:
