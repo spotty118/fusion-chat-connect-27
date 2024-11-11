@@ -13,16 +13,19 @@ const combineResponsesWithAI = async (responses: { provider: string; response: s
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Authentication required');
 
-    // Check cache first
-    const cacheKey = JSON.stringify(responses.map(r => ({ provider: r.provider, response: r.response.substring(0, 100) })));
+    // Generate a hash of the responses for caching
+    const cacheKey = btoa(JSON.stringify(responses.map(r => ({
+      provider: r.provider,
+      response: r.response.substring(0, 100)
+    }))));
     
-    const { data: existingResponse } = await supabase
-      .from('response_cache')
-      .select('*')
-      .eq('cache_key', cacheKey)
-      .single();
+    // Use RPC call instead of direct query to handle large cache keys
+    const { data: existingResponse, error: cacheError } = await supabase
+      .rpc('get_cached_response', { cache_key: cacheKey });
 
-    if (existingResponse) {
+    if (cacheError) {
+      console.error('Error checking cache:', cacheError);
+    } else if (existingResponse) {
       console.log('Cache hit! Returning cached response');
       return existingResponse.combined_response;
     }
@@ -36,17 +39,16 @@ const combineResponsesWithAI = async (responses: { provider: string; response: s
 
     if (error) throw error;
 
-    // Cache the combined response
-    const { error: cacheError } = await supabase
-      .from('response_cache')
-      .insert({
+    // Cache the combined response using RPC
+    const { error: cacheStoreError } = await supabase
+      .rpc('store_cached_response', {
         cache_key: cacheKey,
         combined_response: data.response,
-        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // Cache for 24 hours
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
       });
 
-    if (cacheError) {
-      console.error('Error caching response:', cacheError);
+    if (cacheStoreError) {
+      console.error('Error caching response:', cacheStoreError);
     }
 
     return data.response;
