@@ -55,19 +55,17 @@ const Index = () => {
         return models;
       } catch (error) {
         console.error('Error fetching models:', error);
+        toast({
+          title: "Error fetching models",
+          description: error instanceof Error ? error.message : 'Unknown error occurred',
+          variant: "destructive",
+        });
         return ['default-model']; // Fallback model on error
       }
     },
     enabled: isWindowAIReady,
     staleTime: 30000,
-    retry: false,
-    onError: (error) => {
-      toast({
-        title: "Error fetching models",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
+    retry: false
   });
 
   const handleModelSelect = async (model) => {
