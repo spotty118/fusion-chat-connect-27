@@ -8,7 +8,7 @@ export const fetchModelsFromBackend = async (provider: string, apiKey: string): 
         dangerouslyAllowBrowser: true // Enable browser usage
       });
       
-      // Return curated list of Claude models
+      // Return curated list of Claude models with correct names
       return ['claude-3-opus-20240229', 'claude-3-sonnet-20240229', 'claude-2.1'];
     }
 
