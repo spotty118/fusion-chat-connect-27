@@ -11,27 +11,28 @@ import { CurrentModel } from '@/components/CurrentModel';
 const Index = () => {
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [fusionMode, setFusionMode] = useState(false);
+  const [fusionMode, setFusionMode] = useState(() => {
+    return localStorage.getItem('fusionMode') === 'true';
+  });
   const [isWindowAIReady, setIsWindowAIReady] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
-    const savedFusionMode = localStorage.getItem('fusionMode') === 'true';
-    setFusionMode(savedFusionMode);
-
-    checkWindowAI()
-      .then(() => {
-        setIsWindowAIReady(true);
-      })
-      .catch((error) => {
-        toast({
-          title: "Window AI Error",
-          description: error.message,
-          variant: "destructive",
+    if (!fusionMode) {
+      checkWindowAI()
+        .then(() => {
+          setIsWindowAIReady(true);
+        })
+        .catch((error) => {
+          toast({
+            title: "Window AI Error",
+            description: error.message,
+            variant: "destructive",
+          });
         });
-      });
-  }, [toast]);
+    }
+  }, [toast, fusionMode]);
 
   const handleSendMessage = async (content) => {
     try {

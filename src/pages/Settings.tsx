@@ -12,7 +12,9 @@ import { useProviderStatus } from '@/hooks/useProviderStatus';
 const Settings = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [fusionMode, setFusionMode] = React.useState(false);
+  const [fusionMode, setFusionMode] = React.useState(() => {
+    return localStorage.getItem('fusionMode') === 'true';
+  });
   const [apiKeys, setApiKeys] = React.useState({
     openai: '',
     claude: '',
@@ -37,6 +39,7 @@ const Settings = () => {
 
   const handleFusionModeChange = (checked: boolean) => {
     setFusionMode(checked);
+    localStorage.setItem('fusionMode', checked.toString());
     if (checked) {
       toast({
         title: "Fusion Mode Enabled",
@@ -93,6 +96,7 @@ const Settings = () => {
       title: "Fusion Mode Activated",
       description: "All providers configured successfully",
     });
+    navigate('/');
   };
 
   return (
