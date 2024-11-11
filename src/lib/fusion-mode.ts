@@ -29,11 +29,11 @@ const combineResponsesWithAI = async (responses: { provider: string; response: s
     
     // Use RPC call instead of direct query to handle large cache keys
     const { data: existingResponse, error: cacheError } = await supabase
-      .rpc<GetCachedResponseParams, CacheResponse[]>('get_cached_response', { cache_key: cacheKey });
+      .rpc('get_cached_response', { cache_key: cacheKey });
 
     if (cacheError) {
       console.error('Error checking cache:', cacheError);
-    } else if (existingResponse && existingResponse.length > 0) {
+    } else if (existingResponse && Array.isArray(existingResponse) && existingResponse.length > 0) {
       console.log('Cache hit! Returning cached response');
       return existingResponse[0].combined_response;
     }
