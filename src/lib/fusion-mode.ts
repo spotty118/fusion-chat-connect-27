@@ -1,4 +1,4 @@
-import { makeProviderRequest } from './provider-api';
+import { supabase } from "@/integrations/supabase/client";
 
 export const generateFusionResponse = async (message: string) => {
   const apiKeys = {
@@ -25,19 +25,42 @@ export const generateFusionResponse = async (message: string) => {
   }
 
   try {
-    // Make parallel requests to all active providers
+    // Make parallel requests to all active providers through our Edge Function
     const responses = await Promise.all(
-      activeProviders.map(provider =>
-        makeProviderRequest(
-          provider,
-          apiKeys[provider]!,
-          selectedModels[provider]!,
-          message
-        ).catch(error => {
+      activeProviders.map(async provider => {
+        try {
+          const { data, error } = await supabase.functions.invoke('api-handler', {
+            body: {
+              provider,
+              message,
+              model: selectedModels[provider]
+            }
+          });
+
+          if (error) throw error;
+
+          // Extract response based on provider
+          let response;
+          switch (provider) {
+            case 'openai':
+            case 'openrouter':
+              response = data.choices[0].message.content;
+              break;
+            case 'claude':
+              response = data.content[0].text;
+              break;
+            case 'google':
+              response = data.candidates[0].output;
+              break;
+            default:
+              throw new Error(`Unsupported provider: ${provider}`);
+          }
+          return response;
+        } catch (error) {
           console.error(`Error with ${provider}:`, error);
           return `[${provider} error: ${error.message}]`;
-        })
-      )
+        }
+      })
     );
 
     // Combine responses with provider names
