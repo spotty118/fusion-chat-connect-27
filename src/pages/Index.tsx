@@ -7,7 +7,8 @@ import { Settings as SettingsIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { CurrentModel } from '@/components/CurrentModel';
-import { ModelSelector } from '@/components/ModelSelector';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useQuery } from '@tanstack/react-query';
 
 const Index = () => {
   const [messages, setMessages] = useState([]);
@@ -22,6 +23,16 @@ const Index = () => {
     const savedFusionMode = localStorage.getItem('fusionMode') === 'true';
     setFusionMode(savedFusionMode);
   }, []);
+
+  const { data: availableModels = [] } = useQuery({
+    queryKey: ['available-models'],
+    queryFn: async () => {
+      if (!window.ai) return [];
+      const models = await window.ai.getModels();
+      return models || [];
+    },
+    enabled: !!window.ai,
+  });
 
   const handleModelSelect = async (model) => {
     try {
@@ -73,12 +84,21 @@ const Index = () => {
             <div className="flex items-center gap-4">
               <CurrentModel />
               <div className="w-64">
-                <ModelSelector
-                  provider="openrouter"
-                  apiKey=""
-                  onModelSelect={handleModelSelect}
-                  selectedModel={selectedModel}
-                />
+                <Select
+                  value={selectedModel}
+                  onValueChange={handleModelSelect}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableModels.map((model) => (
+                      <SelectItem key={model} value={model}>
+                        {model}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>

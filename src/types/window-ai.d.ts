@@ -2,6 +2,7 @@ interface Window {
   ai: {
     getCurrentModel: () => Promise<string>;
     setCurrentModel?: (model: string) => Promise<void>;
+    getModels?: () => Promise<string[]>;
     generateText: (params: {
       messages: Array<{ role: string; content: string }>;
       model?: string;
