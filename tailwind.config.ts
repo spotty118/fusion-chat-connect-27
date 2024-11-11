@@ -62,16 +62,17 @@ export default {
       },
       keyframes: {
         "typing-dot": {
-          "0%": { opacity: "0.2" },
-          "20%": { opacity: "1" },
-          "60%": { opacity: "0.2" },
-          "100%": { opacity: "0.2" },
+          "0%": { transform: "translateY(0px)", opacity: "0.2" },
+          "25%": { transform: "translateY(-3px)", opacity: "0.8" },
+          "50%": { transform: "translateY(0px)", opacity: "0.2" },
+          "75%": { transform: "translateY(3px)", opacity: "0.8" },
+          "100%": { transform: "translateY(0px)", opacity: "0.2" },
         }
       },
       animation: {
-        "typing-dot-1": "typing-dot 1.4s infinite",
-        "typing-dot-2": "typing-dot 1.4s infinite 0.2s",
-        "typing-dot-3": "typing-dot 1.4s infinite 0.4s",
+        "typing-dot-1": "typing-dot 1s infinite",
+        "typing-dot-2": "typing-dot 1s infinite 0.2s",
+        "typing-dot-3": "typing-dot 1s infinite 0.4s",
       },
     },
   },
