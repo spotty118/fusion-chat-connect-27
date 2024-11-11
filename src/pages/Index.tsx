@@ -7,14 +7,11 @@ import { Settings as SettingsIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { CurrentModel } from '@/components/CurrentModel';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useQuery } from '@tanstack/react-query';
 
 const Index = () => {
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [fusionMode, setFusionMode] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('');
   const [isWindowAIReady, setIsWindowAIReady] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -23,14 +20,9 @@ const Index = () => {
     const savedFusionMode = localStorage.getItem('fusionMode') === 'true';
     setFusionMode(savedFusionMode);
 
-    // Check if Window AI is available
     checkWindowAI()
       .then(() => {
         setIsWindowAIReady(true);
-        // Get current model when Window AI is ready
-        if (window.ai?.getCurrentModel) {
-          window.ai.getCurrentModel().then(model => setSelectedModel(model));
-        }
       })
       .catch((error) => {
         toast({
@@ -40,52 +32,6 @@ const Index = () => {
         });
       });
   }, [toast]);
-
-  const { data: availableModels = [] } = useQuery({
-    queryKey: ['available-models'],
-    queryFn: async () => {
-      if (!window.ai?.getModels) return [];
-      try {
-        const models = await window.ai.getModels();
-        if (!models || models.length === 0) {
-          console.log('No models available from Window AI');
-          return ['default-model']; // Fallback model if none available
-        }
-        console.log('Available models:', models);
-        return models;
-      } catch (error) {
-        console.error('Error fetching models:', error);
-        toast({
-          title: "Error fetching models",
-          description: error instanceof Error ? error.message : 'Unknown error occurred',
-          variant: "destructive",
-        });
-        return ['default-model']; // Fallback model on error
-      }
-    },
-    enabled: isWindowAIReady,
-    staleTime: 30000,
-    retry: false
-  });
-
-  const handleModelSelect = async (model) => {
-    try {
-      if (window.ai?.setCurrentModel) {
-        await window.ai.setCurrentModel(model);
-        setSelectedModel(model);
-        toast({
-          title: "Model Updated",
-          description: `Switched to ${model}`,
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to switch model. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
 
   const handleSendMessage = async (content) => {
     try {
@@ -115,27 +61,7 @@ const Index = () => {
             <h1 className="text-2xl font-bold tracking-tight">
               {fusionMode ? "Fusion Chat (Multi-AI Mode)" : "Fusion Chat"}
             </h1>
-            <div className="flex items-center gap-4">
-              <CurrentModel />
-              <div className="w-64">
-                <Select
-                  value={selectedModel}
-                  onValueChange={handleModelSelect}
-                  disabled={!isWindowAIReady}
-                >
-                  <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                    <SelectValue placeholder="Select a model" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableModels.map((model) => (
-                      <SelectItem key={model} value={model}>
-                        {model}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            <CurrentModel />
           </div>
           <Button
             variant="ghost"
