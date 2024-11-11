@@ -1,3 +1,4 @@
+```typescript
 import React from 'react';
 import {
   Select,
@@ -177,3 +178,4 @@ export const ModelSelector = ({ provider, apiKey, onModelSelect, selectedModel }
     </Select>
   );
 };
+```
