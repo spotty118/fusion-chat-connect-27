@@ -12,6 +12,10 @@ interface CacheResponse {
   combined_response: string;
 }
 
+interface GetCachedResponseParams {
+  cache_key: string;
+}
+
 const combineResponsesWithAI = async (responses: { provider: string; response: string }[]): Promise<string> => {
   try {
     const { data: { session } } = await supabase.auth.getSession();
@@ -25,7 +29,7 @@ const combineResponsesWithAI = async (responses: { provider: string; response: s
     
     // Use RPC call instead of direct query to handle large cache keys
     const { data: existingResponse, error: cacheError } = await supabase
-      .rpc<CacheResponse[]>('get_cached_response', { cache_key: cacheKey });
+      .rpc<GetCachedResponseParams, CacheResponse[]>('get_cached_response', { cache_key: cacheKey });
 
     if (cacheError) {
       console.error('Error checking cache:', cacheError);
