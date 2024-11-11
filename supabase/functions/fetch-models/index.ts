@@ -44,12 +44,20 @@ serve(async (req) => {
     if (provider === 'claude') {
       console.log('Fetching Claude models with API key:', apiKey ? 'Present' : 'Missing');
       
-      const response = await fetch('https://api.anthropic.com/v1/models', {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
         headers: {
           'x-api-key': apiKey,
           'anthropic-version': '2023-06-01',
-          'Content-Type': 'application/json'
-        }
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: "claude-3-sonnet-20240229",
+          max_tokens: 1,
+          messages: [
+            { role: "user", content: "Hi" }
+          ]
+        })
       });
 
       if (!response.ok) {
@@ -58,24 +66,14 @@ serve(async (req) => {
         throw new Error(`Failed to fetch Claude models: ${errorText}`);
       }
 
-      const data = await response.json();
-      console.log('Claude API response:', data);
+      // Since we can't fetch models directly, we'll return the known Claude-3 models
+      models = [
+        'claude-3-opus-20240229',
+        'claude-3-sonnet-20240229',
+        'claude-2.1'
+      ];
 
-      if (!data.models || !Array.isArray(data.models)) {
-        console.error('Unexpected Claude API response format:', data);
-        throw new Error('Invalid response format from Claude API');
-      }
-
-      models = data.models
-        .map((model: { name: string }) => model.name)
-        .filter((name: string) => 
-          name.startsWith('claude-') && 
-          (name.includes('3-') || name.includes('2.1'))
-        )
-        .sort()
-        .reverse();
-
-      console.log('Filtered Claude models:', models);
+      console.log('Available Claude models:', models);
     }
 
     return new Response(
