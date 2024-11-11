@@ -58,7 +58,7 @@ const fetchModels = async (provider: string, apiKey: string): Promise<string[]> 
             }
             return '';
           })
-          .filter((model): model is string => model !== '');
+          .filter(Boolean);
 
         if (formattedModels.length > 0) {
           console.log('Formatted Window.ai models:', formattedModels);
