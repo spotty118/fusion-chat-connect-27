@@ -7,14 +7,20 @@ export const CurrentModel = () => {
   const { data: currentModel, isLoading, error } = useQuery({
     queryKey: ['current-model'],
     queryFn: async () => {
-      try {
-        await checkWindowAI();
-        const model = await window.ai.getCurrentModel();
-        return model;
-      } catch (error) {
-        console.error('Error fetching current model:', error);
-        throw error;
+      if (typeof window === 'undefined') {
+        throw new Error('Window is not defined');
       }
+
+      if (!window.ai) {
+        await checkWindowAI();
+      }
+
+      if (!window.ai?.getCurrentModel) {
+        throw new Error('Window AI extension not properly initialized');
+      }
+
+      const model = await window.ai.getCurrentModel();
+      return model;
     },
     refetchInterval: 2000,
     retry: 3,
