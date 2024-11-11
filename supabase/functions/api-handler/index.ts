@@ -43,10 +43,12 @@ const handleProviderRequest = async (provider: string, message: string, model: s
       break;
 
     case 'google':
-      endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      // Google's Gemini API requires 'gemini-pro' as the model name
+      endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
       headers = {
         'Content-Type': 'application/json',
       };
+      endpoint += `?key=${apiKey}`;
       body = JSON.stringify({
         contents: [{
           parts: [{
