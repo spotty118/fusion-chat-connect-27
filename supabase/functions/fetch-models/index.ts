@@ -56,6 +56,10 @@ serve(async (req) => {
       const data = await response.json();
       models = data.models
         .map((model: { name: string }) => model.name)
+        .filter((name: string) => 
+          name.startsWith('claude-') && 
+          (name.includes('3-') || name.includes('2.1'))
+        )
         .sort()
         .reverse();
     }
