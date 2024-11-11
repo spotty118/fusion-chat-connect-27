@@ -43,16 +43,20 @@ const handleProviderRequest = async (provider: string, message: string, model: s
       break;
 
     case 'google':
-      // Updated to use the correct model name format for PaLM API
-      endpoint = `https://generativelanguage.googleapis.com/v1beta3/models/text-bison-001:generateText?key=${apiKey}`;
+      endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
       headers = {
         'Content-Type': 'application/json',
       };
       body = JSON.stringify({
-        prompt: { text: message },
-        temperature: 0.7,
-        candidate_count: 1,
-        max_output_tokens: 1000,
+        contents: [{
+          parts: [{
+            text: message
+          }]
+        }],
+        generationConfig: {
+          maxOutputTokens: 1000,
+          temperature: 0.7
+        }
       });
       break;
 
@@ -110,7 +114,7 @@ const handleProviderRequest = async (provider: string, message: string, model: s
       case 'google':
         return {
           candidates: [{
-            output: data.candidates[0].text
+            output: data.candidates[0].content.parts[0].text
           }]
         };
       default:
