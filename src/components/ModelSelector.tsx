@@ -20,7 +20,7 @@ const DEFAULT_MODELS = {
   openai: ['gpt-4', 'gpt-3.5-turbo'],
   claude: ['claude-2', 'claude-instant'],
   google: ['palm-2'],
-  openrouter: ['openai/gpt-4', 'anthropic/claude-2']
+  openrouter: ['openrouter/auto', 'openai/gpt-4', 'anthropic/claude-2']
 };
 
 interface WindowAIModel {
@@ -29,7 +29,7 @@ interface WindowAIModel {
   provider: string;
 }
 
-const fetchModels = async (provider: string, apiKey: string) => {
+const fetchModels = async (provider: string, apiKey: string): Promise<string[]> => {
   if (!apiKey && provider !== 'openrouter') {
     throw new Error('API key is required');
   }
@@ -37,31 +37,30 @@ const fetchModels = async (provider: string, apiKey: string) => {
   // For Window.ai integration with OpenRouter
   if (provider === 'openrouter' && typeof window !== 'undefined' && window.ai?.getModels) {
     try {
-      // Window.ai returns models in format: { id: string, name: string, provider: string }[]
-      const windowAiModels = await window.ai.getModels() as (WindowAIModel | string)[];
+      const windowAiModels = await window.ai.getModels() as (WindowAIModel | string | null)[];
       console.log('Raw Window.ai models:', windowAiModels);
       
       // Transform the models to match our expected format: provider/model
-      const formattedModels = windowAiModels.map(model => {
-        if (!model) return '';
-        
-        // Some models might already be in provider/model format
-        if (typeof model === 'string' && model.includes('/')) return model;
-        
-        // Extract provider and model name if available in object format
-        if (typeof model === 'object' && model.provider && model.id) {
-          return `${model.provider}/${model.id}`;
-        }
-        
-        // Fallback for other formats
-        return typeof model === 'string' ? model : '';
-      }).filter(model => model !== ''); // Remove empty strings
+      const formattedModels = windowAiModels
+        .filter((model): model is WindowAIModel | string => model !== null)
+        .map(model => {
+          if (typeof model === 'string') {
+            return model.includes('/') ? model : '';
+          }
+          
+          if (typeof model === 'object' && model.provider && model.id) {
+            return `${model.provider}/${model.id}`;
+          }
+          
+          return '';
+        })
+        .filter(model => model !== '');
 
       console.log('Formatted models:', formattedModels);
-      return formattedModels;
+      return formattedModels.length > 0 ? formattedModels : DEFAULT_MODELS[provider];
     } catch (error) {
       console.error('Error fetching models from Window.ai:', error);
-      return DEFAULT_MODELS[provider] || [];
+      return DEFAULT_MODELS[provider];
     }
   }
 
