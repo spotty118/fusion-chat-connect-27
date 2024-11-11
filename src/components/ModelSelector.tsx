@@ -18,13 +18,6 @@ interface ModelSelectorProps {
   fusionMode?: boolean;
 }
 
-const DEFAULT_MODELS = {
-  openai: ['gpt-4', 'gpt-3.5-turbo'],
-  claude: ['claude-2', 'claude-instant'],
-  google: ['palm-2'],
-  openrouter: ['openrouter/auto', 'mistralai/mixtral-8x7b-instruct', 'anthropic/claude-2']
-};
-
 const fetchModels = async (
   provider: string,
   apiKey: string,
@@ -32,12 +25,7 @@ const fetchModels = async (
 ): Promise<string[]> => {
   // For providers requiring backend proxy
   if (provider === 'claude' || provider === 'openai' || provider === 'google') {
-    try {
-      return await fetchModelsFromBackend(provider, apiKey);
-    } catch (error) {
-      console.error(`Error fetching models from backend for ${provider}:`, error);
-      return DEFAULT_MODELS[provider];
-    }
+    return await fetchModelsFromBackend(provider, apiKey);
   }
 
   // If Window.ai is available and fusion mode is not active, try using it
@@ -72,12 +60,12 @@ const fetchModels = async (
       return data.data.map((model: { id: string }) => model.id);
     } catch (error) {
       console.error('Error fetching OpenRouter models:', error);
-      return DEFAULT_MODELS.openrouter;
+      return await fetchModelsFromBackend(provider, apiKey);
     }
   }
 
-  // Return default models for any other case
-  return DEFAULT_MODELS[provider] || [];
+  // If all else fails, fetch from backend
+  return await fetchModelsFromBackend(provider, apiKey);
 };
 
 export const ModelSelector = ({
@@ -92,17 +80,15 @@ export const ModelSelector = ({
     queryKey: ['models', provider, apiKey, fusionMode],
     queryFn: () => fetchModels(provider, apiKey, fusionMode),
     enabled: true,
-    retry: false,
+    retry: 1,
     gcTime: 0,
     staleTime: 30000,
-    meta: {
-      errorHandler: (error: Error) => {
-        toast({
-          title: `Error fetching ${provider} models`,
-          description: error.message,
-          variant: "destructive",
-        });
-      }
+    onError: (error: Error) => {
+      toast({
+        title: `Error fetching ${provider} models`,
+        description: error.message,
+        variant: "destructive",
+      });
     }
   });
 
