@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -29,24 +28,26 @@ const handleProviderRequest = async (provider: string, message: string, model: s
     case 'claude':
       endpoint = 'https://api.anthropic.com/v1/messages';
       headers = {
-        'x-api-key': apiKey,
+        'anthropic-api-key': apiKey,
         'Content-Type': 'application/json',
         'anthropic-version': '2023-06-01'
       };
       body = JSON.stringify({
         model,
         messages: [{ role: 'user', content: message }],
+        max_tokens: 1024,
       });
       break;
 
     case 'google':
-      endpoint = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent`;
+      endpoint = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
       headers = {
         'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey,
       };
       body = JSON.stringify({
-        contents: [{ parts: [{ text: message }] }],
+        contents: [{
+          parts: [{ text: message }]
+        }]
       });
       break;
 
@@ -67,19 +68,53 @@ const handleProviderRequest = async (provider: string, message: string, model: s
       throw new Error(`Unsupported provider: ${provider}`);
   }
 
-  const result = await fetch(endpoint, {
-    method: 'POST',
-    headers,
-    body,
-  });
+  try {
+    console.log(`Making request to ${provider} API...`);
+    const result = await fetch(endpoint, {
+      method: 'POST',
+      headers,
+      body,
+    });
 
-  if (!result.ok) {
-    const errorText = await result.text();
-    console.error(`${provider} API error:`, errorText);
-    throw new Error(`${provider} API returned status ${result.status}: ${errorText}`);
+    if (!result.ok) {
+      const errorText = await result.text();
+      console.error(`${provider} API error:`, errorText);
+      throw new Error(`${provider} API returned status ${result.status}: ${errorText}`);
+    }
+
+    const data = await result.json();
+    console.log(`${provider} API response:`, data);
+
+    // Transform response based on provider
+    switch (provider) {
+      case 'openai':
+      case 'openrouter':
+        return {
+          choices: [{
+            message: {
+              content: data.choices[0].message.content
+            }
+          }]
+        };
+      case 'claude':
+        return {
+          content: [{
+            text: data.content[0].text
+          }]
+        };
+      case 'google':
+        return {
+          candidates: [{
+            output: data.candidates[0].content.parts[0].text
+          }]
+        };
+      default:
+        return data;
+    }
+  } catch (error) {
+    console.error(`Error with ${provider}:`, error);
+    throw error;
   }
-
-  return await result.json();
 };
 
 serve(async (req) => {
@@ -89,108 +124,32 @@ serve(async (req) => {
   }
 
   try {
-    const { provider, message, model } = await req.json();
-    const authHeader = req.headers.get('Authorization');
+    const { provider, message, model, apiKey } = await req.json();
     
-    if (!authHeader) {
+    if (!provider || !message || !model || !apiKey) {
       return new Response(
-        JSON.stringify({ error: 'Missing authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Missing required parameters' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    console.log(`Processing request for ${provider} with model ${model}`);
 
-    if (!supabaseUrl || !supabaseServiceKey) {
-      console.error('Missing Supabase configuration');
-      return new Response(
-        JSON.stringify({ error: 'Server configuration error' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    const response = await handleProviderRequest(provider, message, model, apiKey);
 
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-    const token = authHeader.replace('Bearer ', '');
-
-    // Verify user token
-    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
-    
-    if (userError || !user) {
-      console.error('Auth error:', userError);
-      return new Response(
-        JSON.stringify({ error: 'Invalid authentication token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Get API key for the provider
-    const { data: apiKeyData, error: apiKeyError } = await supabaseAdmin
-      .from('api_keys')
-      .select('api_key')
-      .eq('user_id', user.id)
-      .eq('provider', provider)
-      .maybeSingle(); // Use maybeSingle instead of single to handle missing rows gracefully
-
-    if (apiKeyError) {
-      console.error(`Database error fetching API key for ${provider}:`, apiKeyError);
-      return new Response(
-        JSON.stringify({ 
-          error: `Failed to fetch API key for ${provider}. Database error.`,
-          provider 
-        }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (!apiKeyData) {
-      console.warn(`No API key found for ${provider} and user ${user.id}`);
-      return new Response(
-        JSON.stringify({ 
-          error: `No API key found for ${provider}. Please add your API key in the settings.`,
-          provider 
-        }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    try {
-      const aiResponse = await handleProviderRequest(provider, message, model, apiKeyData.api_key);
-
-      // Store the chat message and response
-      const { error: insertError } = await supabaseAdmin
-        .from('chat_messages')
-        .insert({
-          user_id: user.id,
-          provider,
-          model,
-          message,
-          response: JSON.stringify(aiResponse)
-        });
-
-      if (insertError) {
-        console.error('Error storing chat message:', insertError);
-      }
-
-      return new Response(
-        JSON.stringify(aiResponse),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-
-    } catch (error) {
-      console.error(`Provider error (${provider}):`, error);
-      return new Response(
-        JSON.stringify({ error: `Provider ${provider} error: ${error.message}`, provider }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    return new Response(
+      JSON.stringify(response),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
 
   } catch (error) {
     console.error('Request error:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
     );
   }
 });
