@@ -25,6 +25,14 @@ export const generateFusionResponse = async (message: string) => {
   }
 
   try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      throw new Error('No active session found');
+    }
+
     // Make parallel requests to all active providers through our Edge Function
     const responses = await Promise.all(
       activeProviders.map(async provider => {
@@ -34,6 +42,9 @@ export const generateFusionResponse = async (message: string) => {
               provider,
               message,
               model: selectedModels[provider]
+            },
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
             }
           });
 
