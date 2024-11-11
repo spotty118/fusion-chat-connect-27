@@ -79,7 +79,8 @@ export const makeProviderRequest = async (
       headers,
       body: JSON.stringify({
         ...config.formatBody(message, model),
-        apiKey // Pass API key in request body for backend validation
+        apiKey,
+        provider // Add provider to help backend route the request
       }),
       credentials: 'include'
     });
