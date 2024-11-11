@@ -43,20 +43,23 @@ const handleProviderRequest = async (provider: string, message: string, model: s
       break;
 
     case 'google':
-      endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+      endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-002:generateContent?key=${apiKey}`;
       headers = {
         'Content-Type': 'application/json',
       };
-      endpoint += `?key=${apiKey}`;
       body = JSON.stringify({
         contents: [{
+          role: "user",
           parts: [{
             text: message
           }]
         }],
         generationConfig: {
-          maxOutputTokens: 1000,
-          temperature: 0.7
+          temperature: 1,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 8192,
+          responseMimeType: "text/plain"
         }
       });
       break;
@@ -80,6 +83,8 @@ const handleProviderRequest = async (provider: string, message: string, model: s
 
   try {
     console.log(`Sending request to ${endpoint}`);
+    console.log('Request body:', body);
+    
     response = await fetch(endpoint, {
       method: 'POST',
       headers,
@@ -95,7 +100,7 @@ const handleProviderRequest = async (provider: string, message: string, model: s
     const data = await response.json();
     console.log(`${provider} API response:`, data);
 
-    // Transform response based on provider
+    // Transform response based on the provider
     switch (provider) {
       case 'openai':
       case 'openrouter':
@@ -117,7 +122,7 @@ const handleProviderRequest = async (provider: string, message: string, model: s
           candidates: [{
             content: {
               parts: [{
-                text: data.candidates[0].content.parts[0].text
+                text: data.candidates[0].text
               }]
             }
           }]
