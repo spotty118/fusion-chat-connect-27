@@ -25,7 +25,13 @@ const Index = () => {
 
     // Check if Window AI is available
     checkWindowAI()
-      .then(() => setIsWindowAIReady(true))
+      .then(() => {
+        setIsWindowAIReady(true);
+        // Get current model when Window AI is ready
+        if (window.ai?.getCurrentModel) {
+          window.ai.getCurrentModel().then(model => setSelectedModel(model));
+        }
+      })
       .catch((error) => {
         toast({
           title: "Window AI Error",
@@ -41,15 +47,27 @@ const Index = () => {
       if (!window.ai?.getModels) return [];
       try {
         const models = await window.ai.getModels();
-        return models || [];
+        if (!models || models.length === 0) {
+          console.log('No models available from Window AI');
+          return ['default-model']; // Fallback model if none available
+        }
+        console.log('Available models:', models);
+        return models;
       } catch (error) {
         console.error('Error fetching models:', error);
-        return [];
+        return ['default-model']; // Fallback model on error
       }
     },
     enabled: isWindowAIReady,
-    staleTime: 30000, // Cache for 30 seconds
+    staleTime: 30000,
     retry: false,
+    onError: (error) => {
+      toast({
+        title: "Error fetching models",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   });
 
   const handleModelSelect = async (model) => {
@@ -107,7 +125,7 @@ const Index = () => {
                   onValueChange={handleModelSelect}
                   disabled={!isWindowAIReady}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-white/10 border-white/20 text-white">
                     <SelectValue placeholder="Select a model" />
                   </SelectTrigger>
                   <SelectContent>
