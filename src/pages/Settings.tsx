@@ -17,19 +17,59 @@ const Settings = () => {
     return localStorage.getItem('fusionMode') === 'true';
   });
   
-  const [apiKeys, setApiKeys] = React.useState(() => ({
-    openai: localStorage.getItem('openai_key') || '',
-    claude: localStorage.getItem('claude_key') || '',
-    google: localStorage.getItem('google_key') || '',
-    openrouter: localStorage.getItem('openrouter_key') || '',
-  }));
-  
+  const [apiKeys, setApiKeys] = React.useState<Record<string, string>>({
+    openai: '',
+    claude: '',
+    google: '',
+    openrouter: '',
+  });
+
   const [selectedModels, setSelectedModels] = React.useState(() => ({
     openai: localStorage.getItem('openai_model') || '',
     claude: localStorage.getItem('claude_model') || '',
     google: localStorage.getItem('google_model') || '',
     openrouter: localStorage.getItem('openrouter_model') || '',
   }));
+
+  // Fetch existing API keys on component mount
+  React.useEffect(() => {
+    const fetchApiKeys = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data, error } = await supabase
+        .from('api_keys')
+        .select('provider, api_key')
+        .eq('user_id', session.user.id);
+
+      if (error) {
+        console.error('Error fetching API keys:', error);
+        return;
+      }
+
+      if (data) {
+        const keys = {
+          openai: '',
+          claude: '',
+          google: '',
+          openrouter: '',
+        };
+        
+        data.forEach(({ provider, api_key }) => {
+          keys[provider as keyof typeof keys] = api_key;
+        });
+        
+        setApiKeys(keys);
+        
+        // Also set in localStorage for compatibility
+        Object.entries(keys).forEach(([provider, key]) => {
+          if (key) localStorage.setItem(`${provider}_key`, key);
+        });
+      }
+    };
+
+    fetchApiKeys();
+  }, []);
 
   const providerQueries = {
     openai: useProviderStatus('openai', apiKeys.openai),
@@ -61,17 +101,9 @@ const Settings = () => {
   };
 
   const handleApiKeyChange = (provider: string) => async (value: string) => {
-    setApiKeys(prev => ({
-      ...prev,
-      [provider]: value
-    }));
-    localStorage.setItem(`${provider}_key`, value);
-
-    // Save API key to Supabase
-    if (value) {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
         toast({
           title: "Authentication Error",
           description: "You must be logged in to save API keys.",
@@ -80,21 +112,29 @@ const Settings = () => {
         return;
       }
 
+      // Update state and localStorage
+      setApiKeys(prev => ({
+        ...prev,
+        [provider]: value
+      }));
+      localStorage.setItem(`${provider}_key`, value);
+
+      // Save to Supabase
       const { error } = await supabase
         .from('api_keys')
         .upsert({
+          user_id: session.user.id,
           provider,
-          api_key: value,
-          user_id: user.id
+          api_key: value
         }, {
-          onConflict: 'provider,user_id'
+          onConflict: 'user_id,provider'
         });
 
       if (error) {
         console.error('Error saving API key:', error);
         toast({
           title: "Error Saving API Key",
-          description: `Failed to save ${provider} API key. Please try again.`,
+          description: `Failed to save ${provider} API key: ${error.message}`,
           variant: "destructive",
         });
       } else {
@@ -103,6 +143,13 @@ const Settings = () => {
           description: `${provider} API key has been saved successfully.`,
         });
       }
+    } catch (error) {
+      console.error('Error in handleApiKeyChange:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save API key. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
