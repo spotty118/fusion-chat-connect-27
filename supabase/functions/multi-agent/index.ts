@@ -1,4 +1,3 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 interface Agent {
@@ -16,19 +15,22 @@ const corsHeaders = {
 };
 
 const ROLE_INSTRUCTIONS = {
-  analyst: "You are an AI analyst. Analyze the problem and break it down into key components. Focus on understanding requirements and identifying potential challenges.",
-  implementer: "You are an AI implementer. Based on the analysis, provide concrete solutions or implementations. Be specific and practical.",
-  reviewer: "You are an AI reviewer. Review the proposed implementation, identify potential issues, and suggest improvements. Consider edge cases and best practices. Do not create new content, focus on reviewing what others have produced.",
-  optimizer: "You are an AI optimizer. Focus on optimizing the solution for efficiency, scalability, and performance. Suggest specific improvements and optimizations."
+  analyst: "You are an AI analyst in a team discussion. First analyze the problem, then participate in a discussion with other AIs to reach the best solution. Focus on understanding requirements and identifying potential challenges.",
+  implementer: "You are an AI implementer in a team discussion. Based on the analysis, propose solutions, then participate in a discussion with other AIs to reach the best approach. Be specific and practical.",
+  reviewer: "You are an AI reviewer in a team discussion. Review the proposed solutions, identify potential issues, and participate in a discussion with other AIs to reach consensus on improvements. Consider edge cases and best practices.",
+  optimizer: "You are an AI optimizer in a team discussion. Focus on optimization opportunities, then participate in a discussion with other AIs to reach the best optimized solution. Suggest specific improvements."
 };
 
-async function makeProviderRequest(agent: Agent, message: string) {
+async function makeProviderRequest(agent: Agent, message: string, context = "") {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
 
   let body;
   const roleInstructions = ROLE_INSTRUCTIONS[agent.role as keyof typeof ROLE_INSTRUCTIONS] || agent.instructions;
+  const fullContext = context ? 
+    `${roleInstructions}\n\nPrevious discussion:\n${context}\n\nContinue the discussion and work towards a consensus.` :
+    roleInstructions;
 
   switch (agent.provider) {
     case 'openai':
@@ -36,7 +38,7 @@ async function makeProviderRequest(agent: Agent, message: string) {
       body = {
         model: agent.model,
         messages: [
-          { role: 'system', content: roleInstructions },
+          { role: 'system', content: fullContext },
           { role: 'user', content: message }
         ],
         max_tokens: 1000,
@@ -49,7 +51,7 @@ async function makeProviderRequest(agent: Agent, message: string) {
       body = {
         model: agent.model,
         messages: [
-          { role: 'system', content: roleInstructions },
+          { role: 'system', content: fullContext },
           { role: 'user', content: message }
         ],
         max_tokens: 1000,
@@ -61,7 +63,7 @@ async function makeProviderRequest(agent: Agent, message: string) {
       headers['anthropic-version'] = '2023-06-01';
       body = {
         model: agent.model,
-        system: roleInstructions,
+        system: fullContext,
         messages: [{ role: 'user', content: message }],
         max_tokens: 1000
       };
@@ -72,7 +74,7 @@ async function makeProviderRequest(agent: Agent, message: string) {
         contents: [{
           role: "user",
           parts: [{
-            text: `${roleInstructions}\n\n${message}`
+            text: `${fullContext}\n\n${message}`
           }]
         }],
         generationConfig: {
@@ -87,7 +89,6 @@ async function makeProviderRequest(agent: Agent, message: string) {
   }
 
   console.log(`Making request to ${agent.provider} with model ${agent.model}`);
-  console.log('Request body:', body);
   
   const response = await fetch(agent.endpoint + (agent.provider === 'google' ? `?key=${agent.apiKey}` : ''), {
     method: 'POST',
@@ -123,6 +124,59 @@ async function makeProviderRequest(agent: Agent, message: string) {
   }
 }
 
+async function facilitateDiscussion(agents: Agent[], userMessage: string) {
+  let discussion = "";
+  let round = 1;
+  const maxRounds = 3;
+
+  // Initial responses
+  console.log("Starting initial response round...");
+  const initialResponses = await Promise.all(
+    agents.map(async (agent) => {
+      const response = await makeProviderRequest(agent, userMessage);
+      return `[${agent.provider} - ${agent.role}]: ${response}`;
+    })
+  );
+  discussion = initialResponses.join("\n\n");
+
+  // Discussion rounds
+  while (round < maxRounds) {
+    console.log(`Starting discussion round ${round}...`);
+    const roundPrompt = `Based on the discussion so far, what's your perspective? Let's work together to reach the best solution.`;
+    
+    const responses = await Promise.all(
+      agents.map(async (agent) => {
+        const response = await makeProviderRequest(agent, roundPrompt, discussion);
+        return `[${agent.provider} - ${agent.role}]: ${response}`;
+      })
+    );
+    
+    discussion += "\n\n--- Round " + round + " ---\n\n" + responses.join("\n\n");
+    round++;
+  }
+
+  // Final consensus round
+  console.log("Starting final consensus round...");
+  const consensusPrompt = "Based on our discussion, please provide a final consensus response that represents our collective best answer. Focus on clarity and practicality.";
+  
+  const consensusResponses = await Promise.all(
+    agents.map(async (agent) => {
+      const response = await makeProviderRequest(agent, consensusPrompt, discussion);
+      return response;
+    })
+  );
+
+  // Select the most comprehensive consensus response
+  const finalResponse = consensusResponses.reduce((longest, current) => 
+    current.length > longest.length ? current : longest
+  );
+
+  return {
+    finalResponse,
+    discussion
+  };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -132,38 +186,17 @@ serve(async (req) => {
     const { message, agents } = await req.json();
     console.log('Processing multi-agent request:', { message, agentCount: agents.length });
 
-    const responses = await Promise.all(
-      agents.map(async (agent: Agent) => {
-        try {
-          const response = await makeProviderRequest(agent, message);
-          return {
-            provider: agent.provider,
-            role: agent.role,
-            response: response || `[No response from ${agent.provider}]`
-          };
-        } catch (error) {
-          console.error(`Error with ${agent.provider}:`, error);
-          return {
-            provider: agent.provider,
-            role: agent.role,
-            response: `[${agent.provider} error: ${error.message}]`
-          };
-        }
-      })
-    );
+    if (!agents || agents.length < 2) {
+      throw new Error('At least 2 agents are required for a meaningful discussion');
+    }
 
-    // Filter out error responses and empty responses
-    const validResponses = responses.filter(r => 
-      !r.response.startsWith('[') && 
-      !r.response.includes('error') &&
-      r.response.trim().length > 0
-    );
-
-    // If we have at least one valid response, return those
-    const finalResponses = validResponses.length > 0 ? validResponses : responses;
+    const { finalResponse, discussion } = await facilitateDiscussion(agents, message);
 
     return new Response(
-      JSON.stringify({ response: finalResponses }),
+      JSON.stringify({ 
+        response: finalResponse,
+        discussion: discussion 
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
