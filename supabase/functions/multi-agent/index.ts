@@ -15,12 +15,20 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const ROLE_INSTRUCTIONS = {
+  analyst: "You are an AI analyst. Analyze the problem and break it down into key components. Focus on understanding requirements and identifying potential challenges.",
+  implementer: "You are an AI implementer. Based on the analysis, provide concrete solutions or implementations. Be specific and practical.",
+  reviewer: "You are an AI reviewer. Review the proposed implementation, identify potential issues, and suggest improvements. Consider edge cases and best practices. Do not create new content, focus on reviewing what others have produced.",
+  optimizer: "You are an AI optimizer. Focus on optimizing the solution for efficiency, scalability, and performance. Suggest specific improvements and optimizations."
+};
+
 async function makeProviderRequest(agent: Agent, message: string) {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
 
   let body;
+  const roleInstructions = ROLE_INSTRUCTIONS[agent.role as keyof typeof ROLE_INSTRUCTIONS] || agent.instructions;
 
   switch (agent.provider) {
     case 'openai':
@@ -28,7 +36,7 @@ async function makeProviderRequest(agent: Agent, message: string) {
       body = {
         model: agent.model,
         messages: [
-          { role: 'system', content: agent.instructions },
+          { role: 'system', content: roleInstructions },
           { role: 'user', content: message }
         ],
         max_tokens: 1000,
@@ -41,7 +49,7 @@ async function makeProviderRequest(agent: Agent, message: string) {
       body = {
         model: agent.model,
         messages: [
-          { role: 'system', content: agent.instructions },
+          { role: 'system', content: roleInstructions },
           { role: 'user', content: message }
         ],
         max_tokens: 1000,
@@ -53,7 +61,7 @@ async function makeProviderRequest(agent: Agent, message: string) {
       headers['anthropic-version'] = '2023-06-01';
       body = {
         model: agent.model,
-        system: agent.instructions,
+        system: roleInstructions,
         messages: [{ role: 'user', content: message }],
         max_tokens: 1000
       };
@@ -64,7 +72,7 @@ async function makeProviderRequest(agent: Agent, message: string) {
         contents: [{
           role: "user",
           parts: [{
-            text: `${agent.instructions}\n\n${message}`
+            text: `${roleInstructions}\n\n${message}`
           }]
         }],
         generationConfig: {
