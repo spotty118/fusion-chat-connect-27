@@ -1,9 +1,9 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { UserCircle2, Bot } from 'lucide-react';
+import { UserCircle2, Bot, MessageSquareQuote } from 'lucide-react';
 import { CodeBlock } from './chat/CodeBlock';
 
-const ChatMessage = ({ message, isAI, isLoading }) => {
+const ChatMessage = ({ message, isAI, isLoading, onReply }) => {
   const getMessageContent = (msg) => {
     if (typeof msg === 'string') return msg;
     if (typeof msg === 'object') {
@@ -73,16 +73,28 @@ const ChatMessage = ({ message, isAI, isLoading }) => {
         </div>
       )}
       <div className={cn(
-        "max-w-[85%] rounded-3xl px-6 py-4 shadow-lg transition-all duration-300",
+        "relative max-w-[85%] rounded-3xl px-6 py-4 shadow-lg transition-all duration-300 group",
         isAI 
           ? "bg-white text-gray-800 rounded-tl-lg border border-gray-100 hover:shadow-xl" 
           : "bg-gradient-to-br from-fusion-primary to-fusion-secondary text-white rounded-tr-lg hover:shadow-fusion-primary/30",
         isAI ? "shadow-lg shadow-gray-100/50" : "shadow-lg shadow-fusion-primary/20"
       )}>
         {isAI && isLoading ? <TypingIndicator /> : (
-          <div className="text-[15px] leading-relaxed">
-            {renderContent(messageContent)}
-          </div>
+          <>
+            <div className="text-[15px] leading-relaxed">
+              {renderContent(messageContent)}
+            </div>
+            <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => onReply?.(messageContent)}
+              >
+                <MessageSquareQuote className="h-4 w-4" />
+              </Button>
+            </div>
+          </>
         )}
       </div>
       {!isAI && (
