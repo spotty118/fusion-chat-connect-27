@@ -20,7 +20,7 @@ export const makeProviderRequest = async (
     }
 
     const { data, error } = await supabase.functions.invoke('api-handler', {
-      body: { provider, message, model },
+      body: { provider, message, model, apiKey },
       headers: {
         Authorization: `Bearer ${session.access_token}`,
       }
@@ -31,6 +31,7 @@ export const makeProviderRequest = async (
     // Extract the response based on the provider
     switch (provider) {
       case 'openai':
+        return data.choices?.[0]?.message?.content || data.choices?.[0]?.text || '';
       case 'openrouter':
         return data.choices[0].message.content;
       case 'claude':
