@@ -8,7 +8,6 @@ import { CurrentModel } from '@/components/CurrentModel';
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from 'react';
 import { generateResponse } from '@/lib/window-ai';
-import { DarkModeToggle } from '@/components/ui/dark-mode-toggle';
 import { ChatSearch } from '@/components/chat/ChatSearch';
 import { ChatExport } from '@/components/chat/ChatExport';
 
@@ -63,7 +62,7 @@ const Index = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+    <div className="flex flex-col h-screen bg-white">
       <header className="bg-gradient-to-br from-fusion-primary to-fusion-secondary p-6 text-white shadow-2xl sticky top-0 z-10 backdrop-blur-lg bg-opacity-95">
         <div className="flex justify-between items-center max-w-5xl mx-auto w-full">
           <div className="flex flex-col gap-2">
@@ -73,7 +72,6 @@ const Index = () => {
             <CurrentModel />
           </div>
           <div className="flex items-center gap-3">
-            <DarkModeToggle />
             <Button
               variant="ghost"
               size="icon"
@@ -94,14 +92,14 @@ const Index = () => {
         </div>
       </header>
       
-      <div className="flex-none p-4 border-b bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+      <div className="flex-none p-4 border-b bg-white/50 backdrop-blur-sm">
         <div className="max-w-5xl mx-auto w-full flex justify-between items-center gap-4">
           <ChatSearch onSearch={handleSearch} />
           <ChatExport messages={messages} />
         </div>
       </div>
       
-      <main className="flex-1 flex flex-col max-w-5xl mx-auto w-full bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl shadow-2xl rounded-3xl my-6 overflow-hidden border border-gray-100 dark:border-gray-700">
+      <main className="flex-1 flex flex-col max-w-5xl mx-auto w-full bg-white/70 backdrop-blur-xl shadow-2xl rounded-3xl my-6 overflow-hidden border border-gray-100">
         <ChatContainer messages={filteredMessages} isLoading={isLoading} />
         <ChatInput onSendMessage={handleSendMessage} disabled={isLoading} />
       </main>
