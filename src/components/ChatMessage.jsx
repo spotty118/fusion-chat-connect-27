@@ -2,6 +2,7 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import { UserCircle2, Bot, MessageSquareQuote } from 'lucide-react';
 import { CodeBlock } from './chat/CodeBlock';
+import { Button } from '@/components/ui/button';
 
 const ChatMessage = ({ message, isAI, isLoading, onReply }) => {
   const getMessageContent = (msg) => {
