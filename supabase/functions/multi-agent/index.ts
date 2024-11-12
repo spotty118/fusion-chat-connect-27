@@ -30,19 +30,21 @@ async function makeProviderRequest(agent: Agent, message: string) {
         messages: [
           { role: 'system', content: agent.instructions },
           { role: 'user', content: message }
-        ]
+        ],
+        max_tokens: 1000,
       };
       break;
 
     case 'openrouter':
       headers['Authorization'] = `Bearer ${agent.apiKey}`;
-      headers['HTTP-Referer'] = 'http://localhost:3000'; // Replace with your actual domain
+      headers['HTTP-Referer'] = Deno.env.get('APP_URL') ?? '*';
       body = {
         model: agent.model,
         messages: [
           { role: 'system', content: agent.instructions },
           { role: 'user', content: message }
-        ]
+        ],
+        max_tokens: 1000,
       };
       break;
 
@@ -52,7 +54,8 @@ async function makeProviderRequest(agent: Agent, message: string) {
       body = {
         model: agent.model,
         system: agent.instructions,
-        messages: [{ role: 'user', content: message }]
+        messages: [{ role: 'user', content: message }],
+        max_tokens: 1000
       };
       break;
 
@@ -66,7 +69,7 @@ async function makeProviderRequest(agent: Agent, message: string) {
         }],
         generationConfig: {
           temperature: 0.7,
-          maxOutputTokens: 2000
+          maxOutputTokens: 1000
         }
       };
       break;
@@ -76,6 +79,7 @@ async function makeProviderRequest(agent: Agent, message: string) {
   }
 
   console.log(`Making request to ${agent.provider} with model ${agent.model}`);
+  console.log('Request body:', body);
   
   const response = await fetch(agent.endpoint + (agent.provider === 'google' ? `?key=${agent.apiKey}` : ''), {
     method: 'POST',
@@ -85,10 +89,12 @@ async function makeProviderRequest(agent: Agent, message: string) {
 
   if (!response.ok) {
     const error = await response.text();
+    console.error(`Error from ${agent.provider}:`, error);
     throw new Error(`Error from ${agent.provider}: ${error}`);
   }
 
   const data = await response.json();
+  console.log(`${agent.provider} API response:`, data);
   
   switch (agent.provider) {
     case 'openai':
