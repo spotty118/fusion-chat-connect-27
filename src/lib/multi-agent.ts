@@ -82,16 +82,7 @@ export const generateMultiAgentResponse = async (
     });
 
     if (error) throw error;
-
-    // Format the combined response
-    const formattedResponse = data.responses
-      .sort((a: any, b: any) => a.role.localeCompare(b.role))
-      .map((response: any) => (
-        `[${response.role.toUpperCase()}]\n${response.response}\n`
-      ))
-      .join('\n---\n\n');
-
-    return formattedResponse;
+    return data.response;
 
   } catch (error) {
     console.error('Error in multi-agent response:', error);

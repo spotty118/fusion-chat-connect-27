@@ -1,16 +1,10 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-interface AgentResponse {
-  provider: string;
-  role: string;
-  response: string;
-}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -21,102 +15,109 @@ serve(async (req) => {
     const { message, agents } = await req.json();
     console.log('Processing multi-agent request:', { message, agentCount: agents.length });
 
-    const responses: AgentResponse[] = [];
+    const responses = [];
 
-    const agentPromises = agents.map(async (agent: any) => {
+    for (const agent of agents) {
       try {
-        let headers: Record<string, string> = {
-          'Content-Type': 'application/json',
-        };
-
-        let body: any = {};
-        let endpoint = agent.endpoint;
+        let response;
+        console.log(`Making request to ${agent.provider} with model ${agent.model}`);
 
         switch (agent.provider) {
           case 'openai':
-            headers['Authorization'] = `Bearer ${agent.apiKey}`;
-            body = {
-              model: agent.model,
-              messages: [
-                {
-                  role: 'system',
-                  content: agent.instructions
-                },
-                { 
-                  role: 'user', 
-                  content: message 
-                }
-              ],
-              max_tokens: 2000
-            };
+            response = await fetch('https://api.openai.com/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${agent.apiKey}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                model: agent.model,
+                messages: [
+                  {
+                    role: 'system',
+                    content: agent.instructions
+                  },
+                  { 
+                    role: 'user', 
+                    content: message 
+                  }
+                ],
+                max_tokens: 2000
+              })
+            });
             break;
 
           case 'claude':
-            headers['x-api-key'] = agent.apiKey;
-            headers['anthropic-version'] = '2023-06-01';
-            body = {
-              model: agent.model,
-              system: agent.instructions,
-              messages: [
-                {
-                  role: 'user',
-                  content: message
-                }
-              ],
-              max_tokens: 2000
-            };
+            response = await fetch('https://api.anthropic.com/v1/messages', {
+              method: 'POST',
+              headers: {
+                'x-api-key': agent.apiKey,
+                'anthropic-version': '2023-06-01',
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                model: agent.model,
+                system: agent.instructions,
+                messages: [
+                  {
+                    role: 'user',
+                    content: message
+                  }
+                ],
+                max_tokens: 2000
+              })
+            });
             break;
 
           case 'google':
-            endpoint = `${agent.endpoint}?key=${agent.apiKey}`;
-            body = {
-              contents: [
-                {
-                  role: 'user',
-                  parts: [
-                    {
-                      text: `${agent.instructions}\n\n${message}`
-                    }
-                  ]
+            response = await fetch(`https://generativelanguage.googleapis.com/v1/models/${agent.model}:generateContent?key=${agent.apiKey}`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                contents: [{
+                  role: "user",
+                  parts: [{
+                    text: `${agent.instructions}\n\n${message}`
+                  }]
+                }],
+                generationConfig: {
+                  maxOutputTokens: 2000
                 }
-              ],
-              generationConfig: {
-                maxOutputTokens: 2000
-              }
-            };
+              })
+            });
             break;
 
           case 'openrouter':
-            headers['Authorization'] = `Bearer ${agent.apiKey}`;
-            headers['HTTP-Referer'] = '*';
-            body = {
-              model: agent.model,
-              max_tokens: 2000,
-              messages: [
-                {
-                  role: 'system',
-                  content: agent.instructions
-                },
-                {
-                  role: 'user',
-                  content: message
-                }
-              ]
-            };
+            response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${agent.apiKey}`,
+                'Content-Type': 'application/json',
+                'HTTP-Referer': '*',
+              },
+              body: JSON.stringify({
+                model: agent.model,
+                messages: [
+                  {
+                    role: 'system',
+                    content: agent.instructions
+                  },
+                  { 
+                    role: 'user', 
+                    content: message 
+                  }
+                ],
+                max_tokens: 2000
+              })
+            });
             break;
         }
 
-        console.log(`Making request to ${agent.provider} with model ${agent.model}`);
-        
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(body)
-        });
-
         if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Error from ${agent.provider}: ${errorText}`);
+          const error = await response.text();
+          throw new Error(`Error from ${agent.provider}: ${error}`);
         }
 
         const data = await response.json();
@@ -137,7 +138,6 @@ serve(async (req) => {
 
         responses.push({
           provider: agent.provider,
-          role: agent.role,
           response: agentResponse
         });
 
@@ -145,16 +145,17 @@ serve(async (req) => {
         console.error(`Error with ${agent.provider}:`, error);
         responses.push({
           provider: agent.provider,
-          role: agent.role,
           response: `Error: ${error.message}`
         });
       }
-    });
+    }
 
-    await Promise.all(agentPromises);
-    responses.sort((a, b) => a.role.localeCompare(b.role));
+    // Now combine all responses into one cohesive response
+    const combinedResponse = responses
+      .map(r => `Response from ${r.provider}:\n${r.response}`)
+      .join('\n\n---\n\n');
 
-    return new Response(JSON.stringify({ responses }), {
+    return new Response(JSON.stringify({ response: combinedResponse }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
