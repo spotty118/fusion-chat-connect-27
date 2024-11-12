@@ -57,16 +57,20 @@ export const generateResponse = async (message: string, fusionMode = false) => {
       messages: [{ role: "user", content: message }]
     });
     
-    if (!response?.length) {
-      throw new Error('No response received from Window AI');
+    if (!response || !Array.isArray(response) || response.length === 0) {
+      throw new Error('Invalid or empty response received from Window AI');
     }
 
     const choice = response[0];
+    if (!choice) {
+      throw new Error('No response choice available');
+    }
+
     if (choice.message?.content) return choice.message.content;
     if (choice.text) return choice.text;
     if (choice.delta?.content) return choice.delta.content;
     
-    throw new Error('Invalid response format');
+    throw new Error('Response format not recognized');
   } catch (error) {
     console.error("Error generating response:", error);
     throw error;
