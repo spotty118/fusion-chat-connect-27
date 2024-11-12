@@ -4,6 +4,12 @@ const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000;
 const AUTH_COOKIE_NAME = 'window_ai_verified';
 
+interface WindowAIResponse {
+  message?: { content: string };
+  text?: string;
+  delta?: { content: string };
+}
+
 const isVerified = () => {
   return document.cookie.includes(AUTH_COOKIE_NAME);
 };
@@ -68,7 +74,7 @@ export const generateResponse = async (message: string, fusionMode = false) => {
 
     // Handle array response format
     if (Array.isArray(response)) {
-      const firstResponse = response[0];
+      const firstResponse = response[0] as WindowAIResponse;
       if (!firstResponse) {
         throw new Error('Empty response from Window AI');
       }
@@ -81,10 +87,11 @@ export const generateResponse = async (message: string, fusionMode = false) => {
     }
 
     // Handle object response format
-    if (typeof response === 'object') {
-      if ('message' in response && response.message?.content) return response.message.content;
-      if ('text' in response && response.text) return response.text;
-      if ('delta' in response && response.delta?.content) return response.delta.content;
+    const objectResponse = response as WindowAIResponse;
+    if (typeof objectResponse === 'object') {
+      if ('message' in objectResponse && objectResponse.message?.content) return objectResponse.message.content;
+      if ('text' in objectResponse && objectResponse.text) return objectResponse.text;
+      if ('delta' in objectResponse && objectResponse.delta?.content) return objectResponse.delta.content;
     }
     
     throw new Error('Unrecognized response format from Window AI');
