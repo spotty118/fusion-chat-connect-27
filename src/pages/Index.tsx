@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import ChatContainer from '@/components/ChatContainer';
 import ChatInput from '@/components/ChatInput';
-import { Settings as SettingsIcon, LogOut, MessageSquareQuote } from 'lucide-react';
+import { Settings as SettingsIcon, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CurrentModel } from '@/components/CurrentModel';
 import { supabase } from "@/integrations/supabase/client";
@@ -66,16 +66,24 @@ const Index = () => {
   const handleReply = (content: string) => {
     inputRef.current?.focus();
     const quote = `> ${content}\n\n`;
-    inputRef.current.value = quote;
+    if (inputRef.current) {
+      (inputRef.current as HTMLInputElement).value = quote;
+    }
   };
 
   useKeyboardShortcuts({
     onSend: () => inputRef.current?.form?.requestSubmit(),
     onSearch: () => {
       setSearchOpen(true);
-      searchInputRef.current?.focus();
+      setTimeout(() => {
+        const searchElement = document.querySelector('[aria-label="Export Chat"]') as HTMLButtonElement;
+        searchElement?.click();
+      }, 0);
     },
-    onExport: () => document.querySelector('[aria-label="Export Chat"]')?.click(),
+    onExport: () => {
+      const exportButton = document.querySelector('[aria-label="Export Chat"]') as HTMLButtonElement;
+      exportButton?.click();
+    },
     onSettings: () => navigate('/settings'),
   });
 
@@ -111,7 +119,7 @@ const Index = () => {
       
       <div className="flex-none p-4 border-b bg-white/50 backdrop-blur-sm">
         <div className="max-w-5xl mx-auto w-full flex justify-between items-center gap-4">
-          <ChatSearch ref={searchInputRef} onSearch={handleSearch} />
+          <ChatSearch onSearch={handleSearch} />
           <ChatExport messages={messages} />
         </div>
       </div>
