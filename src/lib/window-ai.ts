@@ -56,21 +56,38 @@ export const generateResponse = async (message: string, fusionMode = false) => {
     const response = await window.ai.generateText({
       messages: [{ role: "user", content: message }]
     });
-    
-    if (!response || !Array.isArray(response) || response.length === 0) {
-      throw new Error('Invalid or empty response received from Window AI');
+
+    // Handle different response formats from Window AI
+    if (typeof response === 'string') {
+      return response;
     }
 
-    const choice = response[0];
-    if (!choice) {
-      throw new Error('No response choice available');
+    if (!response) {
+      throw new Error('No response received from Window AI');
     }
 
-    if (choice.message?.content) return choice.message.content;
-    if (choice.text) return choice.text;
-    if (choice.delta?.content) return choice.delta.content;
+    // Handle array response format
+    if (Array.isArray(response)) {
+      const firstResponse = response[0];
+      if (!firstResponse) {
+        throw new Error('Empty response from Window AI');
+      }
+
+      // Try to extract content from various possible formats
+      if (typeof firstResponse === 'string') return firstResponse;
+      if (firstResponse.message?.content) return firstResponse.message.content;
+      if (firstResponse.text) return firstResponse.text;
+      if (firstResponse.delta?.content) return firstResponse.delta.content;
+    }
+
+    // Handle object response format
+    if (typeof response === 'object') {
+      if (response.message?.content) return response.message.content;
+      if (response.text) return response.text;
+      if (response.delta?.content) return response.delta.content;
+    }
     
-    throw new Error('Response format not recognized');
+    throw new Error('Unrecognized response format from Window AI');
   } catch (error) {
     console.error("Error generating response:", error);
     throw error;
