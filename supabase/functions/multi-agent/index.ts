@@ -1,11 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
 interface Agent {
   provider: string;
   model: string;
@@ -14,6 +9,11 @@ interface Agent {
   endpoint: string;
   apiKey: string;
 }
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 async function makeProviderRequest(agent: Agent, message: string) {
   const headers: Record<string, string> = {
@@ -96,16 +96,22 @@ async function makeProviderRequest(agent: Agent, message: string) {
   const data = await response.json();
   console.log(`${agent.provider} API response:`, data);
   
-  switch (agent.provider) {
-    case 'openai':
-    case 'openrouter':
-      return data.choices[0].message.content;
-    case 'claude':
-      return data.content[0].text;
-    case 'google':
-      return data.candidates[0].content.parts[0].text;
-    default:
-      throw new Error(`Unsupported provider: ${agent.provider}`);
+  try {
+    switch (agent.provider) {
+      case 'openai':
+      case 'openrouter':
+        return data.choices[0].message.content;
+      case 'claude':
+        return data.content[0].text;
+      case 'google':
+        return data.candidates[0].content.parts[0].text;
+      default:
+        throw new Error(`Unsupported provider: ${agent.provider}`);
+    }
+  } catch (error) {
+    console.error(`Error parsing response from ${agent.provider}:`, error);
+    console.error('Full response:', data);
+    return `[Error parsing ${agent.provider} response]`;
   }
 }
 
@@ -125,17 +131,31 @@ serve(async (req) => {
           return {
             provider: agent.provider,
             role: agent.role,
-            response
+            response: response || `[No response from ${agent.provider}]`
           };
         } catch (error) {
           console.error(`Error with ${agent.provider}:`, error);
-          throw error;
+          return {
+            provider: agent.provider,
+            role: agent.role,
+            response: `[${agent.provider} error: ${error.message}]`
+          };
         }
       })
     );
 
+    // Filter out error responses and empty responses
+    const validResponses = responses.filter(r => 
+      !r.response.startsWith('[') && 
+      !r.response.includes('error') &&
+      r.response.trim().length > 0
+    );
+
+    // If we have at least one valid response, return those
+    const finalResponses = validResponses.length > 0 ? validResponses : responses;
+
     return new Response(
-      JSON.stringify({ response: responses }),
+      JSON.stringify({ response: finalResponses }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
