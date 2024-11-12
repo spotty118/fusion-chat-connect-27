@@ -1,7 +1,65 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { corsHeaders, AGENT_ROLES } from './constants.ts';
-import { getAgentEndpoint, selectBestResponse } from './utils.ts';
-import { Agent, AgentResponse } from './types.ts';
+
+// Types
+interface Agent {
+  provider: string;
+  model: string;
+  role: string;
+  instructions: string;
+  endpoint: string;
+  apiKey: string;
+}
+
+interface AgentResponse {
+  provider: string;
+  role: string;
+  response: string;
+}
+
+// Constants
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+const AGENT_ROLES = {
+  ANALYST: {
+    role: 'analyst',
+    instructions: 'You are an AI analyst. Analyze the problem and break it down into key components. Focus on understanding requirements and identifying potential challenges.'
+  },
+  IMPLEMENTER: {
+    role: 'implementer',
+    instructions: 'You are an AI implementer. Based on the analysis, provide concrete solutions or implementations. Be specific and practical.'
+  },
+  REVIEWER: {
+    role: 'reviewer',
+    instructions: 'You are an AI reviewer. Review the proposed implementation, identify potential issues, and suggest improvements. Consider edge cases and best practices.'
+  }
+};
+
+// Utility functions
+function getAgentEndpoint(provider: string): string {
+  switch (provider) {
+    case 'openai':
+      return 'https://api.openai.com/v1/chat/completions';
+    case 'claude':
+      return 'https://api.anthropic.com/v1/messages';
+    case 'google':
+      return 'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro-002:generateContent';
+    case 'openrouter':
+      return 'https://openrouter.ai/api/v1/chat/completions';
+    default:
+      throw new Error(`Unsupported provider: ${provider}`);
+  }
+}
+
+function selectBestResponse(responses: string[]): string {
+  return responses
+    .filter(response => !response.toLowerCase().includes('error'))
+    .reduce((longest, current) => 
+      current.length > longest.length ? current : longest
+    , responses[0] || '');
+}
 
 async function makeProviderRequest(agent: Agent, message: string): Promise<string> {
   try {
