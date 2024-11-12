@@ -23,7 +23,6 @@ serve(async (req) => {
 
     const responses: AgentResponse[] = [];
 
-    // Process each agent's response in parallel
     const agentPromises = agents.map(async (agent: any) => {
       try {
         let headers: Record<string, string> = {
@@ -31,8 +30,8 @@ serve(async (req) => {
         };
 
         let body: any = {};
+        let endpoint = agent.endpoint;
 
-        // Configure request based on provider
         switch (agent.provider) {
           case 'openai':
             headers['Authorization'] = `Bearer ${agent.apiKey}`;
@@ -57,18 +56,19 @@ serve(async (req) => {
             headers['anthropic-version'] = '2023-06-01';
             body = {
               model: agent.model,
-              max_tokens: 2000,
+              system: agent.instructions,
               messages: [
                 {
                   role: 'user',
-                  content: `${agent.instructions}\n\nUser message: ${message}`
+                  content: message
                 }
-              ]
+              ],
+              max_tokens: 2000
             };
             break;
 
           case 'google':
-            agent.endpoint = `${agent.endpoint}?key=${agent.apiKey}`;
+            endpoint = `${agent.endpoint}?key=${agent.apiKey}`;
             body = {
               contents: [
                 {
@@ -108,7 +108,7 @@ serve(async (req) => {
 
         console.log(`Making request to ${agent.provider} with model ${agent.model}`);
         
-        const response = await fetch(agent.endpoint, {
+        const response = await fetch(endpoint, {
           method: 'POST',
           headers,
           body: JSON.stringify(body)
@@ -122,7 +122,6 @@ serve(async (req) => {
         const data = await response.json();
         let agentResponse = '';
 
-        // Extract response based on provider
         switch (agent.provider) {
           case 'openai':
           case 'openrouter':
@@ -153,8 +152,6 @@ serve(async (req) => {
     });
 
     await Promise.all(agentPromises);
-
-    // Sort responses by role to maintain consistent order
     responses.sort((a, b) => a.role.localeCompare(b.role));
 
     return new Response(JSON.stringify({ responses }), {
