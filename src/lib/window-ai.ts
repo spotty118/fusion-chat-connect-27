@@ -75,16 +75,16 @@ export const generateResponse = async (message: string, fusionMode = false) => {
 
       // Try to extract content from various possible formats
       if (typeof firstResponse === 'string') return firstResponse;
-      if (firstResponse.message?.content) return firstResponse.message.content;
-      if (firstResponse.text) return firstResponse.text;
-      if (firstResponse.delta?.content) return firstResponse.delta.content;
+      if ('message' in firstResponse && firstResponse.message?.content) return firstResponse.message.content;
+      if ('text' in firstResponse && firstResponse.text) return firstResponse.text;
+      if ('delta' in firstResponse && firstResponse.delta?.content) return firstResponse.delta.content;
     }
 
     // Handle object response format
     if (typeof response === 'object') {
-      if (response.message?.content) return response.message.content;
-      if (response.text) return response.text;
-      if (response.delta?.content) return response.delta.content;
+      if ('message' in response && response.message?.content) return response.message.content;
+      if ('text' in response && response.text) return response.text;
+      if ('delta' in response && response.delta?.content) return response.delta.content;
     }
     
     throw new Error('Unrecognized response format from Window AI');
