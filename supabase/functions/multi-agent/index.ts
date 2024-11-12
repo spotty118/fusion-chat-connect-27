@@ -47,7 +47,8 @@ serve(async (req) => {
                   role: 'user', 
                   content: message 
                 }
-              ]
+              ],
+              max_tokens: 2000
             };
             break;
 
@@ -56,6 +57,7 @@ serve(async (req) => {
             headers['anthropic-version'] = '2023-06-01';
             body = {
               model: agent.model,
+              max_tokens: 2000,
               messages: [
                 {
                   role: 'user',
@@ -77,7 +79,10 @@ serve(async (req) => {
                     }
                   ]
                 }
-              ]
+              ],
+              generationConfig: {
+                maxOutputTokens: 2000
+              }
             };
             break;
 
@@ -86,6 +91,7 @@ serve(async (req) => {
             headers['HTTP-Referer'] = '*';
             body = {
               model: agent.model,
+              max_tokens: 2000,
               messages: [
                 {
                   role: 'system',
