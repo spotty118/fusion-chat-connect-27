@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,38 +19,104 @@ serve(async (req) => {
 
   try {
     const { message, agents } = await req.json();
-    console.log('Processing multi-agent request:', { message, agents });
+    console.log('Processing multi-agent request:', { message, agentCount: agents.length });
 
     const responses: AgentResponse[] = [];
 
     // Process each agent's response in parallel
     const agentPromises = agents.map(async (agent: any) => {
       try {
+        let headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+        };
+
+        let body: any = {};
+
+        // Configure request based on provider
+        switch (agent.provider) {
+          case 'openai':
+            headers['Authorization'] = `Bearer ${agent.apiKey}`;
+            body = {
+              model: agent.model,
+              messages: [
+                {
+                  role: 'system',
+                  content: agent.instructions
+                },
+                { 
+                  role: 'user', 
+                  content: message 
+                }
+              ]
+            };
+            break;
+
+          case 'claude':
+            headers['x-api-key'] = agent.apiKey;
+            headers['anthropic-version'] = '2023-06-01';
+            body = {
+              model: agent.model,
+              messages: [
+                {
+                  role: 'user',
+                  content: `${agent.instructions}\n\nUser message: ${message}`
+                }
+              ]
+            };
+            break;
+
+          case 'google':
+            agent.endpoint = `${agent.endpoint}?key=${agent.apiKey}`;
+            body = {
+              contents: [
+                {
+                  role: 'user',
+                  parts: [
+                    {
+                      text: `${agent.instructions}\n\n${message}`
+                    }
+                  ]
+                }
+              ]
+            };
+            break;
+
+          case 'openrouter':
+            headers['Authorization'] = `Bearer ${agent.apiKey}`;
+            headers['HTTP-Referer'] = '*';
+            body = {
+              model: agent.model,
+              messages: [
+                {
+                  role: 'system',
+                  content: agent.instructions
+                },
+                {
+                  role: 'user',
+                  content: message
+                }
+              ]
+            };
+            break;
+        }
+
+        console.log(`Making request to ${agent.provider} with model ${agent.model}`);
+        
         const response = await fetch(agent.endpoint, {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${agent.apiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: agent.model,
-            messages: [
-              {
-                role: 'system',
-                content: `You are a specialized AI agent focused on ${agent.role}. ${agent.instructions}`
-              },
-              { role: 'user', content: message }
-            ]
-          })
+          headers,
+          body: JSON.stringify(body)
         });
 
         if (!response.ok) {
-          throw new Error(`Error from ${agent.provider}: ${await response.text()}`);
+          const errorText = await response.text();
+          throw new Error(`Error from ${agent.provider}: ${errorText}`);
         }
 
         const data = await response.json();
         let agentResponse = '';
 
+        // Extract response based on provider
         switch (agent.provider) {
           case 'openai':
           case 'openrouter':

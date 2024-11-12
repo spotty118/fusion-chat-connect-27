@@ -12,19 +12,19 @@ interface Agent {
 const AGENT_ROLES = {
   ANALYST: {
     role: 'analyst',
-    instructions: 'Analyze the problem and break it down into key components. Focus on understanding requirements and identifying potential challenges.'
+    instructions: 'You are an AI analyst. Analyze the problem and break it down into key components. Focus on understanding requirements and identifying potential challenges.'
   },
   IMPLEMENTER: {
     role: 'implementer',
-    instructions: 'Based on the analysis, provide concrete solutions or implementations. Be specific and practical.'
+    instructions: 'You are an AI implementer. Based on the analysis, provide concrete solutions or implementations. Be specific and practical.'
   },
   REVIEWER: {
     role: 'reviewer',
-    instructions: 'Review the proposed implementation, identify potential issues, and suggest improvements. Consider edge cases and best practices.'
+    instructions: 'You are an AI reviewer. Review the proposed implementation, identify potential issues, and suggest improvements. Consider edge cases and best practices.'
   },
   OPTIMIZER: {
     role: 'optimizer',
-    instructions: 'Focus on optimizing the solution for efficiency, scalability, and performance. Suggest specific improvements and optimizations.'
+    instructions: 'You are an AI optimizer. Focus on optimizing the solution for efficiency, scalability, and performance. Suggest specific improvements and optimizations.'
   }
 };
 
@@ -84,9 +84,12 @@ export const generateMultiAgentResponse = async (
     if (error) throw error;
 
     // Format the combined response
-    const formattedResponse = data.responses.map(response => (
-      `[${response.role.toUpperCase()}]\n${response.response}\n\n`
-    )).join('---\n\n');
+    const formattedResponse = data.responses
+      .sort((a: any, b: any) => a.role.localeCompare(b.role))
+      .map((response: any) => (
+        `[${response.role.toUpperCase()}]\n${response.response}\n`
+      ))
+      .join('\n---\n\n');
 
     return formattedResponse;
 
