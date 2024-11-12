@@ -6,6 +6,30 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+interface Agent {
+  provider: string;
+  model: string;
+  role: string;
+  instructions: string;
+  endpoint: string;
+  apiKey: string;
+}
+
+const AGENT_ROLES = {
+  ANALYST: {
+    role: 'analyst',
+    instructions: 'You are an expert AI analyst. Break down complex problems into key components, identify patterns, and provide deep insights. Focus on understanding the core issues and their implications.'
+  },
+  IMPLEMENTER: {
+    role: 'implementer',
+    instructions: 'You are an expert AI implementer. Provide detailed, practical solutions based on thorough analysis. Consider real-world constraints and best practices while maintaining high standards.'
+  },
+  REVIEWER: {
+    role: 'reviewer',
+    instructions: 'You are an expert AI reviewer. Critically evaluate proposed solutions, identify potential issues, and suggest improvements. Consider edge cases, scalability, and long-term implications.'
+  }
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -17,6 +41,7 @@ serve(async (req) => {
 
     const responses = [];
 
+    // Collect responses from all agents
     for (const agent of agents) {
       try {
         let response;
@@ -24,6 +49,7 @@ serve(async (req) => {
 
         switch (agent.provider) {
           case 'openai':
+          case 'openrouter':
             response = await fetch('https://api.openai.com/v1/chat/completions', {
               method: 'POST',
               headers: {
@@ -33,15 +59,10 @@ serve(async (req) => {
               body: JSON.stringify({
                 model: agent.model,
                 messages: [
-                  {
-                    role: 'system',
-                    content: agent.instructions
-                  },
-                  { 
-                    role: 'user', 
-                    content: message 
-                  }
+                  { role: 'system', content: agent.instructions },
+                  { role: 'user', content: message }
                 ],
+                temperature: 0.7,
                 max_tokens: 2000
               })
             });
@@ -58,12 +79,7 @@ serve(async (req) => {
               body: JSON.stringify({
                 model: agent.model,
                 system: agent.instructions,
-                messages: [
-                  {
-                    role: 'user',
-                    content: message
-                  }
-                ],
+                messages: [{ role: 'user', content: message }],
                 max_tokens: 2000
               })
             });
@@ -83,33 +99,9 @@ serve(async (req) => {
                   }]
                 }],
                 generationConfig: {
+                  temperature: 0.7,
                   maxOutputTokens: 2000
                 }
-              })
-            });
-            break;
-
-          case 'openrouter':
-            response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${agent.apiKey}`,
-                'Content-Type': 'application/json',
-                'HTTP-Referer': '*',
-              },
-              body: JSON.stringify({
-                model: agent.model,
-                messages: [
-                  {
-                    role: 'system',
-                    content: agent.instructions
-                  },
-                  { 
-                    role: 'user', 
-                    content: message 
-                  }
-                ],
-                max_tokens: 2000
               })
             });
             break;
@@ -138,6 +130,7 @@ serve(async (req) => {
 
         responses.push({
           provider: agent.provider,
+          role: agent.role,
           response: agentResponse
         });
 
@@ -145,17 +138,67 @@ serve(async (req) => {
         console.error(`Error with ${agent.provider}:`, error);
         responses.push({
           provider: agent.provider,
+          role: agent.role,
           response: `Error: ${error.message}`
         });
       }
     }
 
-    // Now combine all responses into one cohesive response
-    const combinedResponse = responses
-      .map(r => `Response from ${r.provider}:\n${r.response}`)
-      .join('\n\n---\n\n');
+    // Use GPT-4o to intelligently combine the responses
+    const openAIKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openAIKey) {
+      throw new Error('OpenAI API key not configured');
+    }
 
-    return new Response(JSON.stringify({ response: combinedResponse }), {
+    const combinationPrompt = `
+You are an expert AI response synthesizer. Your task is to create a comprehensive, intelligent response by combining insights from multiple AI agents. Each agent has analyzed the problem from a different perspective:
+
+${responses.map(r => `${r.role.toUpperCase()} (${r.provider}):
+${r.response}`).join('\n\n')}
+
+Create a unified response that:
+1. Synthesizes the key insights from all agents
+2. Resolves any contradictions between responses
+3. Provides a clear, coherent narrative
+4. Includes practical, actionable recommendations
+5. Maintains a professional and authoritative tone
+
+Original user query: "${message}"
+
+Combined response:`;
+
+    const combinedResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert AI response synthesizer that combines multiple AI perspectives into one coherent, intelligent response.'
+          },
+          {
+            role: 'user',
+            content: combinationPrompt
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 2000
+      })
+    });
+
+    if (!combinedResponse.ok) {
+      const error = await combinedResponse.text();
+      throw new Error(`Error combining responses: ${error}`);
+    }
+
+    const combinedData = await combinedResponse.json();
+    const finalResponse = combinedData.choices[0].message.content;
+
+    return new Response(JSON.stringify({ response: finalResponse }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
