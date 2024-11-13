@@ -45,24 +45,26 @@ export function SettingsTabs() {
   };
 
   return (
-    <Tabs defaultValue="providers" className="w-full">
-      <div className="flex gap-6">
-        <TabsList className="flex-col h-auto space-y-2 bg-muted p-2">
-          <TabsTrigger value="providers" className="justify-start">
-            AI Providers
-          </TabsTrigger>
-          <TabsTrigger value="customization" className="justify-start">
-            Customization
-          </TabsTrigger>
-          <TabsTrigger value="shortcuts" className="justify-start">
-            Keyboard Shortcuts
-          </TabsTrigger>
-          <TabsTrigger value="backup" className="justify-start">
-            Backup & Restore
-          </TabsTrigger>
-        </TabsList>
+    <Tabs defaultValue="providers" className="w-full h-[calc(100vh-8rem)]">
+      <div className="flex h-full gap-6">
+        <div className="w-48 shrink-0">
+          <TabsList className="flex-col h-auto w-full space-y-2 bg-muted p-2 sticky top-0">
+            <TabsTrigger value="providers" className="justify-start w-full">
+              AI Providers
+            </TabsTrigger>
+            <TabsTrigger value="customization" className="justify-start w-full">
+              Customization
+            </TabsTrigger>
+            <TabsTrigger value="shortcuts" className="justify-start w-full">
+              Keyboard Shortcuts
+            </TabsTrigger>
+            <TabsTrigger value="backup" className="justify-start w-full">
+              Backup & Restore
+            </TabsTrigger>
+          </TabsList>
+        </div>
         
-        <div className="flex-1">
+        <div className="flex-1 min-h-0 overflow-y-auto">
           <TabsContent value="providers" className="mt-0">
             <FusionModeSettings
               apiKeys={apiKeys}
