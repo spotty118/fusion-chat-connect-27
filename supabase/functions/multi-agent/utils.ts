@@ -94,8 +94,7 @@ export async function makeProviderRequest(agent: Agent, prompt: string): Promise
       case 'openrouter':
         return data.choices[0].message.content;
       case 'claude':
-        // Claude's response structure is different, it returns content directly
-        return data.content;
+        return data.content[0].text;
       case 'google':
         return data.candidates[0].content.parts[0].text;
       default:
