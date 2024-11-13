@@ -4,7 +4,6 @@ import { LanguageSettings } from './LanguageSettings';
 import { KeyboardShortcutsSettings } from './KeyboardShortcutsSettings';
 import { ExportImportSettings } from './ExportImportSettings';
 import { AppearanceSettings } from './AppearanceSettings';
-import { NotificationSettings } from './NotificationSettings';
 import { useState } from 'react';
 import { useProviderStatus } from '@/hooks/useProviderStatus';
 
@@ -57,9 +56,6 @@ export function SettingsTabs() {
             <TabsTrigger value="appearance" className="justify-start w-full">
               Appearance
             </TabsTrigger>
-            <TabsTrigger value="notifications" className="justify-start w-full">
-              Notifications
-            </TabsTrigger>
             <TabsTrigger value="customization" className="justify-start w-full">
               Language
             </TabsTrigger>
@@ -85,10 +81,6 @@ export function SettingsTabs() {
           
           <TabsContent value="appearance" className="mt-0">
             <AppearanceSettings />
-          </TabsContent>
-          
-          <TabsContent value="notifications" className="mt-0">
-            <NotificationSettings />
           </TabsContent>
           
           <TabsContent value="customization" className="mt-0">

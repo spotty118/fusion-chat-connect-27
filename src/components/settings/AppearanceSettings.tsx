@@ -6,23 +6,31 @@ import { useToast } from "@/hooks/use-toast";
 
 export const AppearanceSettings = () => {
   const { toast } = useToast();
-  const [isDarkMode, setIsDarkMode] = useState(() => 
-    document.documentElement.classList.contains('dark')
-  );
-  const [isCompactMode, setIsCompactMode] = useState(() => 
-    document.documentElement.classList.contains('compact')
-  );
+  
+  // Initialize state from localStorage or default values
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const savedMode = localStorage.getItem('darkMode');
+    return savedMode ? savedMode === 'true' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+  
+  const [isCompactMode, setIsCompactMode] = useState(() => {
+    const savedMode = localStorage.getItem('compactMode');
+    return savedMode ? savedMode === 'true' : false;
+  });
 
+  // Apply dark mode changes
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDarkMode);
     localStorage.setItem('darkMode', String(isDarkMode));
   }, [isDarkMode]);
 
+  // Apply compact mode changes
   useEffect(() => {
     document.documentElement.classList.toggle('compact', isCompactMode);
     localStorage.setItem('compactMode', String(isCompactMode));
   }, [isCompactMode]);
 
+  // Handle dark mode toggle
   const handleDarkModeChange = (checked: boolean) => {
     setIsDarkMode(checked);
     toast({
@@ -31,6 +39,7 @@ export const AppearanceSettings = () => {
     });
   };
 
+  // Handle compact mode toggle
   const handleCompactModeChange = (checked: boolean) => {
     setIsCompactMode(checked);
     toast({
