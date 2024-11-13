@@ -19,11 +19,24 @@ import { Label } from "@/components/ui/label";
 const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [showSetupDialog, setShowSetupDialog] = useState(true);
+  const [showSetupDialog, setShowSetupDialog] = useState(false);
   const [isSettingUp, setIsSettingUp] = useState(false);
   const [supabaseUrl, setSupabaseUrl] = useState('');
   const [supabaseKey, setSupabaseKey] = useState('');
   const [supabaseClient, setSupabaseClient] = useState(null);
+
+  useEffect(() => {
+    // Check for existing Supabase configuration
+    const savedUrl = localStorage.getItem('supabaseUrl');
+    const savedKey = localStorage.getItem('supabaseKey');
+    
+    if (savedUrl && savedKey) {
+      const client = createClient(savedUrl, savedKey);
+      setSupabaseClient(client);
+    } else {
+      setShowSetupDialog(true);
+    }
+  }, []);
 
   const initializeSupabase = async () => {
     if (!supabaseUrl || !supabaseKey) {
@@ -66,20 +79,6 @@ const Login = () => {
       });
     }
   };
-
-  useEffect(() => {
-    // Check for existing Supabase configuration
-    const savedUrl = localStorage.getItem('supabaseUrl');
-    const savedKey = localStorage.getItem('supabaseKey');
-    
-    if (savedUrl && savedKey) {
-      setSupabaseUrl(savedUrl);
-      setSupabaseKey(savedKey);
-      const client = createClient(savedUrl, savedKey);
-      setSupabaseClient(client);
-      setShowSetupDialog(false);
-    }
-  }, []);
 
   if (isSettingUp) {
     return (
@@ -129,13 +128,20 @@ const Login = () => {
                 <Button onClick={initializeSupabase} className="w-full">
                   Connect to Supabase
                 </Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => setShowSetupDialog(false)}
+                >
+                  I already have a connection
+                </Button>
               </div>
             </DialogDescription>
           </DialogHeader>
         </DialogContent>
       </Dialog>
 
-      {supabaseClient && (
+      {(!showSetupDialog || supabaseClient) && (
         <div className="w-full max-w-md">
           <div className="bg-white rounded-3xl shadow-2xl p-8 space-y-8">
             <div className="flex flex-col items-center space-y-4">
