@@ -1,7 +1,16 @@
 import { supabase } from "@/integrations/supabase/client";
 import { generateMultiAgentResponse } from './multi-agent';
 
-export const generateFusionResponse = async (message: string) => {
+export interface FusionResponse {
+  final: string;
+  providers: Array<{
+    provider: string;
+    role: string;
+    response: string;
+  }>;
+}
+
+export const generateFusionResponse = async (message: string): Promise<FusionResponse> => {
   const {
     data: { session },
     error: sessionError,
@@ -59,5 +68,12 @@ export const generateFusionResponse = async (message: string) => {
     );
   }
 
-  return await generateMultiAgentResponse(message, apiKeys, selectedModels);
+  const response = await generateMultiAgentResponse(message, apiKeys, selectedModels);
+  
+  // Ensure the response matches the FusionResponse interface
+  if (!response || typeof response !== 'object' || !('final' in response) || !('providers' in response)) {
+    throw new Error('Invalid response format from multi-agent system');
+  }
+
+  return response as FusionResponse;
 };

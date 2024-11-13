@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { FusionResponse } from './fusion-mode';
 
 interface Agent {
   provider: string;
@@ -47,7 +48,7 @@ export const generateMultiAgentResponse = async (
   message: string,
   apiKeys: Record<string, string>,
   selectedModels: Record<string, string>
-) => {
+): Promise<FusionResponse> => {
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.access_token) {
@@ -82,7 +83,13 @@ export const generateMultiAgentResponse = async (
     });
 
     if (error) throw error;
-    return data.response;
+
+    // Validate the response format
+    if (!data?.response || typeof data.response !== 'object' || !('final' in data.response) || !('providers' in data.response)) {
+      throw new Error('Invalid response format from edge function');
+    }
+
+    return data.response as FusionResponse;
 
   } catch (error) {
     console.error('Error in multi-agent response:', error);
