@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { FusionModeSection } from '@/components/settings/FusionModeSection';
 import { LanguageSettings } from '@/components/settings/LanguageSettings';
@@ -143,41 +144,74 @@ const Settings = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-2xl mx-auto space-y-4">
-        <Button 
-          variant="ghost" 
-          onClick={handleBack}
-          className="mb-4"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
-        </Button>
+    <div className="min-h-screen bg-gray-50">
+      <div className="flex">
+        {/* Left sidebar with tabs */}
+        <div className="w-64 min-h-screen border-r bg-white p-4">
+          <Button 
+            variant="ghost" 
+            onClick={handleBack}
+            className="mb-6 w-full justify-start"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
+          
+          <Tabs defaultValue="fusion" orientation="vertical" className="w-full">
+            <TabsList className="flex flex-col h-full space-y-2">
+              <TabsTrigger value="fusion" className="w-full justify-start">
+                AI Providers
+              </TabsTrigger>
+              <TabsTrigger value="customization" className="w-full justify-start">
+                Customization
+              </TabsTrigger>
+              <TabsTrigger value="keyboard" className="w-full justify-start">
+                Keyboard Shortcuts
+              </TabsTrigger>
+              <TabsTrigger value="backup" className="w-full justify-start">
+                Backup & Restore
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
 
-        <SettingsSection title="AI Providers">
-          <FusionModeSection
-            fusionMode={fusionMode}
-            onFusionModeChange={handleFusionModeChange}
-            apiKeys={apiKeys}
-            selectedModels={selectedModels}
-            onApiKeyChange={handleApiKeyChange}
-            onModelSelect={handleModelSelect}
-            providerQueries={providerQueries}
-            onActivate={() => navigate('/')}
-          />
-        </SettingsSection>
+        {/* Main content area */}
+        <div className="flex-1 p-8">
+          <Tabs defaultValue="fusion" orientation="vertical">
+            <TabsContent value="fusion" className="mt-0">
+              <SettingsSection title="AI Providers">
+                <FusionModeSection
+                  fusionMode={fusionMode}
+                  onFusionModeChange={handleFusionModeChange}
+                  apiKeys={apiKeys}
+                  selectedModels={selectedModels}
+                  onApiKeyChange={handleApiKeyChange}
+                  onModelSelect={handleModelSelect}
+                  providerQueries={providerQueries}
+                  onActivate={() => navigate('/')}
+                />
+              </SettingsSection>
+            </TabsContent>
 
-        <SettingsSection title="Customization">
-          <LanguageSettings />
-        </SettingsSection>
+            <TabsContent value="customization" className="mt-0">
+              <SettingsSection title="Customization">
+                <LanguageSettings />
+              </SettingsSection>
+            </TabsContent>
 
-        <SettingsSection title="Keyboard Shortcuts">
-          <KeyboardShortcutsSettings />
-        </SettingsSection>
+            <TabsContent value="keyboard" className="mt-0">
+              <SettingsSection title="Keyboard Shortcuts">
+                <KeyboardShortcutsSettings />
+              </SettingsSection>
+            </TabsContent>
 
-        <SettingsSection title="Backup & Restore">
-          <ExportImportSettings />
-        </SettingsSection>
+            <TabsContent value="backup" className="mt-0">
+              <SettingsSection title="Backup & Restore">
+                <ExportImportSettings />
+              </SettingsSection>
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
     </div>
   );
