@@ -4,17 +4,35 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { Bot } from 'lucide-react';
+import { useToast } from "@/components/ui/use-toast";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
-    supabase.auth.onAuthStateChange((event, session) => {
+    // Check if user is already logged in
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         navigate('/');
       }
     });
-  }, [navigate]);
+
+    // Listen for auth state changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN') {
+        toast({
+          title: "Welcome!",
+          description: "You have successfully signed in.",
+        });
+        navigate('/');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate, toast]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center p-4">
