@@ -39,6 +39,8 @@ const Index = () => {
   };
 
   const handleSendMessage = async (content: string) => {
+    if (!content.trim()) return;
+
     try {
       setIsLoading(true);
       const userMessage = { role: 'user', content };
@@ -64,10 +66,8 @@ const Index = () => {
             content: fusionResponse
           };
           setMessages(prev => [...prev, aiMessage]);
-        } else {
-          throw new Error('Invalid fusion response format');
         }
-      } else {
+      } else if (typeof response === 'string') {
         const aiMessage = { 
           role: 'assistant', 
           content: response
@@ -75,9 +75,10 @@ const Index = () => {
         setMessages(prev => [...prev, aiMessage]);
       }
     } catch (error) {
+      console.error('Error in handleSendMessage:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to generate response",
         variant: "destructive",
       });
     } finally {
