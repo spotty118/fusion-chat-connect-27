@@ -1,25 +1,19 @@
 import { useState, useEffect } from 'react';
 
 export const useFusionMode = () => {
-  const [isFusionMode, setIsFusionMode] = useState(false);
+  const [isFusionMode, setIsFusionMode] = useState(() => {
+    return localStorage.getItem('fusionMode') === 'true';
+  });
 
   useEffect(() => {
-    const updateFusionMode = () => {
-      const fusionMode = localStorage.getItem('fusionMode') === 'true';
-      setIsFusionMode(fusionMode);
-    };
-
-    updateFusionMode();
-
-    window.addEventListener('storage', (e) => {
+    const updateFusionMode = (e: StorageEvent) => {
       if (e.key === 'fusionMode') {
-        updateFusionMode();
+        setIsFusionMode(e.newValue === 'true');
       }
-    });
-
-    return () => {
-      window.removeEventListener('storage', updateFusionMode);
     };
+
+    window.addEventListener('storage', updateFusionMode);
+    return () => window.removeEventListener('storage', updateFusionMode);
   }, []);
 
   return isFusionMode;

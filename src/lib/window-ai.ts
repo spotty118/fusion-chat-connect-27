@@ -4,21 +4,6 @@ const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000;
 const AUTH_COOKIE_NAME = 'window_ai_verified';
 
-interface FusionResponse {
-  final: string;
-  providers: Array<{
-    provider: string;
-    role: string;
-    response: string;
-  }>;
-}
-
-interface WindowAIResponse {
-  message?: { content: string };
-  text?: string;
-  delta?: { content: string };
-}
-
 const isVerified = () => {
   return document.cookie.includes(AUTH_COOKIE_NAME);
 };
@@ -48,7 +33,9 @@ const waitForWindowAI = async (retries = 0): Promise<boolean> => {
 };
 
 export const checkWindowAI = async () => {
-  if (localStorage.getItem('fusionMode') === 'true') {
+  const fusionMode = localStorage.getItem('fusionMode') === 'true';
+  
+  if (fusionMode) {
     return false;
   }
   
@@ -58,9 +45,11 @@ export const checkWindowAI = async () => {
   return waitForWindowAI();
 };
 
-export const generateResponse = async (message: string, fusionMode = false): Promise<string | FusionResponse> => {
+export const generateResponse = async (message: string) => {
   try {
-    if (fusionMode || localStorage.getItem('fusionMode') === 'true') {
+    const fusionMode = localStorage.getItem('fusionMode') === 'true';
+
+    if (fusionMode) {
       const response = await generateFusionResponse(message);
       if (!response || !response.providers || !response.final) {
         throw new Error('Invalid fusion response format');
@@ -83,7 +72,7 @@ export const generateResponse = async (message: string, fusionMode = false): Pro
     }
 
     if (Array.isArray(response)) {
-      const firstResponse = response[0] as WindowAIResponse;
+      const firstResponse = response[0];
       if (!firstResponse) {
         throw new Error('Empty response from Window AI');
       }
@@ -94,7 +83,7 @@ export const generateResponse = async (message: string, fusionMode = false): Pro
       if ('delta' in firstResponse && firstResponse.delta?.content) return firstResponse.delta.content;
     }
 
-    const objectResponse = response as WindowAIResponse;
+    const objectResponse = response;
     if (typeof objectResponse === 'object') {
       if ('message' in objectResponse && objectResponse.message?.content) return objectResponse.message.content;
       if ('text' in objectResponse && objectResponse.text) return objectResponse.text;

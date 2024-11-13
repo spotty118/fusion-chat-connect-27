@@ -4,11 +4,11 @@ import { checkWindowAI } from '@/lib/window-ai';
 import { Database } from 'lucide-react';
 
 export const CurrentModel = () => {
-  const fusionMode = localStorage.getItem('fusionMode') === 'true';
-
   const { data: currentModel, isLoading, error } = useQuery({
     queryKey: ['current-model'],
     queryFn: async () => {
+      const fusionMode = localStorage.getItem('fusionMode') === 'true';
+      
       if (fusionMode) {
         return 'fusion/multi-provider';
       }
@@ -63,6 +63,7 @@ export const CurrentModel = () => {
     );
   }
 
+  const fusionMode = localStorage.getItem('fusionMode') === 'true';
   if (fusionMode) {
     return (
       <div className="text-sm text-white/80 flex items-center gap-2">
