@@ -3,6 +3,9 @@ import FusionModeSettings from './FusionModeSettings';
 import { LanguageSettings } from './LanguageSettings';
 import { KeyboardShortcutsSettings } from './KeyboardShortcutsSettings';
 import { ExportImportSettings } from './ExportImportSettings';
+import { ChatHistoryTools } from './tools/ChatHistoryTools';
+import { ModelConfigTools } from './tools/ModelConfigTools';
+import { PromptTemplateTools } from './tools/PromptTemplateTools';
 import { useState } from 'react';
 import { useProviderStatus } from '@/hooks/useProviderStatus';
 
@@ -52,6 +55,9 @@ export function SettingsTabs() {
             <TabsTrigger value="providers" className="justify-start w-full">
               AI Providers
             </TabsTrigger>
+            <TabsTrigger value="tools" className="justify-start w-full">
+              Tools
+            </TabsTrigger>
             <TabsTrigger value="customization" className="justify-start w-full">
               Language
             </TabsTrigger>
@@ -73,6 +79,12 @@ export function SettingsTabs() {
               onModelSelect={handleModelSelect}
               providerQueries={providerQueries}
             />
+          </TabsContent>
+          
+          <TabsContent value="tools" className="mt-0 space-y-6">
+            <ChatHistoryTools />
+            <ModelConfigTools />
+            <PromptTemplateTools />
           </TabsContent>
           
           <TabsContent value="customization" className="mt-0">
