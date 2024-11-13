@@ -36,10 +36,8 @@ const FusionSidePanel = ({ isOpen, onClose, responses }: FusionSidePanelProps) =
   return (
     <div 
       className={cn(
-        "fixed right-0 top-0 h-screen bg-white/95 backdrop-blur-sm border-l border-gray-200 shadow-xl",
-        "transform transition-all duration-300 ease-in-out z-50",
-        "w-full sm:w-[480px] lg:w-[580px] xl:w-[680px]",
-        "flex flex-col"
+        "fixed right-0 top-0 h-screen w-[680px] bg-white/95 backdrop-blur-sm border-l border-gray-200 shadow-xl",
+        "transform transition-all duration-300 ease-in-out z-40"
       )}
     >
       <div className="flex items-center justify-between p-4 border-b bg-white/50">
@@ -62,7 +60,7 @@ const FusionSidePanel = ({ isOpen, onClose, responses }: FusionSidePanelProps) =
         </Button>
       </div>
       
-      <ScrollArea className="flex-1 p-4">
+      <ScrollArea className="flex-1 p-4 h-[calc(100vh-72px)]">
         <div className="space-y-4 max-w-3xl mx-auto">
           {responses.map((response, index) => (
             <div
