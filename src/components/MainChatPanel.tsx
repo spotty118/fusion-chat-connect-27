@@ -1,6 +1,7 @@
 import React from 'react';
 import ChatContainer from './ChatContainer';
 import ChatInput from './ChatInput';
+import { cn } from '@/lib/utils';
 
 interface MainChatPanelProps {
   messages: any[];
@@ -11,7 +12,10 @@ interface MainChatPanelProps {
 
 const MainChatPanel = ({ messages, isLoading, onSendMessage, inputRef }: MainChatPanelProps) => {
   return (
-    <div className="flex-1 flex flex-col bg-white/70 backdrop-blur-xl shadow-2xl rounded-3xl overflow-hidden border border-gray-100 min-w-[500px]">
+    <div className={cn(
+      "flex-1 flex flex-col bg-white/70 backdrop-blur-xl shadow-2xl rounded-3xl overflow-hidden border border-gray-100",
+      "max-w-4xl mx-auto w-full" // Add max width and center when alone
+    )}>
       <ChatContainer messages={messages} isLoading={isLoading} />
       <ChatInput ref={inputRef} onSendMessage={onSendMessage} disabled={isLoading} />
     </div>

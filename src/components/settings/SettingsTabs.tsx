@@ -3,6 +3,8 @@ import FusionModeSettings from './FusionModeSettings';
 import { LanguageSettings } from './LanguageSettings';
 import { KeyboardShortcutsSettings } from './KeyboardShortcutsSettings';
 import { ExportImportSettings } from './ExportImportSettings';
+import { AppearanceSettings } from './AppearanceSettings';
+import { NotificationSettings } from './NotificationSettings';
 import { useState } from 'react';
 import { useProviderStatus } from '@/hooks/useProviderStatus';
 
@@ -52,8 +54,14 @@ export function SettingsTabs() {
             <TabsTrigger value="providers" className="justify-start w-full">
               AI Providers
             </TabsTrigger>
+            <TabsTrigger value="appearance" className="justify-start w-full">
+              Appearance
+            </TabsTrigger>
+            <TabsTrigger value="notifications" className="justify-start w-full">
+              Notifications
+            </TabsTrigger>
             <TabsTrigger value="customization" className="justify-start w-full">
-              Customization
+              Language
             </TabsTrigger>
             <TabsTrigger value="shortcuts" className="justify-start w-full">
               Keyboard Shortcuts
@@ -73,6 +81,14 @@ export function SettingsTabs() {
               onModelSelect={handleModelSelect}
               providerQueries={providerQueries}
             />
+          </TabsContent>
+          
+          <TabsContent value="appearance" className="mt-0">
+            <AppearanceSettings />
+          </TabsContent>
+          
+          <TabsContent value="notifications" className="mt-0">
+            <NotificationSettings />
           </TabsContent>
           
           <TabsContent value="customization" className="mt-0">

@@ -4,7 +4,7 @@ import Index from '@/pages/Index';
 import Settings from '@/pages/Settings';
 import Login from '@/pages/Login';
 import { useEffect, useState } from 'react';
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from '@/integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
