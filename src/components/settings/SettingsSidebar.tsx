@@ -22,11 +22,11 @@ export const SettingsSidebar = ({ onBack, activeTab, onTabChange }: SettingsSide
         </Button>
         
         <div className="p-4">
-          <h2 className="font-medium text-sm mb-4">Settings</h2>
-          <TabsList className="flex flex-col w-full space-y-2 bg-transparent">
+          <h2 className="font-medium text-sm mb-6">Settings</h2>
+          <TabsList className="flex flex-col w-full space-y-4 bg-transparent">
             <TabsTrigger 
               value="fusion" 
-              className="w-full justify-start"
+              className="w-full justify-start px-4 py-2 rounded-lg"
               onClick={() => onTabChange('fusion')}
               data-state={activeTab === 'fusion' ? 'active' : ''}
             >
@@ -34,7 +34,7 @@ export const SettingsSidebar = ({ onBack, activeTab, onTabChange }: SettingsSide
             </TabsTrigger>
             <TabsTrigger 
               value="customization" 
-              className="w-full justify-start"
+              className="w-full justify-start px-4 py-2 rounded-lg"
               onClick={() => onTabChange('customization')}
               data-state={activeTab === 'customization' ? 'active' : ''}
             >
@@ -42,7 +42,7 @@ export const SettingsSidebar = ({ onBack, activeTab, onTabChange }: SettingsSide
             </TabsTrigger>
             <TabsTrigger 
               value="keyboard" 
-              className="w-full justify-start"
+              className="w-full justify-start px-4 py-2 rounded-lg"
               onClick={() => onTabChange('keyboard')}
               data-state={activeTab === 'keyboard' ? 'active' : ''}
             >
@@ -50,7 +50,7 @@ export const SettingsSidebar = ({ onBack, activeTab, onTabChange }: SettingsSide
             </TabsTrigger>
             <TabsTrigger 
               value="backup" 
-              className="w-full justify-start"
+              className="w-full justify-start px-4 py-2 rounded-lg"
               onClick={() => onTabChange('backup')}
               data-state={activeTab === 'backup' ? 'active' : ''}
             >
