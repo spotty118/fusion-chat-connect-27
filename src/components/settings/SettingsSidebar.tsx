@@ -23,7 +23,7 @@ export const SettingsSidebar = ({ onBack, activeTab, onTabChange }: SettingsSide
           </Button>
         </div>
         
-        <div className="p-4">
+        <div className="p-4 pt-6">
           <TabsList className="flex flex-col w-full space-y-2 bg-transparent">
             <TabsTrigger 
               value="fusion" 
