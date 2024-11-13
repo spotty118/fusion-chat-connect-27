@@ -12,18 +12,17 @@ export const SettingsSidebar = ({ onBack, activeTab, onTabChange }: SettingsSide
   return (
     <div className="w-64 h-screen border-r bg-gray-50">
       <div className="flex flex-col h-full">
-        <div className="border-b">
-          <Button 
-            variant="ghost" 
-            onClick={onBack}
-            className="w-full justify-start px-4 py-3"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
-          </Button>
-        </div>
+        <Button 
+          variant="ghost" 
+          onClick={onBack}
+          className="w-full justify-start p-4 border-b"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
         
-        <div className="p-4 pt-6">
+        <div className="p-4">
+          <h2 className="font-medium text-sm mb-4">Settings</h2>
           <TabsList className="flex flex-col w-full space-y-2 bg-transparent">
             <TabsTrigger 
               value="fusion" 
