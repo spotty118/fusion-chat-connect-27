@@ -183,7 +183,7 @@ const Index = () => {
           className={cn(
             "flex-1 flex flex-col max-w-5xl mx-auto w-full bg-white/70 backdrop-blur-xl shadow-2xl rounded-3xl my-6 overflow-hidden border border-gray-100",
             "transition-all duration-300 ease-in-out",
-            sidePanelOpen && "mr-[680px]"
+            sidePanelOpen && "opacity-50 pointer-events-none"
           )}
         >
           <ChatContainer 

@@ -36,11 +36,11 @@ const FusionSidePanel = ({ isOpen, onClose, responses }: FusionSidePanelProps) =
   return (
     <div 
       className={cn(
-        "fixed right-0 top-0 h-screen max-w-5xl mx-auto w-full",
+        "fixed right-0 top-0 h-screen w-full max-w-5xl mx-auto",
         "transform transition-all duration-300 ease-in-out z-40"
       )}
     >
-      <div className="mx-6 my-6 h-[calc(100vh-48px)] flex flex-col bg-white/95 backdrop-blur-xl shadow-2xl rounded-3xl border border-gray-100 overflow-hidden">
+      <div className="flex-1 flex flex-col max-w-5xl mx-auto w-full bg-white/70 backdrop-blur-xl shadow-2xl rounded-3xl my-6 mx-6 overflow-hidden border border-gray-100">
         <div className="flex items-center justify-between p-6 border-b bg-gradient-to-br from-fusion-primary/10 to-fusion-secondary/10">
           <div className="flex items-center gap-4">
             <div className="relative">
