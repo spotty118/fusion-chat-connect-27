@@ -63,11 +63,11 @@ function selectBestResponse(responses: string[]): string {
 
 async function makeProviderRequest(agent: Agent, message: string): Promise<string> {
   try {
-    const headers: Record<string, string> = {
+    let headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
+    let body: Record<string, any>;
 
-    let body;
     switch (agent.provider) {
       case 'openai':
       case 'openrouter':
@@ -80,7 +80,8 @@ async function makeProviderRequest(agent: Agent, message: string): Promise<strin
           messages: [
             { role: 'system', content: agent.instructions },
             { role: 'user', content: message }
-          ]
+          ],
+          max_tokens: 1000
         };
         break;
 
@@ -89,8 +90,11 @@ async function makeProviderRequest(agent: Agent, message: string): Promise<strin
         headers['anthropic-version'] = '2023-06-01';
         body = {
           model: agent.model,
+          messages: [
+            { role: 'user', content: message }
+          ],
           system: agent.instructions,
-          messages: [{ role: 'user', content: message }]
+          max_tokens: 1000
         };
         break;
 
@@ -98,7 +102,9 @@ async function makeProviderRequest(agent: Agent, message: string): Promise<strin
         body = {
           contents: [{
             role: "user",
-            parts: [{ text: `${agent.instructions}\n\n${message}` }]
+            parts: [{
+              text: `${agent.instructions}\n\n${message}`
+            }]
           }],
           generationConfig: {
             temperature: 0.7,
@@ -115,18 +121,23 @@ async function makeProviderRequest(agent: Agent, message: string): Promise<strin
       ? `${agent.endpoint}?key=${agent.apiKey}`
       : agent.endpoint;
 
+    console.log(`Making request to ${agent.provider} with endpoint: ${endpoint}`);
+    
     const response = await fetch(endpoint, {
       method: 'POST',
       headers,
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {
-      throw new Error(`${agent.provider} API error: ${await response.text()}`);
+      const error = await response.text();
+      console.error(`${agent.provider} API error:`, error);
+      throw new Error(`${agent.provider} API error: ${error}`);
     }
 
     const data = await response.json();
-    
+    console.log(`${agent.provider} API response:`, data);
+
     switch (agent.provider) {
       case 'openai':
       case 'openrouter':
@@ -136,11 +147,11 @@ async function makeProviderRequest(agent: Agent, message: string): Promise<strin
       case 'google':
         return data.candidates[0].content.parts[0].text;
       default:
-        return '';
+        throw new Error(`Unsupported provider: ${agent.provider}`);
     }
   } catch (error) {
     console.error(`Error with ${agent.provider}:`, error);
-    return `Error: ${error.message}`;
+    throw error;
   }
 }
 
@@ -157,7 +168,6 @@ serve(async (req) => {
       throw new Error('At least 2 agents are required');
     }
 
-    // Get responses from all agents
     const responses = await Promise.all(
       agents.map(async (agent: Agent) => {
         const response = await makeProviderRequest(agent, message);
@@ -165,14 +175,12 @@ serve(async (req) => {
       })
     );
 
-    // Select the best response
-    const finalResponse = selectBestResponse(responses);
+    const bestResponse = selectBestResponse(responses);
 
     return new Response(
-      JSON.stringify({ response: finalResponse }),
+      JSON.stringify({ response: bestResponse }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
-
   } catch (error) {
     console.error('Error in multi-agent function:', error);
     return new Response(
