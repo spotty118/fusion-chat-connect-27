@@ -1,4 +1,4 @@
-import { Agent } from './types';
+import { Agent, AgentResponse } from './types.ts';
 
 export async function makeProviderRequest(agent: Agent, prompt: string): Promise<string> {
   try {
@@ -94,7 +94,7 @@ export async function makeProviderRequest(agent: Agent, prompt: string): Promise
 
 export async function conductVotingRound(
   agents: Agent[], 
-  initialResponses: Array<{ provider: string; role: string; response: string }>
+  initialResponses: AgentResponse[]
 ): Promise<string> {
   const votingPrompt = `As AI models collaborating on a creative task, analyze these responses and vote on the best elements to create one cohesive output:
 

@@ -15,3 +15,9 @@ export interface FusionResponse {
     response: string;
   }>;
 }
+
+export interface AgentResponse {
+  provider: string;
+  role: string;
+  response: string;
+}
