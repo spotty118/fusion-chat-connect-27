@@ -45,24 +45,24 @@ export function SettingsTabs() {
   };
 
   return (
-    <div className="flex h-full">
-      <TabsList className="flex-col h-auto space-y-2 bg-muted p-2">
-        <TabsTrigger value="providers" className="justify-start">
-          AI Providers
-        </TabsTrigger>
-        <TabsTrigger value="customization" className="justify-start">
-          Customization
-        </TabsTrigger>
-        <TabsTrigger value="shortcuts" className="justify-start">
-          Keyboard Shortcuts
-        </TabsTrigger>
-        <TabsTrigger value="backup" className="justify-start">
-          Backup & Restore
-        </TabsTrigger>
-      </TabsList>
-      
-      <div className="flex-1 pl-6">
-        <Tabs defaultValue="providers">
+    <Tabs defaultValue="providers" className="w-full">
+      <div className="flex gap-6">
+        <TabsList className="flex-col h-auto space-y-2 bg-muted p-2">
+          <TabsTrigger value="providers" className="justify-start">
+            AI Providers
+          </TabsTrigger>
+          <TabsTrigger value="customization" className="justify-start">
+            Customization
+          </TabsTrigger>
+          <TabsTrigger value="shortcuts" className="justify-start">
+            Keyboard Shortcuts
+          </TabsTrigger>
+          <TabsTrigger value="backup" className="justify-start">
+            Backup & Restore
+          </TabsTrigger>
+        </TabsList>
+        
+        <div className="flex-1">
           <TabsContent value="providers" className="mt-0">
             <FusionModeSettings
               apiKeys={apiKeys}
@@ -85,8 +85,8 @@ export function SettingsTabs() {
           <TabsContent value="backup" className="mt-0">
             <ExportImportSettings />
           </TabsContent>
-        </Tabs>
+        </div>
       </div>
-    </div>
+    </Tabs>
   );
 }
