@@ -120,12 +120,12 @@ async function makeProviderRequest(agent: Agent, message: string): Promise<strin
 }
 
 function combineResponses(responses: Array<{ provider: string; role: string; response: string }>): string {
-  // Combine all responses into a coherent final response
-  const combinedResponse = responses
-    .map(r => `${r.role.toUpperCase()} (${r.provider}): ${r.response}`)
-    .join('\n\n');
-  
-  return `Based on multiple AI perspectives:\n\n${combinedResponse}`;
+  // Create a structured summary of all responses
+  const summary = responses.map(r => {
+    return `${r.role.toUpperCase()} (${r.provider}): ${r.response}`;
+  }).join('\n\n');
+
+  return `Based on multiple AI perspectives:\n\n${summary}`;
 }
 
 serve(async (req) => {
@@ -153,11 +153,11 @@ serve(async (req) => {
     );
 
     const fusionResponse: FusionResponse = {
-      providers: providerResponses,
-      final: combineResponses(providerResponses)
+      final: combineResponses(providerResponses),
+      providers: providerResponses
     };
 
-    console.log('Successfully generated fusion response');
+    console.log('Successfully generated fusion response:', fusionResponse);
 
     return new Response(
       JSON.stringify({ response: fusionResponse }),
