@@ -70,28 +70,30 @@ const Index = () => {
 
       const response = await generateResponse(content, isFusionMode);
       
-      // Check if response is a fusion mode response
-      if (typeof response === 'object' && response !== null && 'providers' in response) {
+      if (isFusionMode && typeof response === 'object' && response !== null) {
         const fusionResponse = response as FusionResponse;
-        if (Array.isArray(fusionResponse.providers)) {
+        if (fusionResponse.providers && Array.isArray(fusionResponse.providers)) {
           setFusionResponses(fusionResponse.providers.map(p => ({
             ...p,
             timestamp: new Date().toLocaleTimeString()
           })));
+          
+          const aiMessage = { 
+            role: 'assistant', 
+            content: fusionResponse.final 
+          };
+          setMessages(prev => [...prev, aiMessage]);
+        } else {
+          throw new Error('Invalid fusion response format');
         }
-        
+      } else if (typeof response === 'string') {
         const aiMessage = { 
           role: 'assistant', 
-          content: fusionResponse.final 
+          content: response
         };
         setMessages(prev => [...prev, aiMessage]);
       } else {
-        // Handle regular string response
-        const aiMessage = { 
-          role: 'assistant', 
-          content: response as string 
-        };
-        setMessages(prev => [...prev, aiMessage]);
+        throw new Error('Invalid response format');
       }
     } catch (error) {
       toast({

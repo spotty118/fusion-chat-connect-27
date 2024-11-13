@@ -4,6 +4,15 @@ const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000;
 const AUTH_COOKIE_NAME = 'window_ai_verified';
 
+interface FusionResponse {
+  final: string;
+  providers: Array<{
+    provider: string;
+    role: string;
+    response: string;
+  }>;
+}
+
 interface WindowAIResponse {
   message?: { content: string };
   text?: string;
@@ -39,7 +48,6 @@ const waitForWindowAI = async (retries = 0): Promise<boolean> => {
 };
 
 export const checkWindowAI = async () => {
-  // Don't check Window.ai if fusion mode is active
   if (localStorage.getItem('fusionMode') === 'true') {
     return false;
   }
@@ -50,15 +58,14 @@ export const checkWindowAI = async () => {
   return waitForWindowAI();
 };
 
-export const generateResponse = async (message: string, fusionMode = false) => {
+export const generateResponse = async (message: string, fusionMode = false): Promise<string | FusionResponse> => {
   try {
-    // If fusion mode is active, bypass Window.ai completely
     if (fusionMode || localStorage.getItem('fusionMode') === 'true') {
       const response = await generateFusionResponse(message);
-      return {
-        final: response.final,
-        providers: response.providers
-      };
+      if (!response || !response.providers || !response.final) {
+        throw new Error('Invalid fusion response format');
+      }
+      return response;
     }
 
     await checkWindowAI();
@@ -67,16 +74,14 @@ export const generateResponse = async (message: string, fusionMode = false) => {
       messages: [{ role: "user", content: message }]
     });
 
-    // Handle different response formats from Window AI
-    if (typeof response === 'string') {
-      return response;
-    }
-
     if (!response) {
       throw new Error('No response received from Window AI');
     }
 
-    // Handle array response format
+    if (typeof response === 'string') {
+      return response;
+    }
+
     if (Array.isArray(response)) {
       const firstResponse = response[0] as WindowAIResponse;
       if (!firstResponse) {
@@ -89,7 +94,6 @@ export const generateResponse = async (message: string, fusionMode = false) => {
       if ('delta' in firstResponse && firstResponse.delta?.content) return firstResponse.delta.content;
     }
 
-    // Handle object response format
     const objectResponse = response as WindowAIResponse;
     if (typeof objectResponse === 'object') {
       if ('message' in objectResponse && objectResponse.message?.content) return objectResponse.message.content;
