@@ -81,7 +81,10 @@ const Login = () => {
   };
 
   const handleSkipSetup = () => {
-    const client = createClient('https://ialfzzyffpruxifznfhz.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlhbGZ6enlmZnBydXhpZnpuZmh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDk4MjcyMzgsImV4cCI6MjAyNTQwMzIzOH0.H6FmwGZOPJOFgVBBIFVlX_QVkHQjVxGVhvFnJYDGxrY');
+    const client = createClient(
+      'https://ialfzzyffpruxifznfhz.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlhbGZ6enlmZnBydXhpZnpuZmh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzEyOTQwODcsImV4cCI6MjA0Njg3MDA4N30.JtRU3ZimPQK06frPFNOMzBhFEubEKU1DA7uZfAPmp8k'
+    );
     setSupabaseClient(client);
     setShowSetupDialog(false);
   };
