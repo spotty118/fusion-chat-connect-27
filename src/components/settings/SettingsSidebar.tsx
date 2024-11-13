@@ -21,44 +21,42 @@ export const SettingsSidebar = ({ onBack, activeTab, onTabChange }: SettingsSide
           Back
         </Button>
         
-        <div className="p-6">
+        <div className="flex flex-col p-6">
           <h2 className="font-medium text-sm text-gray-500 mb-4">Settings</h2>
-          <div className="space-y-2">
-            <TabsList className="flex flex-col w-full bg-transparent">
-              <TabsTrigger 
-                value="fusion" 
-                className="w-full justify-start px-4 py-2 rounded-lg text-left"
-                onClick={() => onTabChange('fusion')}
-                data-state={activeTab === 'fusion' ? 'active' : ''}
-              >
-                AI Providers
-              </TabsTrigger>
-              <TabsTrigger 
-                value="customization" 
-                className="w-full justify-start px-4 py-2 rounded-lg text-left"
-                onClick={() => onTabChange('customization')}
-                data-state={activeTab === 'customization' ? 'active' : ''}
-              >
-                Customization
-              </TabsTrigger>
-              <TabsTrigger 
-                value="keyboard" 
-                className="w-full justify-start px-4 py-2 rounded-lg text-left"
-                onClick={() => onTabChange('keyboard')}
-                data-state={activeTab === 'keyboard' ? 'active' : ''}
-              >
-                Keyboard Shortcuts
-              </TabsTrigger>
-              <TabsTrigger 
-                value="backup" 
-                className="w-full justify-start px-4 py-2 rounded-lg text-left"
-                onClick={() => onTabChange('backup')}
-                data-state={activeTab === 'backup' ? 'active' : ''}
-              >
-                Backup & Restore
-              </TabsTrigger>
-            </TabsList>
-          </div>
+          <TabsList className="flex flex-col w-full space-y-2 bg-transparent">
+            <TabsTrigger 
+              value="fusion" 
+              className="w-full justify-start px-4 py-2 rounded-lg text-left"
+              onClick={() => onTabChange('fusion')}
+              data-state={activeTab === 'fusion' ? 'active' : ''}
+            >
+              AI Providers
+            </TabsTrigger>
+            <TabsTrigger 
+              value="customization" 
+              className="w-full justify-start px-4 py-2 rounded-lg text-left"
+              onClick={() => onTabChange('customization')}
+              data-state={activeTab === 'customization' ? 'active' : ''}
+            >
+              Customization
+            </TabsTrigger>
+            <TabsTrigger 
+              value="keyboard" 
+              className="w-full justify-start px-4 py-2 rounded-lg text-left"
+              onClick={() => onTabChange('keyboard')}
+              data-state={activeTab === 'keyboard' ? 'active' : ''}
+            >
+              Keyboard Shortcuts
+            </TabsTrigger>
+            <TabsTrigger 
+              value="backup" 
+              className="w-full justify-start px-4 py-2 rounded-lg text-left"
+              onClick={() => onTabChange('backup')}
+              data-state={activeTab === 'backup' ? 'active' : ''}
+            >
+              Backup & Restore
+            </TabsTrigger>
+          </TabsList>
         </div>
       </div>
     </div>
