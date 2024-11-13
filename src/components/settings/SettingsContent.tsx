@@ -29,8 +29,8 @@ export const SettingsContent = ({
   onActivate
 }: SettingsContentProps) => {
   return (
-    <div className="flex-1 overflow-y-auto">
-      <div className="h-full p-6">
+    <div className="flex-1 overflow-y-auto border-l">
+      <div className="h-full px-8 py-6">
         <TabsContent value="fusion" className="space-y-6 mt-0" forceMount hidden={activeTab !== 'fusion'}>
           <SettingsSection title="AI Providers">
             <FusionModeSection

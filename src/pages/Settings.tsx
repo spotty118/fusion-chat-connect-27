@@ -141,8 +141,8 @@ const Settings = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="flex">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <div className="flex h-screen">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-1">
           <SettingsSidebar
             onBack={handleBack}
             activeTab={activeTab}
