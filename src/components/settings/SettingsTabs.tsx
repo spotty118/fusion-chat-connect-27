@@ -5,7 +5,6 @@ import { KeyboardShortcutsSettings } from './KeyboardShortcutsSettings';
 import { ExportImportSettings } from './ExportImportSettings';
 import { useState } from 'react';
 import { useProviderStatus } from '@/hooks/useProviderStatus';
-import { supabase } from "@/integrations/supabase/client";
 
 export function SettingsTabs() {
   const [apiKeys, setApiKeys] = useState<Record<string, string>>({
@@ -46,8 +45,8 @@ export function SettingsTabs() {
   };
 
   return (
-    <Tabs defaultValue="providers" className="flex">
-      <TabsList className="flex-col h-auto space-y-2 bg-muted p-2 mr-6">
+    <div className="flex h-full">
+      <TabsList className="flex-col h-auto space-y-2 bg-muted p-2">
         <TabsTrigger value="providers" className="justify-start">
           AI Providers
         </TabsTrigger>
@@ -62,30 +61,32 @@ export function SettingsTabs() {
         </TabsTrigger>
       </TabsList>
       
-      <div className="flex-1">
-        <TabsContent value="providers" className="m-0">
-          <FusionModeSettings
-            apiKeys={apiKeys}
-            selectedModels={selectedModels}
-            onApiKeyChange={handleApiKeyChange}
-            onModelSelect={handleModelSelect}
-            providerQueries={providerQueries}
-            onActivate={() => {}}
-          />
-        </TabsContent>
-        
-        <TabsContent value="customization" className="m-0">
-          <LanguageSettings />
-        </TabsContent>
-        
-        <TabsContent value="shortcuts" className="m-0">
-          <KeyboardShortcutsSettings />
-        </TabsContent>
-        
-        <TabsContent value="backup" className="m-0">
-          <ExportImportSettings />
-        </TabsContent>
+      <div className="flex-1 pl-6">
+        <Tabs defaultValue="providers">
+          <TabsContent value="providers" className="mt-0">
+            <FusionModeSettings
+              apiKeys={apiKeys}
+              selectedModels={selectedModels}
+              onApiKeyChange={handleApiKeyChange}
+              onModelSelect={handleModelSelect}
+              providerQueries={providerQueries}
+              onActivate={() => {}}
+            />
+          </TabsContent>
+          
+          <TabsContent value="customization" className="mt-0">
+            <LanguageSettings />
+          </TabsContent>
+          
+          <TabsContent value="shortcuts" className="mt-0">
+            <KeyboardShortcutsSettings />
+          </TabsContent>
+          
+          <TabsContent value="backup" className="mt-0">
+            <ExportImportSettings />
+          </TabsContent>
+        </div>
       </div>
-    </Tabs>
+    </div>
   );
 }
