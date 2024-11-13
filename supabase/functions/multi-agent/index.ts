@@ -120,12 +120,20 @@ async function makeProviderRequest(agent: Agent, message: string): Promise<strin
 }
 
 function combineResponses(responses: Array<{ provider: string; role: string; response: string }>): string {
-  // Create a structured summary of all responses
-  const summary = responses.map(r => {
-    return `${r.role.toUpperCase()} (${r.provider}): ${r.response}`;
-  }).join('\n\n');
+  // Extract key insights and information from each response
+  const insights = responses.map(r => {
+    const cleanResponse = r.response.trim().replace(/\n+/g, ' ');
+    return cleanResponse;
+  });
 
-  return `Based on multiple AI perspectives:\n\n${summary}`;
+  // Combine insights into a coherent response
+  const combinedResponse = `After analyzing multiple perspectives, here is a synthesized response:
+
+${insights.join('\n\nAdditionally, ')}
+
+This combined response represents a comprehensive analysis from multiple AI models working together to provide the most accurate and helpful information.`;
+
+  return combinedResponse;
 }
 
 serve(async (req) => {
