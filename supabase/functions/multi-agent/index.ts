@@ -10,10 +10,13 @@ interface Agent {
   apiKey: string;
 }
 
-interface AgentResponse {
-  provider: string;
-  role: string;
-  response: string;
+interface FusionResponse {
+  final: string;
+  providers: Array<{
+    provider: string;
+    role: string;
+    response: string;
+  }>;
 }
 
 // Constants
@@ -21,45 +24,6 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-const AGENT_ROLES = {
-  ANALYST: {
-    role: 'analyst',
-    instructions: 'You are an AI analyst. Analyze the problem and break it down into key components. Focus on understanding requirements and identifying potential challenges.'
-  },
-  IMPLEMENTER: {
-    role: 'implementer',
-    instructions: 'You are an AI implementer. Based on the analysis, provide concrete solutions or implementations. Be specific and practical.'
-  },
-  REVIEWER: {
-    role: 'reviewer',
-    instructions: 'You are an AI reviewer. Review the proposed implementation, identify potential issues, and suggest improvements. Consider edge cases and best practices.'
-  }
-};
-
-// Utility functions
-function getAgentEndpoint(provider: string): string {
-  switch (provider) {
-    case 'openai':
-      return 'https://api.openai.com/v1/chat/completions';
-    case 'claude':
-      return 'https://api.anthropic.com/v1/messages';
-    case 'google':
-      return 'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro-002:generateContent';
-    case 'openrouter':
-      return 'https://openrouter.ai/api/v1/chat/completions';
-    default:
-      throw new Error(`Unsupported provider: ${provider}`);
-  }
-}
-
-function selectBestResponse(responses: string[]): string {
-  return responses
-    .filter(response => !response.toLowerCase().includes('error'))
-    .reduce((longest, current) => 
-      current.length > longest.length ? current : longest
-    , responses[0] || '');
-}
 
 async function makeProviderRequest(agent: Agent, message: string): Promise<string> {
   try {
@@ -121,7 +85,7 @@ async function makeProviderRequest(agent: Agent, message: string): Promise<strin
       ? `${agent.endpoint}?key=${agent.apiKey}`
       : agent.endpoint;
 
-    console.log(`Making request to ${agent.provider} with endpoint: ${endpoint}`);
+    console.log(`Making request to ${agent.provider}`);
     
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -136,7 +100,7 @@ async function makeProviderRequest(agent: Agent, message: string): Promise<strin
     }
 
     const data = await response.json();
-    console.log(`${agent.provider} API response:`, data);
+    console.log(`${agent.provider} API response received`);
 
     switch (agent.provider) {
       case 'openai':
@@ -155,6 +119,15 @@ async function makeProviderRequest(agent: Agent, message: string): Promise<strin
   }
 }
 
+function combineResponses(responses: Array<{ provider: string; role: string; response: string }>): string {
+  // Combine all responses into a coherent final response
+  const combinedResponse = responses
+    .map(r => `${r.role.toUpperCase()} (${r.provider}): ${r.response}`)
+    .join('\n\n');
+  
+  return `Based on multiple AI perspectives:\n\n${combinedResponse}`;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -168,17 +141,26 @@ serve(async (req) => {
       throw new Error('At least 2 agents are required');
     }
 
-    const responses = await Promise.all(
+    const providerResponses = await Promise.all(
       agents.map(async (agent: Agent) => {
         const response = await makeProviderRequest(agent, message);
-        return response;
+        return {
+          provider: agent.provider,
+          role: agent.role,
+          response: response
+        };
       })
     );
 
-    const bestResponse = selectBestResponse(responses);
+    const fusionResponse: FusionResponse = {
+      providers: providerResponses,
+      final: combineResponses(providerResponses)
+    };
+
+    console.log('Successfully generated fusion response');
 
     return new Response(
-      JSON.stringify({ response: bestResponse }),
+      JSON.stringify({ response: fusionResponse }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
