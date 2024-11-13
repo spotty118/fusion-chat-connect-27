@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Settings2, RefreshCcw } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 
 export const ModelConfigTools = () => {
@@ -17,6 +17,7 @@ export const ModelConfigTools = () => {
   };
 
   const resetModelPreferences = () => {
+    // Clear model preferences from localStorage
     localStorage.removeItem('openai_model');
     localStorage.removeItem('claude_model');
     localStorage.removeItem('google_model');

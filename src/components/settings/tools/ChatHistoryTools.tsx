@@ -1,35 +1,76 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Settings2, Download, Trash2 } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export const ChatHistoryTools = () => {
   const { toast } = useToast();
 
-  const clearHistory = () => {
-    localStorage.removeItem('chatHistory');
-    toast({
-      title: "Chat History Cleared",
-      description: "Your chat history has been cleared successfully.",
-    });
+  const clearHistory = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session');
+      }
+
+      const { error } = await supabase
+        .from('chat_messages')
+        .delete()
+        .eq('user_id', session.user.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Chat History Cleared",
+        description: "Your chat history has been cleared successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to clear chat history. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const downloadHistory = () => {
-    const history = localStorage.getItem('chatHistory');
-    const blob = new Blob([history || ''], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'chat-history.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    toast({
-      title: "Chat History Downloaded",
-      description: "Your chat history has been downloaded successfully.",
-    });
+  const downloadHistory = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session');
+      }
+
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      const historyJson = JSON.stringify(data, null, 2);
+      const blob = new Blob([historyJson], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'chat-history.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Chat History Downloaded",
+        description: "Your chat history has been downloaded successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to download chat history. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
