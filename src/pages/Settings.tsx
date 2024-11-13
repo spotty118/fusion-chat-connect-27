@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft } from 'lucide-react';
 import FusionModeSettings from '@/components/settings/FusionModeSettings';
 import { LanguageSettings } from '@/components/settings/LanguageSettings';
@@ -14,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const Settings = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [fusionMode, setFusionMode] = React.useState(() => {
     return localStorage.getItem('fusionMode') === 'true';
   });
