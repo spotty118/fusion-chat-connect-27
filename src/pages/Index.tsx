@@ -1,28 +1,18 @@
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import ChatContainer from '@/components/ChatContainer';
-import ChatInput from '@/components/ChatInput';
 import { Settings as SettingsIcon, LogOut, SplitSquareHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CurrentModel } from '@/components/CurrentModel';
 import { supabase } from "@/integrations/supabase/client";
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { generateResponse } from '@/lib/window-ai';
 import { ChatSearch } from '@/components/chat/ChatSearch';
 import { ChatExport } from '@/components/chat/ChatExport';
 import { KeyboardShortcuts } from '@/components/KeyboardShortcuts';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import FusionSidePanel from '@/components/FusionSidePanel';
+import MainChatPanel from '@/components/MainChatPanel';
 import { cn } from '@/lib/utils';
-
-interface FusionResponse {
-  final: string;
-  providers: Array<{
-    provider: string;
-    role: string;
-    response: string;
-  }>;
-}
 
 const Index = () => {
   const [messages, setMessages] = useState([]);
@@ -178,33 +168,25 @@ const Index = () => {
         </div>
       </div>
       
-      <div className="flex flex-1 gap-6 px-6">
-        <main 
-          className={cn(
-            "flex-1 flex flex-col bg-white/70 backdrop-blur-xl shadow-2xl rounded-3xl my-6 overflow-hidden border border-gray-100",
-            "transition-all duration-300 ease-in-out",
-            sidePanelOpen && "opacity-100"
-          )}
-        >
-          <ChatContainer 
-            messages={filteredMessages} 
+      <div className="flex flex-1 gap-6 p-6 overflow-hidden">
+        <div className={cn(
+          "flex gap-6 w-full transition-all duration-300",
+          sidePanelOpen ? "justify-between" : "justify-center"
+        )}>
+          <MainChatPanel
+            messages={filteredMessages}
             isLoading={isLoading}
-            onReply={handleReply}
+            onSendMessage={handleSendMessage}
+            inputRef={inputRef}
           />
-          <ChatInput 
-            ref={inputRef}
-            onSendMessage={handleSendMessage} 
-            disabled={isLoading} 
-          />
-        </main>
-
-        {sidePanelOpen && isFusionMode && (
-          <FusionSidePanel
-            isOpen={sidePanelOpen}
-            onClose={() => setSidePanelOpen(false)}
-            responses={fusionResponses}
-          />
-        )}
+          {sidePanelOpen && isFusionMode && (
+            <FusionSidePanel
+              isOpen={sidePanelOpen}
+              onClose={() => setSidePanelOpen(false)}
+              responses={fusionResponses}
+            />
+          )}
+        </div>
       </div>
     </div>
   );
