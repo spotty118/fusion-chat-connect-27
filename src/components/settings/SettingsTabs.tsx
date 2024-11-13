@@ -85,7 +85,7 @@ export function SettingsTabs() {
           <TabsContent value="backup" className="mt-0">
             <ExportImportSettings />
           </TabsContent>
-        </div>
+        </Tabs>
       </div>
     </div>
   );
