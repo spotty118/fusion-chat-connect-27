@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const AnalyticsTools = () => {
   const { toast } = useToast();
 
-  const { data: analytics, isLoading } = useQuery({
+  const { data: analytics, isLoading, error } = useQuery({
     queryKey: ['chat-analytics'],
     queryFn: async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -41,15 +41,19 @@ export const AnalyticsTools = () => {
         totalMessages,
         lastMessageDate: lastMessage?.created_at,
       };
-    },
-    onError: () => {
+    }
+  });
+
+  // Handle error with useEffect
+  React.useEffect(() => {
+    if (error) {
       toast({
         title: "Error",
         description: "Failed to load analytics data.",
         variant: "destructive",
       });
-    },
-  });
+    }
+  }, [error, toast]);
 
   return (
     <Card className="p-6 space-y-4">
