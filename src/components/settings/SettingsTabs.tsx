@@ -72,7 +72,6 @@ export function SettingsTabs() {
               onApiKeyChange={handleApiKeyChange}
               onModelSelect={handleModelSelect}
               providerQueries={providerQueries}
-              onActivate={() => {}}
             />
           </TabsContent>
           
