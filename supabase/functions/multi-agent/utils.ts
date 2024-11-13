@@ -47,8 +47,6 @@ export async function makeProviderRequest(agent: Agent, prompt: string): Promise
           ],
           max_tokens: 1000
         };
-        console.log('Claude request headers:', JSON.stringify(headers, null, 2));
-        console.log('Claude request body:', JSON.stringify(body, null, 2));
         break;
 
       case 'google':
@@ -89,14 +87,15 @@ export async function makeProviderRequest(agent: Agent, prompt: string): Promise
     }
 
     const data = await response.json();
-    console.log(`${agent.provider} API response received:`, JSON.stringify(data, null, 2));
+    console.log(`${agent.provider} response:`, JSON.stringify(data, null, 2));
 
     switch (agent.provider) {
       case 'openai':
       case 'openrouter':
         return data.choices[0].message.content;
       case 'claude':
-        return data.content[0].text;
+        // Claude's response structure is different, it returns content directly
+        return data.content;
       case 'google':
         return data.candidates[0].content.parts[0].text;
       default:
