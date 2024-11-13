@@ -6,7 +6,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Create a Supabase client for the edge function
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
 const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -18,11 +17,8 @@ serve(async (req) => {
 
   try {
     const { provider, message, model, apiKey } = await req.json();
-
-    // Generate cache key based on provider, message, and model
     const cacheKey = `${provider}-${model}-${message}`;
 
-    // Check cache first
     const { data: existingResponse } = await supabase
       .from('response_cache')
       .select('response')
@@ -58,14 +54,18 @@ serve(async (req) => {
       case 'claude':
         endpoint = 'https://api.anthropic.com/v1/messages';
         headers = {
+          'anthropic-version': '2023-06-01',
           'x-api-key': apiKey,
           'Content-Type': 'application/json',
-          'anthropic-version': '2023-06-01'
         };
         body = JSON.stringify({
           model,
-          messages: [{ role: 'user', content: message }],
+          messages: [{
+            role: 'user',
+            content: message
+          }],
           max_tokens: 1000,
+          system: "You are a helpful AI assistant."
         });
         break;
 
@@ -128,10 +128,11 @@ serve(async (req) => {
       console.log(`${provider} API response:`, data);
 
       // Transform response based on the provider
+      let transformedResponse;
       switch (provider) {
         case 'openai':
         case 'openrouter':
-          response = {
+          transformedResponse = {
             choices: [{
               message: {
                 content: data.choices[0].message.content
@@ -140,14 +141,14 @@ serve(async (req) => {
           };
           break;
         case 'claude':
-          response = {
+          transformedResponse = {
             content: [{
-              text: data.content[0].text
+              text: data.content
             }]
           };
           break;
         case 'google':
-          response = {
+          transformedResponse = {
             candidates: [{
               content: {
                 parts: [{
@@ -158,23 +159,23 @@ serve(async (req) => {
           };
           break;
         default:
-          response = data;
+          transformedResponse = data;
       }
+
+      // Cache the response
+      await supabase.from('response_cache').insert({
+        cache_key: cacheKey,
+        response: transformedResponse,
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000)
+      });
+
+      return new Response(JSON.stringify(transformedResponse), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     } catch (error) {
       console.error(`Error with ${provider}:`, error);
       throw error;
     }
-
-    // Cache the response
-    await supabase.from('response_cache').insert({
-      cache_key: cacheKey,
-      response: response,
-      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000) // Cache for 24 hours
-    });
-
-    return new Response(JSON.stringify(response), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
   } catch (error) {
     console.error('Error:', error);
     return new Response(JSON.stringify({ error: error.message }), {
