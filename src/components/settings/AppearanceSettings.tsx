@@ -1,11 +1,51 @@
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Palette, Moon } from "lucide-react";
-import { useState } from "react";
+import { Moon } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useToast } from "@/components/ui/use-toast";
 
 export const AppearanceSettings = () => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [isCompactMode, setIsCompactMode] = useState(false);
+  const { toast } = useToast();
+  const [isDarkMode, setIsDarkMode] = useState(() => 
+    localStorage.getItem('darkMode') === 'true'
+  );
+  const [isCompactMode, setIsCompactMode] = useState(() => 
+    localStorage.getItem('compactMode') === 'true'
+  );
+
+  useEffect(() => {
+    // Apply dark mode
+    document.documentElement.classList.toggle('dark', isDarkMode);
+    localStorage.setItem('darkMode', String(isDarkMode));
+    
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
+
+  useEffect(() => {
+    // Apply compact mode
+    document.documentElement.classList.toggle('compact', isCompactMode);
+    localStorage.setItem('compactMode', String(isCompactMode));
+  }, [isCompactMode]);
+
+  const handleDarkModeChange = (checked: boolean) => {
+    setIsDarkMode(checked);
+    toast({
+      title: checked ? "Dark Mode Enabled" : "Dark Mode Disabled",
+      description: checked ? "The dark theme has been activated" : "The light theme has been activated",
+    });
+  };
+
+  const handleCompactModeChange = (checked: boolean) => {
+    setIsCompactMode(checked);
+    toast({
+      title: checked ? "Compact Mode Enabled" : "Compact Mode Disabled",
+      description: checked ? "Interface spacing has been reduced" : "Interface spacing has been restored",
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -24,7 +64,7 @@ export const AppearanceSettings = () => {
           </div>
           <Switch
             checked={isDarkMode}
-            onCheckedChange={setIsDarkMode}
+            onCheckedChange={handleDarkModeChange}
           />
         </div>
 
@@ -37,7 +77,7 @@ export const AppearanceSettings = () => {
           </div>
           <Switch
             checked={isCompactMode}
-            onCheckedChange={setIsCompactMode}
+            onCheckedChange={handleCompactModeChange}
           />
         </div>
       </div>

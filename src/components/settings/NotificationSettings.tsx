@@ -1,11 +1,60 @@
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Bell } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useToast } from "@/components/ui/use-toast";
 
 export const NotificationSettings = () => {
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const [desktopNotifications, setDesktopNotifications] = useState(true);
+  const { toast } = useToast();
+  const [emailNotifications, setEmailNotifications] = useState(() => 
+    localStorage.getItem('emailNotifications') !== 'false'
+  );
+  const [desktopNotifications, setDesktopNotifications] = useState(() => 
+    localStorage.getItem('desktopNotifications') !== 'false'
+  );
+
+  useEffect(() => {
+    localStorage.setItem('emailNotifications', String(emailNotifications));
+  }, [emailNotifications]);
+
+  useEffect(() => {
+    localStorage.setItem('desktopNotifications', String(desktopNotifications));
+    
+    if (desktopNotifications) {
+      // Request notification permission if enabled
+      if ('Notification' in window) {
+        Notification.requestPermission();
+      }
+    }
+  }, [desktopNotifications]);
+
+  const handleEmailNotificationsChange = (checked: boolean) => {
+    setEmailNotifications(checked);
+    toast({
+      title: checked ? "Email Notifications Enabled" : "Email Notifications Disabled",
+      description: checked ? "You will now receive email updates" : "Email notifications have been turned off",
+    });
+  };
+
+  const handleDesktopNotificationsChange = async (checked: boolean) => {
+    if (checked && 'Notification' in window) {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        toast({
+          title: "Permission Denied",
+          description: "Please enable notifications in your browser settings",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+    
+    setDesktopNotifications(checked);
+    toast({
+      title: checked ? "Desktop Notifications Enabled" : "Desktop Notifications Disabled",
+      description: checked ? "You will now receive desktop notifications" : "Desktop notifications have been turned off",
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -24,7 +73,7 @@ export const NotificationSettings = () => {
           </div>
           <Switch
             checked={emailNotifications}
-            onCheckedChange={setEmailNotifications}
+            onCheckedChange={handleEmailNotificationsChange}
           />
         </div>
 
@@ -37,7 +86,7 @@ export const NotificationSettings = () => {
           </div>
           <Switch
             checked={desktopNotifications}
-            onCheckedChange={setDesktopNotifications}
+            onCheckedChange={handleDesktopNotificationsChange}
           />
         </div>
       </div>
