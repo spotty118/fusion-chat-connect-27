@@ -4,6 +4,7 @@ import { useToast } from "@/components/ui/use-toast";
 import ProviderConfig from './ProviderConfig';
 import { UseQueryResult } from '@tanstack/react-query';
 import { Zap } from 'lucide-react';
+import { useFusionMode } from '@/hooks/useFusionMode';
 
 interface FusionModeSettingsProps {
   apiKeys: Record<string, string>;
@@ -11,7 +12,6 @@ interface FusionModeSettingsProps {
   onApiKeyChange: (provider: string) => (value: string) => void;
   onModelSelect: (provider: string) => (model: string) => void;
   providerQueries: Record<string, UseQueryResult<boolean, unknown>>;
-  onActivate: () => void;
 }
 
 const FusionModeSettings = ({
@@ -20,10 +20,10 @@ const FusionModeSettings = ({
   onApiKeyChange,
   onModelSelect,
   providerQueries,
-  onActivate
 }: FusionModeSettingsProps) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const { toast } = useToast();
+  const { isFusionMode, toggleFusionMode } = useFusionMode();
 
   const getConfiguredProvidersCount = () => {
     return Object.entries(apiKeys).filter(([provider, key]) => 
@@ -32,6 +32,16 @@ const FusionModeSettings = ({
   };
 
   const handleActivate = () => {
+    if (isFusionMode) {
+      // Deactivating fusion mode
+      toggleFusionMode();
+      toast({
+        title: "Fusion Mode Deactivated",
+        description: "Switched to single provider mode",
+      });
+      return;
+    }
+
     const configuredCount = getConfiguredProvidersCount();
     
     if (configuredCount < 3) {
@@ -46,12 +56,16 @@ const FusionModeSettings = ({
     setIsAnimating(true);
     setTimeout(() => {
       setIsAnimating(false);
-      onActivate();
+      toggleFusionMode();
+      toast({
+        title: "Fusion Mode Activated",
+        description: "Multi-provider mode is now active",
+      });
     }, 2000);
   };
 
   const configuredCount = getConfiguredProvidersCount();
-  const isActivatable = configuredCount >= 3;
+  const isActivatable = !isFusionMode && configuredCount >= 3;
 
   return (
     <div className="space-y-6 animate-in fade-in-50 relative">
@@ -107,17 +121,19 @@ const FusionModeSettings = ({
 
       <div className="space-y-2">
         <Button 
-          className={`w-full relative overflow-hidden group ${!isActivatable ? 'opacity-50 cursor-not-allowed' : ''}`}
+          className={`w-full relative overflow-hidden group ${!isActivatable && !isFusionMode ? 'opacity-50 cursor-not-allowed' : ''}`}
           onClick={handleActivate}
-          disabled={!isActivatable || isAnimating}
+          disabled={!isActivatable && !isFusionMode}
         >
           <span className="relative z-10 flex items-center justify-center gap-2">
-            Activate Fusion Mode
+            {isFusionMode ? 'Deactivate' : 'Activate'} Fusion Mode
             <Zap className="w-4 h-4" />
           </span>
         </Button>
         <p className="text-sm text-gray-500 text-center">
-          {configuredCount}/4 providers configured ({isActivatable ? 'Ready to activate' : `Need ${3 - configuredCount} more`})
+          {isFusionMode 
+            ? "Multi-provider mode is active" 
+            : `${configuredCount}/4 providers configured (${isActivatable ? 'Ready to activate' : `Need ${3 - configuredCount} more`})`}
         </p>
       </div>
     </div>

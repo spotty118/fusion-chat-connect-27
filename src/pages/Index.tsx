@@ -21,7 +21,7 @@ const Index = () => {
   const inputRef = useRef(null);
   const searchInputRef = useRef(null);
   const { toast } = useToast();
-  const isFusionMode = useFusionMode();
+  const { isFusionMode } = useFusionMode();
 
   useEffect(() => {
     setFilteredMessages(messages);
@@ -61,20 +61,18 @@ const Index = () => {
           
           const aiMessage = { 
             role: 'assistant', 
-            content: fusionResponse.final 
+            content: fusionResponse
           };
           setMessages(prev => [...prev, aiMessage]);
         } else {
           throw new Error('Invalid fusion response format');
         }
-      } else if (typeof response === 'string') {
+      } else {
         const aiMessage = { 
           role: 'assistant', 
           content: response
         };
         setMessages(prev => [...prev, aiMessage]);
-      } else {
-        throw new Error('Invalid response format');
       }
     } catch (error) {
       toast({
