@@ -28,9 +28,29 @@ const Index = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Initialize fusion mode state and listen for changes
   useEffect(() => {
-    const fusionMode = localStorage.getItem('fusionMode') === 'true';
-    setIsFusionMode(fusionMode);
+    const updateFusionMode = () => {
+      const fusionMode = localStorage.getItem('fusionMode') === 'true';
+      setIsFusionMode(fusionMode);
+      if (!fusionMode) {
+        setSidePanelOpen(false);
+        setFusionResponses([]);
+      }
+    };
+
+    // Initial state
+    updateFusionMode();
+
+    // Listen for storage changes
+    const handleStorageChange = (e) => {
+      if (e.key === 'fusionMode') {
+        updateFusionMode();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   useEffect(() => {
@@ -59,8 +79,9 @@ const Index = () => {
       const userMessage = { role: 'user', content };
       setMessages(prev => [...prev, userMessage]);
 
+      // Only open side panel and clear responses if fusion mode is active
       if (isFusionMode) {
-        setFusionResponses([]); // Clear previous responses
+        setFusionResponses([]);
         setSidePanelOpen(true);
       }
 
