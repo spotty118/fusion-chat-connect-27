@@ -1,16 +1,19 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useToast } from "@/hooks/use-toast";
-import { Tabs } from "@/components/ui/tabs";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { ArrowLeft } from 'lucide-react';
+import FusionModeSettings from '@/components/settings/FusionModeSettings';
+import { LanguageSettings } from '@/components/settings/LanguageSettings';
+import { ExportImportSettings } from '@/components/settings/ExportImportSettings';
+import { KeyboardShortcutsSettings } from '@/components/settings/KeyboardShortcutsSettings';
 import { useProviderStatus } from '@/hooks/useProviderStatus';
 import { supabase } from "@/integrations/supabase/client";
-import { SettingsSidebar } from '@/components/settings/SettingsSidebar';
-import { SettingsContent } from '@/components/settings/SettingsContent';
 
 const Settings = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [activeTab, setActiveTab] = React.useState('fusion');
   const [fusionMode, setFusionMode] = React.useState(() => {
     return localStorage.getItem('fusionMode') === 'true';
   });
@@ -29,6 +32,7 @@ const Settings = () => {
     openrouter: localStorage.getItem('openrouter_model') || '',
   }));
 
+  // Fetch existing API keys on component mount
   React.useEffect(() => {
     const fetchApiKeys = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -57,6 +61,8 @@ const Settings = () => {
         });
         
         setApiKeys(keys);
+        
+        // Also set in localStorage for compatibility
         Object.entries(keys).forEach(([provider, key]) => {
           if (key) localStorage.setItem(`${provider}_key`, key);
         });
@@ -92,12 +98,14 @@ const Settings = () => {
         return;
       }
 
+      // Update state and localStorage
       setApiKeys(prev => ({
         ...prev,
         [provider]: value
       }));
       localStorage.setItem(`${provider}_key`, value);
 
+      // Save to Supabase
       const { error } = await supabase
         .from('api_keys')
         .upsert({
@@ -140,26 +148,63 @@ const Settings = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="flex h-screen">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-1">
-          <SettingsSidebar
-            onBack={handleBack}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-          />
-          <SettingsContent
-            activeTab={activeTab}
-            fusionMode={fusionMode}
-            onFusionModeChange={handleFusionModeChange}
-            apiKeys={apiKeys}
-            selectedModels={selectedModels}
-            onApiKeyChange={handleApiKeyChange}
-            onModelSelect={handleModelSelect}
-            providerQueries={providerQueries}
-            onActivate={() => navigate('/')}
-          />
-        </Tabs>
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="max-w-2xl mx-auto space-y-4">
+        <Button 
+          variant="ghost" 
+          onClick={handleBack}
+          className="mb-4"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Settings</CardTitle>
+            <CardDescription>
+              Configure your AI chat experience. Make sure to save your API keys to use the providers.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex items-center justify-between space-x-2">
+              <div className="space-y-0.5">
+                <Label htmlFor="fusion-mode">Fusion Mode</Label>
+                <p className="text-sm text-muted-foreground">
+                  Combine responses from multiple AI providers
+                </p>
+              </div>
+              <Switch
+                id="fusion-mode"
+                checked={fusionMode}
+                onCheckedChange={handleFusionModeChange}
+              />
+            </div>
+
+            {fusionMode && (
+              <FusionModeSettings
+                apiKeys={apiKeys}
+                selectedModels={selectedModels}
+                onApiKeyChange={handleApiKeyChange}
+                onModelSelect={handleModelSelect}
+                providerQueries={providerQueries}
+                onActivate={() => navigate('/')}
+              />
+            )}
+
+            <div className="border-t pt-6">
+              <LanguageSettings />
+            </div>
+
+            <div className="border-t pt-6">
+              <KeyboardShortcutsSettings />
+            </div>
+
+            <div className="border-t pt-6">
+              <ExportImportSettings />
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
