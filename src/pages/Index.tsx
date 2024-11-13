@@ -4,7 +4,7 @@ import { Settings as SettingsIcon, LogOut, SplitSquareHorizontal } from 'lucide-
 import { Button } from '@/components/ui/button';
 import { CurrentModel } from '@/components/CurrentModel';
 import { supabase } from "@/integrations/supabase/client";
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { generateResponse } from '@/lib/window-ai';
 import { ChatSearch } from '@/components/chat/ChatSearch';
 import { ChatExport } from '@/components/chat/ChatExport';
@@ -13,6 +13,7 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import FusionSidePanel from '@/components/FusionSidePanel';
 import MainChatPanel from '@/components/MainChatPanel';
 import { cn } from '@/lib/utils';
+import { FusionResponse } from '@/lib/fusion-mode';
 
 const Index = () => {
   const [messages, setMessages] = useState([]);
@@ -193,3 +194,4 @@ const Index = () => {
 };
 
 export default Index;
+
