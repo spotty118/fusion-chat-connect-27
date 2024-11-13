@@ -1,7 +1,6 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { makeProviderRequest } from './utils.ts';
-import type { Agent, FusionResponse } from './types.ts';
+import { makeProviderRequest, conductVotingRound } from './utils.ts';
+import type { Agent, AgentResponse } from './types.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,31 +15,19 @@ serve(async (req) => {
   try {
     const { message, agents, collaborationSteps } = await req.json();
     console.log('Starting collaborative multi-agent process');
+    console.log('Active agents:', agents.map((a: Agent) => `${a.provider} (${a.role})`));
 
     let currentContext = message;
-    const agentResponses = [];
+    const agentResponses: AgentResponse[] = [];
 
     // Sequential collaboration through defined steps
     for (const step of collaborationSteps) {
-      const relevantAgent = agents.find(a => a.role.toLowerCase().includes(step.type));
+      const relevantAgent = agents.find((a: Agent) => a.role.toLowerCase().includes(step.type));
       if (!relevantAgent) continue;
 
       console.log(`Executing ${step.type} step with ${relevantAgent.provider}`);
 
-      const stepPrompt = `
-Context: ${currentContext}
-
-Your Role: ${relevantAgent.instructions}
-
-Current Step: ${step.description}
-
-Previous Insights: ${agentResponses.map(r => `
-${r.role.toUpperCase()}: ${r.response}`).join('\n')}
-
-Task: Based on the above context and previous insights, provide your perspective and contribution.
-`;
-
-      const response = await makeProviderRequest(relevantAgent, stepPrompt);
+      const response = await makeProviderRequest(relevantAgent, currentContext);
       agentResponses.push({
         provider: relevantAgent.provider,
         role: relevantAgent.role,
@@ -48,20 +35,16 @@ Task: Based on the above context and previous insights, provide your perspective
       });
 
       // Update context with new insights
-      currentContext = `${currentContext}\n\nInsights from ${relevantAgent.role}: ${response}`;
+      currentContext = `Original query: ${message}\n\nCurrent insights:\n${agentResponses.map(r => 
+        `${r.role.toUpperCase()} (${r.provider}):\n${r.response}`
+      ).join('\n\n')}`;
     }
 
-    // Final synthesis
-    const synthesizer = agents.find(a => a.role.toLowerCase().includes('synthesizer'));
-    const finalResponse = synthesizer ? await makeProviderRequest(synthesizer, `
-Create a final, coherent response that synthesizes all these perspectives:
+    // Conduct final synthesis through voting
+    console.log('Starting final synthesis phase');
+    const finalResponse = await conductVotingRound(agents, agentResponses);
 
-${agentResponses.map(r => `${r.role.toUpperCase()}: ${r.response}`).join('\n\n')}
-
-Important: Provide a clear, well-structured final response that incorporates the best insights from each perspective.
-    `) : agentResponses[agentResponses.length - 1].response;
-
-    const fusionResponse: FusionResponse = {
+    const fusionResponse = {
       final: finalResponse,
       providers: agentResponses
     };

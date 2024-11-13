@@ -17,7 +17,14 @@ export async function makeProviderRequest(agent: Agent, prompt: string): Promise
         body = {
           model: agent.model,
           messages: [
-            { role: 'user', content: prompt }
+            { 
+              role: 'system', 
+              content: agent.instructions 
+            },
+            { 
+              role: 'user', 
+              content: `Context from previous agents:\n${prompt}\n\nYour role: ${agent.role}\n\nProvide your perspective based on your role.`
+            }
           ],
           max_tokens: 1000
         };
@@ -30,10 +37,16 @@ export async function makeProviderRequest(agent: Agent, prompt: string): Promise
         body = {
           model: agent.model,
           messages: [
-            { role: 'user', content: prompt }
+            {
+              role: 'system',
+              content: agent.instructions
+            },
+            {
+              role: 'user',
+              content: `Context from previous agents:\n${prompt}\n\nYour role: ${agent.role}\n\nProvide your perspective based on your role.`
+            }
           ],
-          max_tokens: 1000,
-          system: "You are a helpful AI assistant."
+          max_tokens: 1000
         };
         console.log('Claude request headers:', JSON.stringify(headers, null, 2));
         console.log('Claude request body:', JSON.stringify(body, null, 2));
@@ -44,7 +57,7 @@ export async function makeProviderRequest(agent: Agent, prompt: string): Promise
           contents: [{
             role: "user",
             parts: [{
-              text: prompt
+              text: `${agent.instructions}\n\nContext from previous agents:\n${prompt}\n\nYour role: ${agent.role}\n\nProvide your perspective based on your role.`
             }]
           }],
           generationConfig: {
@@ -101,36 +114,43 @@ export async function conductVotingRound(
   agents: Agent[], 
   initialResponses: AgentResponse[]
 ): Promise<string> {
-  const votingPrompt = `As AI models collaborating on a creative task, analyze these responses and vote on the best elements to create one cohesive output:
+  // Create a context that includes all previous responses
+  const context = initialResponses.map(r => 
+    `${r.role.toUpperCase()} (${r.provider}):\n${r.response}`
+  ).join('\n\n');
 
-${initialResponses.map(r => `${r.role.toUpperCase()} (${r.provider}):
-${r.response}`).join('\n\n')}
+  const votingPrompt = `As an AI model participating in a collaborative task, analyze these responses and create a cohesive synthesis:
 
-Please:
-1. Vote on which response best achieves the creative goal
-2. Identify the strongest creative elements
-3. Create ONE unified creative piece that captures the best elements
+${context}
 
-Important: For creative tasks like poems, stories, or creative writing, do NOT explain the process - just provide the final creative piece.`;
+Instructions:
+1. Identify the key insights from each response
+2. Find common themes and complementary perspectives
+3. Create a unified response that:
+   - Combines the best elements from all perspectives
+   - Maintains consistency and coherence
+   - Addresses the original query comprehensively
 
-  // Use each agent to vote and provide recommendations
-  const votingResponses = await Promise.all(
+Important: Focus on creating a clear, well-structured response that builds upon all previous insights.`;
+
+  // Use each agent to provide a synthesis
+  const syntheses = await Promise.all(
     agents.map(agent => makeProviderRequest(agent, votingPrompt))
   );
 
-  // Create final synthesis prompt
-  const synthesisPrompt = `Based on the voting results from all agents:
+  // Create final synthesis prompt using all the synthesized responses
+  const finalSynthesisPrompt = `Create the final, unified response based on these synthesized perspectives:
 
-${votingResponses.join('\n\n')}
+${syntheses.join('\n\n')}
 
-Create the final creative piece. Important:
-1. Only output the final creative work
-2. Do not include any explanations or analysis
-3. Keep it concise and focused
-4. Maintain the original creative intent`;
+Instructions:
+1. Combine the key insights into one coherent response
+2. Ensure all important points are included
+3. Maintain a clear and focused narrative
+4. Present the information in a well-structured format`;
 
   // Use the first agent for final synthesis
   const synthesizer = agents[0];
   console.log('Creating final synthesis using:', synthesizer.provider);
-  return await makeProviderRequest(synthesizer, synthesisPrompt);
+  return await makeProviderRequest(synthesizer, finalSynthesisPrompt);
 }
