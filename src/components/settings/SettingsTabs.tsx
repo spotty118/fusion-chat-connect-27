@@ -61,6 +61,9 @@ export function SettingsTabs() {
             <TabsTrigger value="tools" className="justify-start w-full">
               Tools
             </TabsTrigger>
+            <TabsTrigger value="analytics" className="justify-start w-full">
+              Analytics
+            </TabsTrigger>
             <TabsTrigger value="customization" className="justify-start w-full">
               Language
             </TabsTrigger>
@@ -90,6 +93,9 @@ export function SettingsTabs() {
             <PromptTemplateTools />
             <ApiKeyTools />
             <ThemeTools />
+          </TabsContent>
+
+          <TabsContent value="analytics" className="mt-0">
             <AnalyticsTools />
           </TabsContent>
           
