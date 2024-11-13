@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { Bot } from 'lucide-react';
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -81,8 +81,7 @@ const Login = () => {
   };
 
   const handleSkipSetup = () => {
-    // Create a default client with empty credentials
-    const client = createClient('', '');
+    const client = createClient('https://ialfzzyffpruxifznfhz.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlhbGZ6enlmZnBydXhpZnpuZmh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDk4MjcyMzgsImV4cCI6MjAyNTQwMzIzOH0.H6FmwGZOPJOFgVBBIFVlX_QVkHQjVxGVhvFnJYDGxrY');
     setSupabaseClient(client);
     setShowSetupDialog(false);
   };
@@ -148,46 +147,48 @@ const Login = () => {
         </DialogContent>
       </Dialog>
 
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-3xl shadow-2xl p-8 space-y-8">
-          <div className="flex flex-col items-center space-y-4">
-            <div className="w-16 h-16 rounded-2xl rotate-6 flex items-center justify-center bg-gradient-to-br from-fusion-primary to-fusion-secondary text-white shadow-lg shadow-fusion-primary/20">
-              <Bot size={32} />
+      {supabaseClient && (
+        <div className="w-full max-w-md">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 space-y-8">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="w-16 h-16 rounded-2xl rotate-6 flex items-center justify-center bg-gradient-to-br from-fusion-primary to-fusion-secondary text-white shadow-lg shadow-fusion-primary/20">
+                <Bot size={32} />
+              </div>
+              <h1 className="text-3xl font-bold text-center bg-gradient-to-br from-fusion-primary to-fusion-secondary bg-clip-text text-transparent">
+                ThinkLink
+              </h1>
+              <p className="text-gray-500 text-center max-w-sm">
+                Connect with advanced AI models through a unified chat interface
+              </p>
             </div>
-            <h1 className="text-3xl font-bold text-center bg-gradient-to-br from-fusion-primary to-fusion-secondary bg-clip-text text-transparent">
-              ThinkLink
-            </h1>
-            <p className="text-gray-500 text-center max-w-sm">
-              Connect with advanced AI models through a unified chat interface
-            </p>
-          </div>
-          <Auth
-            supabaseClient={supabaseClient}
-            appearance={{
-              theme: ThemeSupa,
-              variables: {
-                default: {
-                  colors: {
-                    brand: '#2563EB',
-                    brandAccent: '#3B82F6',
-                  },
-                  radii: {
-                    borderRadiusButton: '1rem',
-                    buttonBorderRadius: '1rem',
-                    inputBorderRadius: '1rem',
+            <Auth
+              supabaseClient={supabaseClient}
+              appearance={{
+                theme: ThemeSupa,
+                variables: {
+                  default: {
+                    colors: {
+                      brand: '#2563EB',
+                      brandAccent: '#3B82F6',
+                    },
+                    radii: {
+                      borderRadiusButton: '1rem',
+                      buttonBorderRadius: '1rem',
+                      inputBorderRadius: '1rem',
+                    },
                   },
                 },
-              },
-              className: {
-                button: 'rounded-2xl shadow-lg shadow-fusion-primary/20',
-                input: 'rounded-2xl',
-              },
-            }}
-            theme="light"
-            providers={[]}
-          />
+                className: {
+                  button: 'rounded-2xl shadow-lg shadow-fusion-primary/20',
+                  input: 'rounded-2xl',
+                },
+              }}
+              theme="light"
+              providers={[]}
+            />
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
