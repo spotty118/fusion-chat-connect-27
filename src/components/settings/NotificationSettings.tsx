@@ -12,7 +12,6 @@ export const NotificationSettings = () => {
     localStorage.getItem('desktopNotifications') === 'true'
   );
 
-  // Load user's email notification preference from Supabase
   useEffect(() => {
     const loadEmailPreference = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -24,7 +23,7 @@ export const NotificationSettings = () => {
           .single();
         
         if (profile) {
-          setEmailNotifications(profile.email_notifications || false);
+          setEmailNotifications(profile.email_notifications ?? false);
         }
       }
     };
@@ -47,7 +46,10 @@ export const NotificationSettings = () => {
     if (session?.user) {
       const { error } = await supabase
         .from('profiles')
-        .update({ email_notifications: checked })
+        .update({
+          email_notifications: checked,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', session.user.id);
 
       if (!error) {
