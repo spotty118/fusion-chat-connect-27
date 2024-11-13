@@ -54,7 +54,11 @@ export const generateResponse = async (message: string, fusionMode = false) => {
   try {
     // If fusion mode is active, bypass Window.ai completely
     if (fusionMode || localStorage.getItem('fusionMode') === 'true') {
-      return await generateFusionResponse(message);
+      const response = await generateFusionResponse(message);
+      return {
+        final: response.final,
+        providers: response.providers
+      };
     }
 
     await checkWindowAI();
@@ -79,7 +83,6 @@ export const generateResponse = async (message: string, fusionMode = false) => {
         throw new Error('Empty response from Window AI');
       }
 
-      // Try to extract content from various possible formats
       if (typeof firstResponse === 'string') return firstResponse;
       if ('message' in firstResponse && firstResponse.message?.content) return firstResponse.message.content;
       if ('text' in firstResponse && firstResponse.text) return firstResponse.text;

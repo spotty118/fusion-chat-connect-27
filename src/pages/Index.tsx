@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import ChatContainer from '@/components/ChatContainer';
 import ChatInput from '@/components/ChatInput';
-import { Settings as SettingsIcon, LogOut } from 'lucide-react';
+import { Settings as SettingsIcon, LogOut, SplitSquareHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CurrentModel } from '@/components/CurrentModel';
 import { supabase } from "@/integrations/supabase/client";
@@ -12,16 +12,21 @@ import { ChatSearch } from '@/components/chat/ChatSearch';
 import { ChatExport } from '@/components/chat/ChatExport';
 import { KeyboardShortcuts } from '@/components/KeyboardShortcuts';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import FusionSidePanel from '@/components/FusionSidePanel';
 
 const Index = () => {
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [filteredMessages, setFilteredMessages] = useState([]);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [sidePanelOpen, setSidePanelOpen] = useState(false);
+  const [fusionResponses, setFusionResponses] = useState([]);
   const inputRef = useRef(null);
   const searchInputRef = useRef(null);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  const isFusionMode = localStorage.getItem('fusionMode') === 'true';
 
   useEffect(() => {
     setFilteredMessages(messages);
@@ -49,8 +54,25 @@ const Index = () => {
       const userMessage = { role: 'user', content };
       setMessages(prev => [...prev, userMessage]);
 
-      const response = await generateResponse(content);
-      const aiMessage = { role: 'assistant', content: response };
+      if (isFusionMode) {
+        setFusionResponses([]); // Clear previous responses
+        setSidePanelOpen(true);
+      }
+
+      const response = await generateResponse(content, isFusionMode);
+      
+      // If it's a fusion mode response, it will include individual provider responses
+      if (response.providers) {
+        setFusionResponses(response.providers.map(p => ({
+          ...p,
+          timestamp: new Date().toLocaleTimeString()
+        })));
+      }
+
+      const aiMessage = { 
+        role: 'assistant', 
+        content: isFusionMode ? response.final : response 
+      };
       setMessages(prev => [...prev, aiMessage]);
     } catch (error) {
       toast({
@@ -96,6 +118,16 @@ const Index = () => {
             <CurrentModel />
           </div>
           <div className="flex items-center gap-3">
+            {isFusionMode && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white hover:bg-white/20 transition-all duration-300 rounded-2xl w-12 h-12 hover:scale-105"
+                onClick={() => setSidePanelOpen(!sidePanelOpen)}
+              >
+                <SplitSquareHorizontal className="h-5 w-5" />
+              </Button>
+            )}
             <KeyboardShortcuts />
             <Button
               variant="ghost"
@@ -136,6 +168,12 @@ const Index = () => {
           disabled={isLoading} 
         />
       </main>
+
+      <FusionSidePanel
+        isOpen={sidePanelOpen && isFusionMode}
+        onClose={() => setSidePanelOpen(false)}
+        responses={fusionResponses}
+      />
     </div>
   );
 };
