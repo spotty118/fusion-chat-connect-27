@@ -17,9 +17,7 @@ export const CurrentModel = () => {
         throw new Error('Window is not defined');
       }
 
-      if (!window.ai) {
-        await checkWindowAI();
-      }
+      await checkWindowAI();
 
       if (!window.ai?.getCurrentModel) {
         throw new Error('Window AI extension not properly initialized');

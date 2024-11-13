@@ -4,12 +4,6 @@ const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000;
 const AUTH_COOKIE_NAME = 'window_ai_verified';
 
-interface WindowAIResponse {
-  message?: { content: string };
-  text?: string;
-  delta?: { content: string };
-}
-
 const isVerified = () => {
   return document.cookie.includes(AUTH_COOKIE_NAME);
 };
@@ -45,9 +39,6 @@ export const checkWindowAI = async () => {
     return false;
   }
   
-  if (isVerified()) {
-    return true;
-  }
   return waitForWindowAI();
 };
 
@@ -78,7 +69,7 @@ export const generateResponse = async (message: string) => {
     }
 
     if (Array.isArray(response)) {
-      const firstResponse = response[0] as WindowAIResponse;
+      const firstResponse = response[0];
       if (!firstResponse) {
         throw new Error('Empty response from Window AI');
       }
@@ -89,7 +80,7 @@ export const generateResponse = async (message: string) => {
       if ('delta' in firstResponse && firstResponse.delta?.content) return firstResponse.delta.content;
     }
 
-    const objectResponse = response as WindowAIResponse;
+    const objectResponse = response;
     if (typeof objectResponse === 'object') {
       if ('message' in objectResponse && objectResponse.message?.content) return objectResponse.message.content;
       if ('text' in objectResponse && objectResponse.text) return objectResponse.text;
