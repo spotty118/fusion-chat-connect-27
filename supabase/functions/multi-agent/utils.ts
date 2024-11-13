@@ -7,6 +7,9 @@ export async function makeProviderRequest(agent: Agent, prompt: string): Promise
     };
     let body: Record<string, any>;
 
+    // Format the message content with role and context
+    const messageContent = `Context from previous agents:\n${prompt}\n\nYour role: ${agent.role}\n\nProvide your perspective based on your role.`;
+
     switch (agent.provider) {
       case 'openai':
       case 'openrouter':
@@ -23,7 +26,7 @@ export async function makeProviderRequest(agent: Agent, prompt: string): Promise
             },
             { 
               role: 'user', 
-              content: `Context from previous agents:\n${prompt}\n\nYour role: ${agent.role}\n\nProvide your perspective based on your role.`
+              content: messageContent
             }
           ],
           max_tokens: 1000
@@ -31,19 +34,15 @@ export async function makeProviderRequest(agent: Agent, prompt: string): Promise
         break;
 
       case 'claude':
-        console.log('Preparing Claude request with model:', agent.model);
         headers['x-api-key'] = agent.apiKey;
         headers['anthropic-version'] = '2023-06-01';
         body = {
           model: agent.model,
+          system: agent.instructions,
           messages: [
             {
-              role: 'system',
-              content: agent.instructions
-            },
-            {
               role: 'user',
-              content: `Context from previous agents:\n${prompt}\n\nYour role: ${agent.role}\n\nProvide your perspective based on your role.`
+              content: messageContent
             }
           ],
           max_tokens: 1000
@@ -57,7 +56,7 @@ export async function makeProviderRequest(agent: Agent, prompt: string): Promise
           contents: [{
             role: "user",
             parts: [{
-              text: `${agent.instructions}\n\nContext from previous agents:\n${prompt}\n\nYour role: ${agent.role}\n\nProvide your perspective based on your role.`
+              text: `${agent.instructions}\n\n${messageContent}`
             }]
           }],
           generationConfig: {
@@ -97,7 +96,6 @@ export async function makeProviderRequest(agent: Agent, prompt: string): Promise
       case 'openrouter':
         return data.choices[0].message.content;
       case 'claude':
-        console.log('Processing Claude response:', JSON.stringify(data, null, 2));
         return data.content[0].text;
       case 'google':
         return data.candidates[0].content.parts[0].text;
