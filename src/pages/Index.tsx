@@ -14,6 +14,15 @@ import { KeyboardShortcuts } from '@/components/KeyboardShortcuts';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import FusionSidePanel from '@/components/FusionSidePanel';
 
+interface FusionResponse {
+  final: string;
+  providers: Array<{
+    provider: string;
+    role: string;
+    response: string;
+  }>;
+}
+
 const Index = () => {
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -61,23 +70,26 @@ const Index = () => {
 
       const response = await generateResponse(content, isFusionMode);
       
-      // Check if response is a fusion mode response (object) or regular response (string)
-      if (typeof response === 'object' && 'providers' in response) {
-        setFusionResponses(response.providers.map(p => ({
-          ...p,
-          timestamp: new Date().toLocaleTimeString()
-        })));
+      // Check if response is a fusion mode response
+      if (typeof response === 'object' && response !== null && 'providers' in response) {
+        const fusionResponse = response as FusionResponse;
+        if (Array.isArray(fusionResponse.providers)) {
+          setFusionResponses(fusionResponse.providers.map(p => ({
+            ...p,
+            timestamp: new Date().toLocaleTimeString()
+          })));
+        }
         
         const aiMessage = { 
           role: 'assistant', 
-          content: response.final 
+          content: fusionResponse.final 
         };
         setMessages(prev => [...prev, aiMessage]);
       } else {
         // Handle regular string response
         const aiMessage = { 
           role: 'assistant', 
-          content: response 
+          content: response as string 
         };
         setMessages(prev => [...prev, aiMessage]);
       }
