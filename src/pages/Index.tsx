@@ -99,7 +99,7 @@ const Index = () => {
       exportButton?.click();
     },
   });
-
+  
   return (
     <div className="flex flex-col h-screen bg-white">
       <ChatHeader 
@@ -115,7 +115,10 @@ const Index = () => {
         </div>
       </div>
       
-      <div className="flex flex-1 gap-6 p-6 overflow-hidden">
+      <div className={cn(
+        "flex flex-1 gap-6 p-6 overflow-hidden",
+        sidePanelOpen ? "justify-between" : "justify-center"
+      )}>
         <div className={cn(
           "flex gap-6 w-full transition-all duration-300",
           sidePanelOpen ? "justify-between" : "justify-center"
