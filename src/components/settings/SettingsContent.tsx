@@ -29,39 +29,41 @@ export const SettingsContent = ({
   onActivate
 }: SettingsContentProps) => {
   return (
-    <div className="flex-1 p-8">
-      <TabsContent value="fusion" className="mt-0" forceMount hidden={activeTab !== 'fusion'}>
-        <SettingsSection title="AI Providers">
-          <FusionModeSection
-            fusionMode={fusionMode}
-            onFusionModeChange={onFusionModeChange}
-            apiKeys={apiKeys}
-            selectedModels={selectedModels}
-            onApiKeyChange={onApiKeyChange}
-            onModelSelect={onModelSelect}
-            providerQueries={providerQueries}
-            onActivate={onActivate}
-          />
-        </SettingsSection>
-      </TabsContent>
+    <div className="flex-1 h-screen overflow-y-auto">
+      <div className="p-8 space-y-6">
+        <TabsContent value="fusion" className="mt-0 space-y-6" forceMount hidden={activeTab !== 'fusion'}>
+          <SettingsSection title="AI Providers">
+            <FusionModeSection
+              fusionMode={fusionMode}
+              onFusionModeChange={onFusionModeChange}
+              apiKeys={apiKeys}
+              selectedModels={selectedModels}
+              onApiKeyChange={onApiKeyChange}
+              onModelSelect={onModelSelect}
+              providerQueries={providerQueries}
+              onActivate={onActivate}
+            />
+          </SettingsSection>
+        </TabsContent>
 
-      <TabsContent value="customization" className="mt-0" forceMount hidden={activeTab !== 'customization'}>
-        <SettingsSection title="Customization">
-          <LanguageSettings />
-        </SettingsSection>
-      </TabsContent>
+        <TabsContent value="customization" className="mt-0 space-y-6" forceMount hidden={activeTab !== 'customization'}>
+          <SettingsSection title="Customization">
+            <LanguageSettings />
+          </SettingsSection>
+        </TabsContent>
 
-      <TabsContent value="keyboard" className="mt-0" forceMount hidden={activeTab !== 'keyboard'}>
-        <SettingsSection title="Keyboard Shortcuts">
-          <KeyboardShortcutsSettings />
-        </SettingsSection>
-      </TabsContent>
+        <TabsContent value="keyboard" className="mt-0 space-y-6" forceMount hidden={activeTab !== 'keyboard'}>
+          <SettingsSection title="Keyboard Shortcuts">
+            <KeyboardShortcutsSettings />
+          </SettingsSection>
+        </TabsContent>
 
-      <TabsContent value="backup" className="mt-0" forceMount hidden={activeTab !== 'backup'}>
-        <SettingsSection title="Backup & Restore">
-          <ExportImportSettings />
-        </SettingsSection>
-      </TabsContent>
+        <TabsContent value="backup" className="mt-0 space-y-6" forceMount hidden={activeTab !== 'backup'}>
+          <SettingsSection title="Backup & Restore">
+            <ExportImportSettings />
+          </SettingsSection>
+        </TabsContent>
+      </div>
     </div>
   );
 };
