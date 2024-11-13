@@ -22,12 +22,16 @@ const Index = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [sidePanelOpen, setSidePanelOpen] = useState(false);
   const [fusionResponses, setFusionResponses] = useState([]);
+  const [isFusionMode, setIsFusionMode] = useState(false);
   const inputRef = useRef(null);
   const searchInputRef = useRef(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const isFusionMode = localStorage.getItem('fusionMode') === 'true';
+  useEffect(() => {
+    const fusionMode = localStorage.getItem('fusionMode') === 'true';
+    setIsFusionMode(fusionMode);
+  }, []);
 
   useEffect(() => {
     setFilteredMessages(messages);
@@ -194,4 +198,3 @@ const Index = () => {
 };
 
 export default Index;
-
