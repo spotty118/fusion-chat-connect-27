@@ -24,6 +24,7 @@ export async function makeProviderRequest(agent: Agent, prompt: string): Promise
         break;
 
       case 'claude':
+        console.log('Preparing Claude request with model:', agent.model);
         headers['x-api-key'] = agent.apiKey;
         headers['anthropic-version'] = '2023-06-01';
         body = {
@@ -31,8 +32,11 @@ export async function makeProviderRequest(agent: Agent, prompt: string): Promise
           messages: [
             { role: 'user', content: prompt }
           ],
-          max_tokens: 1000
+          max_tokens: 1000,
+          system: "You are a helpful AI assistant."
         };
+        console.log('Claude request headers:', JSON.stringify(headers, null, 2));
+        console.log('Claude request body:', JSON.stringify(body, null, 2));
         break;
 
       case 'google':
@@ -58,7 +62,7 @@ export async function makeProviderRequest(agent: Agent, prompt: string): Promise
       ? `${agent.endpoint}?key=${agent.apiKey}`
       : agent.endpoint;
 
-    console.log(`Making request to ${agent.provider}`);
+    console.log(`Making request to ${agent.provider} at ${endpoint}`);
     
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -73,13 +77,14 @@ export async function makeProviderRequest(agent: Agent, prompt: string): Promise
     }
 
     const data = await response.json();
-    console.log(`${agent.provider} API response received`);
+    console.log(`${agent.provider} API response received:`, JSON.stringify(data, null, 2));
 
     switch (agent.provider) {
       case 'openai':
       case 'openrouter':
         return data.choices[0].message.content;
       case 'claude':
+        console.log('Processing Claude response:', JSON.stringify(data, null, 2));
         return data.content[0].text;
       case 'google':
         return data.candidates[0].content.parts[0].text;
