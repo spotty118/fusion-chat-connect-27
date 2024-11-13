@@ -5,13 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft } from 'lucide-react';
-import { useToast } from "@/components/ui/use-toast";
 import FusionModeSettings from '@/components/settings/FusionModeSettings';
+import { LanguageSettings } from '@/components/settings/LanguageSettings';
+import { ExportImportSettings } from '@/components/settings/ExportImportSettings';
+import { KeyboardShortcutsSettings } from '@/components/settings/KeyboardShortcutsSettings';
 import { useProviderStatus } from '@/hooks/useProviderStatus';
 import { supabase } from "@/integrations/supabase/client";
 
 const Settings = () => {
-  const { toast } = useToast();
   const navigate = useNavigate();
   const [fusionMode, setFusionMode] = React.useState(() => {
     return localStorage.getItem('fusionMode') === 'true';
@@ -83,21 +84,6 @@ const Settings = () => {
   const handleFusionModeChange = (checked: boolean) => {
     setFusionMode(checked);
     localStorage.setItem('fusionMode', checked.toString());
-    if (checked) {
-      toast({
-        title: "Fusion Mode Enabled",
-        description: "Please configure your API keys and select models for providers",
-      });
-    } else {
-      setSelectedModels({ openai: '', claude: '', google: '', openrouter: '' });
-      Object.keys(selectedModels).forEach(provider => {
-        localStorage.removeItem(`${provider}_model`);
-      });
-      toast({
-        title: "Fusion Mode Disabled",
-        description: "Using Window.AI provider",
-      });
-    }
   };
 
   const handleApiKeyChange = (provider: string) => async (value: string) => {
@@ -161,27 +147,6 @@ const Settings = () => {
     localStorage.setItem(`${provider}_model`, model);
   };
 
-  const handleActivate = () => {
-    const activeProviders = Object.entries(apiKeys).filter(([provider, value]) => 
-      value.length > 0 && selectedModels[provider as keyof typeof selectedModels]
-    );
-
-    if (activeProviders.length < 3) {
-      toast({
-        title: "Insufficient Providers",
-        description: "Please configure at least 3 provider API keys and select their models",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    toast({
-      title: "Fusion Mode Activated",
-      description: "All providers configured successfully",
-    });
-    navigate('/');
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-2xl mx-auto space-y-4">
@@ -206,7 +171,7 @@ const Settings = () => {
               <div className="space-y-0.5">
                 <Label htmlFor="fusion-mode">Fusion Mode</Label>
                 <p className="text-sm text-muted-foreground">
-                  Combine responses from multiple AI providers (requires at least 3 providers)
+                  Combine responses from multiple AI providers
                 </p>
               </div>
               <Switch
@@ -223,9 +188,21 @@ const Settings = () => {
                 onApiKeyChange={handleApiKeyChange}
                 onModelSelect={handleModelSelect}
                 providerQueries={providerQueries}
-                onActivate={handleActivate}
+                onActivate={() => navigate('/')}
               />
             )}
+
+            <div className="border-t pt-6">
+              <LanguageSettings />
+            </div>
+
+            <div className="border-t pt-6">
+              <KeyboardShortcutsSettings />
+            </div>
+
+            <div className="border-t pt-6">
+              <ExportImportSettings />
+            </div>
           </CardContent>
         </Card>
       </div>
