@@ -17,30 +17,36 @@ serve(async (req) => {
     console.log('Starting collaborative multi-agent process');
     console.log('Active agents:', agents.map((a: Agent) => `${a.provider} (${a.role})`));
 
-    let currentContext = message;
     const agentResponses: AgentResponse[] = [];
+    let currentContext = message;
 
-    // Sequential collaboration through defined steps
-    for (const step of collaborationSteps) {
-      const relevantAgent = agents.find((a: Agent) => a.role.toLowerCase().includes(step.type));
-      if (!relevantAgent) continue;
+    // Ensure each agent gets a chance to contribute
+    for (const agent of agents) {
+      console.log(`Getting response from ${agent.provider} as ${agent.role}`);
+      try {
+        const response = await makeProviderRequest(agent, currentContext);
+        agentResponses.push({
+          provider: agent.provider,
+          role: agent.role,
+          response: response
+        });
 
-      console.log(`Executing ${step.type} step with ${relevantAgent.provider}`);
+        // Update context with new response
+        currentContext = `Original query: ${message}\n\nCurrent insights:\n${agentResponses.map(r => 
+          `${r.role.toUpperCase()} (${r.provider}):\n${r.response}`
+        ).join('\n\n')}`;
 
-      const response = await makeProviderRequest(relevantAgent, currentContext);
-      agentResponses.push({
-        provider: relevantAgent.provider,
-        role: relevantAgent.role,
-        response: response
-      });
-
-      // Update context with new insights
-      currentContext = `Original query: ${message}\n\nCurrent insights:\n${agentResponses.map(r => 
-        `${r.role.toUpperCase()} (${r.provider}):\n${r.response}`
-      ).join('\n\n')}`;
+      } catch (error) {
+        console.error(`Error with ${agent.provider}:`, error);
+        // Continue with other agents if one fails
+      }
     }
 
-    // Conduct final synthesis through voting
+    if (agentResponses.length === 0) {
+      throw new Error('No agents were able to provide responses');
+    }
+
+    // Conduct final synthesis
     console.log('Starting final synthesis phase');
     const finalResponse = await conductVotingRound(agents, agentResponses);
 

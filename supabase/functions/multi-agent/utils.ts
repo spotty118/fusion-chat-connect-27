@@ -8,7 +8,7 @@ export async function makeProviderRequest(agent: Agent, prompt: string): Promise
     let body: Record<string, any>;
 
     // Format the message content with role and context
-    const messageContent = `Context from previous agents:\n${prompt}\n\nYour role: ${agent.role}\n\nProvide your perspective based on your role.`;
+    const messageContent = `Context: ${agent.role}\n\nInstructions: ${agent.instructions}\n\nQuery: ${prompt}`;
 
     switch (agent.provider) {
       case 'openai':
@@ -20,14 +20,8 @@ export async function makeProviderRequest(agent: Agent, prompt: string): Promise
         body = {
           model: agent.model,
           messages: [
-            { 
-              role: 'system', 
-              content: agent.instructions 
-            },
-            { 
-              role: 'user', 
-              content: messageContent
-            }
+            { role: 'system', content: agent.instructions },
+            { role: 'user', content: prompt }
           ],
           max_tokens: 1000
         };
@@ -40,22 +34,18 @@ export async function makeProviderRequest(agent: Agent, prompt: string): Promise
           model: agent.model,
           system: agent.instructions,
           messages: [
-            {
-              role: 'user',
-              content: messageContent
-            }
+            { role: 'user', content: prompt }
           ],
           max_tokens: 1000
         };
         break;
 
       case 'google':
+        const endpoint = `${agent.endpoint}?key=${agent.apiKey}`;
         body = {
           contents: [{
             role: "user",
-            parts: [{
-              text: `${agent.instructions}\n\n${messageContent}`
-            }]
+            parts: [{ text: `${agent.instructions}\n\n${prompt}` }]
           }],
           generationConfig: {
             temperature: 0.7,
@@ -68,16 +58,12 @@ export async function makeProviderRequest(agent: Agent, prompt: string): Promise
         throw new Error(`Unsupported provider: ${agent.provider}`);
     }
 
-    const endpoint = agent.provider === 'google' 
-      ? `${agent.endpoint}?key=${agent.apiKey}`
-      : agent.endpoint;
-
-    console.log(`Making request to ${agent.provider} at ${endpoint}`);
+    console.log(`Making request to ${agent.provider} with role: ${agent.role}`);
     
-    const response = await fetch(endpoint, {
+    const response = await fetch(agent.endpoint, {
       method: 'POST',
       headers,
-      body: JSON.stringify(body),
+      body: JSON.stringify(body)
     });
 
     if (!response.ok) {
@@ -129,24 +115,13 @@ Instructions:
 
 Important: Focus on creating a clear, well-structured response that builds upon all previous insights.`;
 
-  // Use each agent to provide a synthesis
-  const syntheses = await Promise.all(
-    agents.map(agent => makeProviderRequest(agent, votingPrompt))
+  // Ensure we're using all available agents for synthesis
+  const availableAgents = agents.filter(agent => 
+    !initialResponses.some(r => r.provider === agent.provider && r.role === agent.role)
   );
 
-  // Create final synthesis prompt using all the synthesized responses
-  const finalSynthesisPrompt = `Create the final, unified response based on these synthesized perspectives:
-
-${syntheses.join('\n\n')}
-
-Instructions:
-1. Combine the key insights into one coherent response
-2. Ensure all important points are included
-3. Maintain a clear and focused narrative
-4. Present the information in a well-structured format`;
-
-  // Use the first agent for final synthesis
-  const synthesizer = agents[0];
+  // If no additional agents are available, use the first agent
+  const synthesizer = availableAgents.length > 0 ? availableAgents[0] : agents[0];
   console.log('Creating final synthesis using:', synthesizer.provider);
-  return await makeProviderRequest(synthesizer, finalSynthesisPrompt);
+  return await makeProviderRequest(synthesizer, votingPrompt);
 }

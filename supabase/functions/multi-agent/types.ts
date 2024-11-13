@@ -7,17 +7,13 @@ export interface Agent {
   apiKey: string;
 }
 
-export interface FusionResponse {
-  final: string;
-  providers: Array<{
-    provider: string;
-    role: string;
-    response: string;
-  }>;
-}
-
 export interface AgentResponse {
   provider: string;
   role: string;
   response: string;
+}
+
+export interface FusionResponse {
+  final: string;
+  providers: AgentResponse[];
 }
