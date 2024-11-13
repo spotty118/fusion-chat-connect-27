@@ -1,6 +1,6 @@
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-// Types
 interface Agent {
   provider: string;
   model: string;
@@ -19,13 +19,12 @@ interface FusionResponse {
   }>;
 }
 
-// Constants
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-async function makeProviderRequest(agent: Agent, message: string): Promise<string> {
+async function makeProviderRequest(agent: Agent, prompt: string): Promise<string> {
   try {
     let headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -43,7 +42,7 @@ async function makeProviderRequest(agent: Agent, message: string): Promise<strin
           model: agent.model,
           messages: [
             { role: 'system', content: agent.instructions },
-            { role: 'user', content: message }
+            { role: 'user', content: prompt }
           ],
           max_tokens: 1000
         };
@@ -55,7 +54,7 @@ async function makeProviderRequest(agent: Agent, message: string): Promise<strin
         body = {
           model: agent.model,
           messages: [
-            { role: 'user', content: message }
+            { role: 'user', content: prompt }
           ],
           system: agent.instructions,
           max_tokens: 1000
@@ -67,7 +66,7 @@ async function makeProviderRequest(agent: Agent, message: string): Promise<strin
           contents: [{
             role: "user",
             parts: [{
-              text: `${agent.instructions}\n\n${message}`
+              text: `${agent.instructions}\n\n${prompt}`
             }]
           }],
           generationConfig: {
@@ -119,21 +118,30 @@ async function makeProviderRequest(agent: Agent, message: string): Promise<strin
   }
 }
 
-function combineResponses(responses: Array<{ provider: string; role: string; response: string }>): string {
-  // Extract key insights and information from each response
-  const insights = responses.map(r => {
-    const cleanResponse = r.response.trim().replace(/\n+/g, ' ');
-    return cleanResponse;
-  });
+async function synthesizeResponses(agents: Agent[], initialResponses: Array<{ provider: string; role: string; response: string }>): Promise<string> {
+  // Create a discussion prompt that includes all initial responses
+  const discussionPrompt = `As AI models working together, let's analyze and synthesize our different perspectives:
 
-  // Combine insights into a coherent response
-  const combinedResponse = `After analyzing multiple perspectives, here is a synthesized response:
+Initial responses:
+${initialResponses.map(r => `${r.role.toUpperCase()} (${r.provider}):
+${r.response}`).join('\n\n')}
 
-${insights.join('\n\nAdditionally, ')}
+Based on these perspectives, let's collaborate to create a comprehensive, unified response that:
+1. Combines the key insights from all viewpoints
+2. Resolves any contradictions
+3. Provides a clear, coherent analysis
+4. Maintains accuracy and precision
 
-This combined response represents a comprehensive analysis from multiple AI models working together to provide the most accurate and helpful information.`;
+Please synthesize these viewpoints into one cohesive response.`;
 
-  return combinedResponse;
+  // Use the first available agent (preferably GPT-4 if available) to synthesize
+  const synthesizer = agents[0];
+  console.log('Synthesizing responses using:', synthesizer.provider);
+  
+  const synthesizedResponse = await makeProviderRequest(synthesizer, discussionPrompt);
+  console.log('Synthesis complete');
+  
+  return synthesizedResponse;
 }
 
 serve(async (req) => {
@@ -149,7 +157,9 @@ serve(async (req) => {
       throw new Error('At least 2 agents are required');
     }
 
-    const providerResponses = await Promise.all(
+    // Step 1: Get initial responses from all agents
+    console.log('Getting initial responses from agents...');
+    const initialResponses = await Promise.all(
       agents.map(async (agent: Agent) => {
         const response = await makeProviderRequest(agent, message);
         return {
@@ -160,12 +170,16 @@ serve(async (req) => {
       })
     );
 
+    // Step 2: Synthesize the responses through agent interaction
+    console.log('Synthesizing responses...');
+    const finalResponse = await synthesizeResponses(agents, initialResponses);
+
     const fusionResponse: FusionResponse = {
-      final: combineResponses(providerResponses),
-      providers: providerResponses
+      final: finalResponse,
+      providers: initialResponses
     };
 
-    console.log('Successfully generated fusion response:', fusionResponse);
+    console.log('Successfully generated fusion response');
 
     return new Response(
       JSON.stringify({ response: fusionResponse }),
