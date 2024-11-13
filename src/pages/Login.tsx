@@ -33,10 +33,17 @@ const Login = () => {
     if (savedUrl && savedKey) {
       const client = createClient(savedUrl, savedKey);
       setSupabaseClient(client);
+
+      // Check if user is already logged in
+      client.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          navigate('/');
+        }
+      });
     } else {
       setShowSetupDialog(true);
     }
-  }, []);
+  }, [navigate]);
 
   const initializeSupabase = async () => {
     if (!supabaseUrl || !supabaseKey) {
@@ -81,10 +88,13 @@ const Login = () => {
   };
 
   const handleSkipSetup = () => {
-    const client = createClient(
-      'https://ialfzzyffpruxifznfhz.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlhbGZ6enlmZnBydXhpZnpuZmh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzEyOTQwODcsImV4cCI6MjA0Njg3MDA4N30.JtRU3ZimPQK06frPFNOMzBhFEubEKU1DA7uZfAPmp8k'
-    );
+    const defaultUrl = 'https://ialfzzyffpruxifznfhz.supabase.co';
+    const defaultKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlhbGZ6enlmZnBydXhpZnpuZmh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzEyOTQwODcsImV4cCI6MjA0Njg3MDA4N30.JtRU3ZimPQK06frPFNOMzBhFEubEKU1DA7uZfAPmp8k';
+    
+    localStorage.setItem('supabaseUrl', defaultUrl);
+    localStorage.setItem('supabaseKey', defaultKey);
+    
+    const client = createClient(defaultUrl, defaultKey);
     setSupabaseClient(client);
     setShowSetupDialog(false);
   };
@@ -188,6 +198,8 @@ const Login = () => {
               }}
               theme="light"
               providers={[]}
+              onlyThirdPartyProviders={false}
+              redirectTo={window.location.origin}
             />
           </div>
         </div>

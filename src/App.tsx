@@ -4,7 +4,7 @@ import Index from '@/pages/Index';
 import Settings from '@/pages/Settings';
 import Login from '@/pages/Login';
 import { useEffect, useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -12,16 +12,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const supabaseUrl = localStorage.getItem('supabaseUrl');
-    const supabaseKey = localStorage.getItem('supabaseKey');
-
-    if (!supabaseUrl || !supabaseKey) {
-      setLoading(false);
-      return;
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setLoading(false);
