@@ -1,6 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { makeProviderRequest, conductVotingRound } from './utils.ts';
+import { makeProviderRequest } from './utils.ts';
 import type { Agent, FusionResponse } from './types.ts';
 
 const corsHeaders = {
@@ -14,36 +14,59 @@ serve(async (req) => {
   }
 
   try {
-    const { message, agents } = await req.json();
-    console.log('Processing multi-agent request:', { message, agentCount: agents.length });
+    const { message, agents, collaborationSteps } = await req.json();
+    console.log('Starting collaborative multi-agent process');
 
-    if (!agents || agents.length < 2) {
-      throw new Error('At least 2 agents are required');
+    let currentContext = message;
+    const agentResponses = [];
+
+    // Sequential collaboration through defined steps
+    for (const step of collaborationSteps) {
+      const relevantAgent = agents.find(a => a.role.toLowerCase().includes(step.type));
+      if (!relevantAgent) continue;
+
+      console.log(`Executing ${step.type} step with ${relevantAgent.provider}`);
+
+      const stepPrompt = `
+Context: ${currentContext}
+
+Your Role: ${relevantAgent.instructions}
+
+Current Step: ${step.description}
+
+Previous Insights: ${agentResponses.map(r => `
+${r.role.toUpperCase()}: ${r.response}`).join('\n')}
+
+Task: Based on the above context and previous insights, provide your perspective and contribution.
+`;
+
+      const response = await makeProviderRequest(relevantAgent, stepPrompt);
+      agentResponses.push({
+        provider: relevantAgent.provider,
+        role: relevantAgent.role,
+        response: response
+      });
+
+      // Update context with new insights
+      currentContext = `${currentContext}\n\nInsights from ${relevantAgent.role}: ${response}`;
     }
 
-    // Step 1: Get initial responses from all agents
-    console.log('Getting initial responses from agents...');
-    const initialResponses = await Promise.all(
-      agents.map(async (agent: Agent) => {
-        const response = await makeProviderRequest(agent, message);
-        return {
-          provider: agent.provider,
-          role: agent.role,
-          response: response
-        };
-      })
-    );
+    // Final synthesis
+    const synthesizer = agents.find(a => a.role.toLowerCase().includes('synthesizer'));
+    const finalResponse = synthesizer ? await makeProviderRequest(synthesizer, `
+Create a final, coherent response that synthesizes all these perspectives:
 
-    // Step 2: Conduct voting and create final synthesis
-    console.log('Starting voting and synthesis process...');
-    const finalResponse = await conductVotingRound(agents, initialResponses);
+${agentResponses.map(r => `${r.role.toUpperCase()}: ${r.response}`).join('\n\n')}
+
+Important: Provide a clear, well-structured final response that incorporates the best insights from each perspective.
+    `) : agentResponses[agentResponses.length - 1].response;
 
     const fusionResponse: FusionResponse = {
       final: finalResponse,
-      providers: initialResponses
+      providers: agentResponses
     };
 
-    console.log('Successfully generated fusion response');
+    console.log('Successfully completed multi-agent collaboration');
 
     return new Response(
       JSON.stringify({ response: fusionResponse }),
