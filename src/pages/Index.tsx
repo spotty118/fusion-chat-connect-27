@@ -172,18 +172,18 @@ const Index = () => {
       </header>
       
       <div className="flex-none p-4 border-b bg-white/50 backdrop-blur-sm">
-        <div className="max-w-5xl mx-auto w-full flex justify-between items-center gap-4">
+        <div className="max-w-[calc(100%-2rem)] mx-auto w-full flex justify-between items-center gap-4">
           <ChatSearch onSearch={handleSearch} />
           <ChatExport messages={messages} />
         </div>
       </div>
       
-      <div className="flex flex-1 relative">
+      <div className="flex flex-1 gap-6 px-6">
         <main 
           className={cn(
-            "flex-1 flex flex-col max-w-5xl mx-auto w-full bg-white/70 backdrop-blur-xl shadow-2xl rounded-3xl my-6 overflow-hidden border border-gray-100",
+            "flex-1 flex flex-col bg-white/70 backdrop-blur-xl shadow-2xl rounded-3xl my-6 overflow-hidden border border-gray-100",
             "transition-all duration-300 ease-in-out",
-            sidePanelOpen && "opacity-50 pointer-events-none"
+            sidePanelOpen && "opacity-100"
           )}
         >
           <ChatContainer 
@@ -198,11 +198,13 @@ const Index = () => {
           />
         </main>
 
-        <FusionSidePanel
-          isOpen={sidePanelOpen && isFusionMode}
-          onClose={() => setSidePanelOpen(false)}
-          responses={fusionResponses}
-        />
+        {sidePanelOpen && isFusionMode && (
+          <FusionSidePanel
+            isOpen={sidePanelOpen}
+            onClose={() => setSidePanelOpen(false)}
+            responses={fusionResponses}
+          />
+        )}
       </div>
     </div>
   );
