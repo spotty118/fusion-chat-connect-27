@@ -29,9 +29,9 @@ export const SettingsContent = ({
   onActivate
 }: SettingsContentProps) => {
   return (
-    <div className="flex-1 h-screen overflow-y-auto">
-      <div className="p-8 space-y-6">
-        <TabsContent value="fusion" className="mt-0 space-y-6" forceMount hidden={activeTab !== 'fusion'}>
+    <div className="flex-1 overflow-y-auto">
+      <div className="h-full p-6">
+        <TabsContent value="fusion" className="space-y-6 mt-0" forceMount hidden={activeTab !== 'fusion'}>
           <SettingsSection title="AI Providers">
             <FusionModeSection
               fusionMode={fusionMode}
@@ -46,19 +46,19 @@ export const SettingsContent = ({
           </SettingsSection>
         </TabsContent>
 
-        <TabsContent value="customization" className="mt-0 space-y-6" forceMount hidden={activeTab !== 'customization'}>
+        <TabsContent value="customization" className="space-y-6 mt-0" forceMount hidden={activeTab !== 'customization'}>
           <SettingsSection title="Customization">
             <LanguageSettings />
           </SettingsSection>
         </TabsContent>
 
-        <TabsContent value="keyboard" className="mt-0 space-y-6" forceMount hidden={activeTab !== 'keyboard'}>
+        <TabsContent value="keyboard" className="space-y-6 mt-0" forceMount hidden={activeTab !== 'keyboard'}>
           <SettingsSection title="Keyboard Shortcuts">
             <KeyboardShortcutsSettings />
           </SettingsSection>
         </TabsContent>
 
-        <TabsContent value="backup" className="mt-0 space-y-6" forceMount hidden={activeTab !== 'backup'}>
+        <TabsContent value="backup" className="space-y-6 mt-0" forceMount hidden={activeTab !== 'backup'}>
           <SettingsSection title="Backup & Restore">
             <ExportImportSettings />
           </SettingsSection>
