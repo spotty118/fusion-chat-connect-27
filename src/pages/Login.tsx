@@ -1,20 +1,9 @@
-import { Auth } from '@supabase/auth-ui-react';
-import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { createClient } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { Bot } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import { SetupDialog } from '@/components/auth/SetupDialog';
+import { AuthForm } from '@/components/auth/AuthForm';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -26,7 +15,6 @@ const Login = () => {
   const [supabaseClient, setSupabaseClient] = useState<any>(null);
 
   useEffect(() => {
-    // Check for existing Supabase configuration
     const savedUrl = localStorage.getItem('supabaseUrl');
     const savedKey = localStorage.getItem('supabaseKey');
     
@@ -70,7 +58,6 @@ const Login = () => {
       setShowSetupDialog(false);
       setIsSettingUp(true);
 
-      // Simulate database setup delay
       setTimeout(() => {
         setIsSettingUp(false);
         toast({
@@ -99,6 +86,27 @@ const Login = () => {
     setShowSetupDialog(false);
   };
 
+  const handleTestLogin = async () => {
+    if (!supabaseClient) return;
+    
+    try {
+      const { error } = await supabaseClient.auth.signInWithPassword({
+        email: 'test@example.com',
+        password: 'testpassword123',
+      });
+      
+      if (error) throw error;
+      
+      navigate('/');
+    } catch (error) {
+      toast({
+        title: "Login Error",
+        description: "Please create a test account first with email: test@example.com and password: testpassword123",
+        variant: "destructive"
+      });
+    }
+  };
+
   if (isSettingUp) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center p-4">
@@ -112,97 +120,22 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center p-4">
-      <Dialog open={showSetupDialog} onOpenChange={setShowSetupDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Connect Your Supabase Project</DialogTitle>
-            <DialogDescription className="space-y-4 pt-4">
-              <p>To use this application, you'll need to connect it to your own Supabase project. Follow these steps:</p>
-              <ol className="list-decimal pl-6 space-y-2">
-                <li>Create a new project at <a href="https://supabase.com" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">supabase.com</a></li>
-                <li>Go to your project settings</li>
-                <li>Copy your project URL and anon key</li>
-                <li>Paste them below</li>
-              </ol>
-              <div className="space-y-4 pt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="supabaseUrl">Project URL</Label>
-                  <Input
-                    id="supabaseUrl"
-                    placeholder="https://your-project.supabase.co"
-                    value={supabaseUrl}
-                    onChange={(e) => setSupabaseUrl(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="supabaseKey">Anon Key</Label>
-                  <Input
-                    id="supabaseKey"
-                    type="password"
-                    placeholder="your-anon-key"
-                    value={supabaseKey}
-                    onChange={(e) => setSupabaseKey(e.target.value)}
-                  />
-                </div>
-                <Button onClick={initializeSupabase} className="w-full">
-                  Connect to Supabase
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={handleSkipSetup}
-                >
-                  Skip Database Setup
-                </Button>
-              </div>
-            </DialogDescription>
-          </DialogHeader>
-        </DialogContent>
-      </Dialog>
+      <SetupDialog
+        open={showSetupDialog}
+        onOpenChange={setShowSetupDialog}
+        supabaseUrl={supabaseUrl}
+        supabaseKey={supabaseKey}
+        onUrlChange={setSupabaseUrl}
+        onKeyChange={setSupabaseKey}
+        onInitialize={initializeSupabase}
+        onSkipSetup={handleSkipSetup}
+      />
 
       {supabaseClient && (
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-3xl shadow-2xl p-8 space-y-8">
-            <div className="flex flex-col items-center space-y-4">
-              <div className="w-16 h-16 rounded-2xl rotate-6 flex items-center justify-center bg-gradient-to-br from-fusion-primary to-fusion-secondary text-white shadow-lg shadow-fusion-primary/20">
-                <Bot size={32} />
-              </div>
-              <h1 className="text-3xl font-bold text-center bg-gradient-to-br from-fusion-primary to-fusion-secondary bg-clip-text text-transparent">
-                ThinkLink
-              </h1>
-              <p className="text-gray-500 text-center max-w-sm">
-                Connect with advanced AI models through a unified chat interface
-              </p>
-            </div>
-            <Auth
-              supabaseClient={supabaseClient}
-              appearance={{
-                theme: ThemeSupa,
-                variables: {
-                  default: {
-                    colors: {
-                      brand: '#2563EB',
-                      brandAccent: '#3B82F6',
-                    },
-                    radii: {
-                      borderRadiusButton: '1rem',
-                      buttonBorderRadius: '1rem',
-                      inputBorderRadius: '1rem',
-                    },
-                  },
-                },
-                className: {
-                  button: 'rounded-2xl shadow-lg shadow-fusion-primary/20',
-                  input: 'rounded-2xl',
-                },
-              }}
-              theme="light"
-              providers={[]}
-              onlyThirdPartyProviders={false}
-              redirectTo={window.location.origin}
-            />
-          </div>
-        </div>
+        <AuthForm 
+          supabaseClient={supabaseClient}
+          onTestLogin={handleTestLogin}
+        />
       )}
     </div>
   );
