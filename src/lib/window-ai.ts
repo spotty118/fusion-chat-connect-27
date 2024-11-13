@@ -8,14 +8,27 @@ export async function generateResponse(content: string): Promise<string | Fusion
       throw new Error('Window AI is not available');
     }
 
-    const response = await window.ai.generateText(content);
+    const response = await window.ai.generateText({
+      messages: [{ role: "user", content }]
+    });
 
     // Validate the response
-    if (!response || typeof response !== 'string') {
+    if (!response || !Array.isArray(response) || response.length === 0) {
       throw new Error('Invalid response format from AI');
     }
 
-    return response;
+    const firstResponse = response[0];
+    if (firstResponse.message?.content) {
+      return firstResponse.message.content;
+    }
+    if (firstResponse.text) {
+      return firstResponse.text;
+    }
+    if (firstResponse.delta?.content) {
+      return firstResponse.delta.content;
+    }
+
+    throw new Error('Invalid response format from AI');
   } catch (error) {
     // Log the error for debugging
     console.error('Error generating response:', error);
