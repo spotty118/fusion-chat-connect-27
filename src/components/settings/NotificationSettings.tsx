@@ -2,38 +2,68 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Bell } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export const NotificationSettings = () => {
   const { toast } = useToast();
-  const [emailNotifications, setEmailNotifications] = useState(() => 
-    localStorage.getItem('emailNotifications') !== 'false'
-  );
+  const [emailNotifications, setEmailNotifications] = useState(false);
   const [desktopNotifications, setDesktopNotifications] = useState(() => 
-    localStorage.getItem('desktopNotifications') !== 'false'
+    localStorage.getItem('desktopNotifications') === 'true'
   );
 
+  // Load user's email notification preference from Supabase
   useEffect(() => {
-    localStorage.setItem('emailNotifications', String(emailNotifications));
-  }, [emailNotifications]);
+    const loadEmailPreference = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('email_notifications')
+          .eq('id', session.user.id)
+          .single();
+        
+        if (profile) {
+          setEmailNotifications(profile.email_notifications || false);
+        }
+      }
+    };
+    
+    loadEmailPreference();
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('desktopNotifications', String(desktopNotifications));
     
     if (desktopNotifications) {
-      // Request notification permission if enabled
       if ('Notification' in window) {
         Notification.requestPermission();
       }
     }
   }, [desktopNotifications]);
 
-  const handleEmailNotificationsChange = (checked: boolean) => {
-    setEmailNotifications(checked);
-    toast({
-      title: checked ? "Email Notifications Enabled" : "Email Notifications Disabled",
-      description: checked ? "You will now receive email updates" : "Email notifications have been turned off",
-    });
+  const handleEmailNotificationsChange = async (checked: boolean) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ email_notifications: checked })
+        .eq('id', session.user.id);
+
+      if (!error) {
+        setEmailNotifications(checked);
+        toast({
+          title: checked ? "Email Notifications Enabled" : "Email Notifications Disabled",
+          description: checked ? "You will now receive email updates" : "Email notifications have been turned off",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to update email notification settings",
+          variant: "destructive",
+        });
+      }
+    }
   };
 
   const handleDesktopNotificationsChange = async (checked: boolean) => {

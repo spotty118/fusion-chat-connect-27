@@ -2,31 +2,23 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Moon } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 export const AppearanceSettings = () => {
   const { toast } = useToast();
   const [isDarkMode, setIsDarkMode] = useState(() => 
-    localStorage.getItem('darkMode') === 'true'
+    document.documentElement.classList.contains('dark')
   );
   const [isCompactMode, setIsCompactMode] = useState(() => 
-    localStorage.getItem('compactMode') === 'true'
+    document.documentElement.classList.contains('compact')
   );
 
   useEffect(() => {
-    // Apply dark mode
     document.documentElement.classList.toggle('dark', isDarkMode);
     localStorage.setItem('darkMode', String(isDarkMode));
-    
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
   }, [isDarkMode]);
 
   useEffect(() => {
-    // Apply compact mode
     document.documentElement.classList.toggle('compact', isCompactMode);
     localStorage.setItem('compactMode', String(isCompactMode));
   }, [isCompactMode]);
