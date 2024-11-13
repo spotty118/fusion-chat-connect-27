@@ -2,13 +2,22 @@ import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Bot } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [showSetupDialog, setShowSetupDialog] = useState(true);
+  const [isSettingUp, setIsSettingUp] = useState(false);
 
   useEffect(() => {
     // Check if user is already logged in
@@ -34,8 +43,49 @@ const Login = () => {
     return () => subscription.unsubscribe();
   }, [navigate, toast]);
 
+  const handleDialogClose = () => {
+    setShowSetupDialog(false);
+    setIsSettingUp(true);
+    // Simulate database setup delay
+    setTimeout(() => {
+      setIsSettingUp(false);
+      toast({
+        title: "Database Ready",
+        description: "Your database has been set up successfully. You can now sign in.",
+      });
+    }, 2000);
+  };
+
+  if (isSettingUp) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center p-4">
+        <div className="text-center space-y-4">
+          <div className="animate-spin w-8 h-8 border-4 border-fusion-primary border-t-transparent rounded-full mx-auto"></div>
+          <p className="text-lg text-gray-700">Setting up your database...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center p-4">
+      <Dialog open={showSetupDialog} onOpenChange={handleDialogClose}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Welcome to ThinkLink!</DialogTitle>
+            <DialogDescription className="space-y-4 pt-4">
+              <p>Before you begin, we'll set up your personal database which includes:</p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li>Creating your user profile</li>
+                <li>Setting up API key storage</li>
+                <li>Initializing chat message storage</li>
+              </ul>
+              <p>Click outside this dialog or press ESC to start the setup process.</p>
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+
       <div className="w-full max-w-md">
         <div className="bg-white rounded-3xl shadow-2xl p-8 space-y-8">
           <div className="flex flex-col items-center space-y-4">
