@@ -23,7 +23,7 @@ const Login = () => {
   const [isSettingUp, setIsSettingUp] = useState(false);
   const [supabaseUrl, setSupabaseUrl] = useState('');
   const [supabaseKey, setSupabaseKey] = useState('');
-  const [supabaseClient, setSupabaseClient] = useState(null);
+  const [supabaseClient, setSupabaseClient] = useState<any>(null);
 
   useEffect(() => {
     // Check for existing Supabase configuration
@@ -155,31 +155,33 @@ const Login = () => {
                 Connect with advanced AI models through a unified chat interface
               </p>
             </div>
-            <Auth
-              supabaseClient={supabaseClient}
-              appearance={{
-                theme: ThemeSupa,
-                variables: {
-                  default: {
-                    colors: {
-                      brand: '#2563EB',
-                      brandAccent: '#3B82F6',
-                    },
-                    radii: {
-                      borderRadiusButton: '1rem',
-                      buttonBorderRadius: '1rem',
-                      inputBorderRadius: '1rem',
+            {supabaseClient && (
+              <Auth
+                supabaseClient={supabaseClient}
+                appearance={{
+                  theme: ThemeSupa,
+                  variables: {
+                    default: {
+                      colors: {
+                        brand: '#2563EB',
+                        brandAccent: '#3B82F6',
+                      },
+                      radii: {
+                        borderRadiusButton: '1rem',
+                        buttonBorderRadius: '1rem',
+                        inputBorderRadius: '1rem',
+                      },
                     },
                   },
-                },
-                className: {
-                  button: 'rounded-2xl shadow-lg shadow-fusion-primary/20',
-                  input: 'rounded-2xl',
-                },
-              }}
-              theme="light"
-              providers={[]}
-            />
+                  className: {
+                    button: 'rounded-2xl shadow-lg shadow-fusion-primary/20',
+                    input: 'rounded-2xl',
+                  },
+                }}
+                theme="light"
+                providers={[]}
+              />
+            )}
           </div>
         </div>
       )}
