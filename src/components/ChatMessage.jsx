@@ -3,11 +3,15 @@ import { cn } from '@/lib/utils';
 import { UserCircle2, Bot, MessageSquareQuote } from 'lucide-react';
 import { CodeBlock } from './chat/CodeBlock';
 import { Button } from '@/components/ui/button';
+import FusionResponse from './FusionResponse';
 
 const ChatMessage = ({ message, isAI, isLoading, onReply }) => {
   const getMessageContent = (msg) => {
     if (typeof msg === 'string') return msg;
     if (typeof msg === 'object') {
+      if (msg.final && msg.providers) {
+        return <FusionResponse response={msg} />;
+      }
       if (msg.text) return msg.text;
       return JSON.stringify(msg, null, 2);
     }
@@ -18,6 +22,10 @@ const ChatMessage = ({ message, isAI, isLoading, onReply }) => {
 
   // Function to detect and parse code blocks
   const renderContent = (content) => {
+    if (React.isValidElement(content)) {
+      return content;
+    }
+
     const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
     const parts = [];
     let lastIndex = 0;
