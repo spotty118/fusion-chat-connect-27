@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { checkWindowAI } from '@/lib/api/window-ai';
+import { checkWindowAI } from '@/lib/window-ai';
 import { Database } from 'lucide-react';
 
 export const CurrentModel = () => {

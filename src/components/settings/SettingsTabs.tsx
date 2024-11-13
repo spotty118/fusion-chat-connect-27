@@ -3,12 +3,6 @@ import FusionModeSettings from './FusionModeSettings';
 import { LanguageSettings } from './LanguageSettings';
 import { KeyboardShortcutsSettings } from './KeyboardShortcutsSettings';
 import { ExportImportSettings } from './ExportImportSettings';
-import { ChatHistoryTools } from './tools/ChatHistoryTools';
-import { ModelConfigTools } from './tools/ModelConfigTools';
-import { PromptTemplateTools } from './tools/PromptTemplateTools';
-import { ApiKeyTools } from './tools/ApiKeyTools';
-import { ThemeTools } from './tools/ThemeTools';
-import { AnalyticsTools } from './tools/AnalyticsTools';
 import { useState } from 'react';
 import { useProviderStatus } from '@/hooks/useProviderStatus';
 
@@ -58,14 +52,8 @@ export function SettingsTabs() {
             <TabsTrigger value="providers" className="justify-start w-full">
               AI Providers
             </TabsTrigger>
-            <TabsTrigger value="tools" className="justify-start w-full">
-              Tools
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="justify-start w-full">
-              Analytics
-            </TabsTrigger>
             <TabsTrigger value="customization" className="justify-start w-full">
-              Language
+              Customization
             </TabsTrigger>
             <TabsTrigger value="shortcuts" className="justify-start w-full">
               Keyboard Shortcuts
@@ -85,18 +73,6 @@ export function SettingsTabs() {
               onModelSelect={handleModelSelect}
               providerQueries={providerQueries}
             />
-          </TabsContent>
-          
-          <TabsContent value="tools" className="mt-0 space-y-6">
-            <ChatHistoryTools />
-            <ModelConfigTools />
-            <PromptTemplateTools />
-            <ApiKeyTools />
-            <ThemeTools />
-          </TabsContent>
-
-          <TabsContent value="analytics" className="mt-0">
-            <AnalyticsTools />
           </TabsContent>
           
           <TabsContent value="customization" className="mt-0">
