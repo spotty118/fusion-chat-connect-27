@@ -108,8 +108,14 @@ const Index = () => {
         onToggleSidePanel={() => setSidePanelOpen(!sidePanelOpen)}
       />
       
-      <div className="flex-none p-4 border-b bg-white/50 backdrop-blur-sm">
-        <div className="max-w-[calc(100%-2rem)] mx-auto w-full flex justify-between items-center gap-4">
+      <div className={cn(
+        "flex-none p-4 border-b bg-white/50 backdrop-blur-sm",
+        sidePanelOpen ? "" : "flex justify-center"
+      )}>
+        <div className={cn(
+          "w-full flex justify-between items-center gap-4",
+          sidePanelOpen ? "max-w-full" : "max-w-4xl"
+        )}>
           <ChatSearch onSearch={handleSearch} />
           <ChatExport messages={messages} />
         </div>
