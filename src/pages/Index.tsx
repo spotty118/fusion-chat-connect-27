@@ -49,7 +49,7 @@ const Index = () => {
         setSidePanelOpen(true);
       }
 
-      const response = await generateResponse(content, isFusionMode);
+      const response = await generateResponse(content);
       
       if (isFusionMode && typeof response === 'object' && response !== null) {
         const fusionResponse = response as FusionResponse;
