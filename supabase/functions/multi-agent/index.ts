@@ -118,30 +118,42 @@ async function makeProviderRequest(agent: Agent, prompt: string): Promise<string
   }
 }
 
-async function synthesizeResponses(agents: Agent[], initialResponses: Array<{ provider: string; role: string; response: string }>): Promise<string> {
-  // Create a discussion prompt that includes all initial responses
-  const discussionPrompt = `As AI models working together, let's analyze and synthesize our different perspectives:
+async function conductVotingRound(agents: Agent[], initialResponses: Array<{ provider: string; role: string; response: string }>): Promise<string> {
+  const votingPrompt = `As AI models collaborating on a task, let's analyze and vote on the best elements from each response to create a unified output. Here are the initial responses:
 
-Initial responses:
 ${initialResponses.map(r => `${r.role.toUpperCase()} (${r.provider}):
 ${r.response}`).join('\n\n')}
 
-Based on these perspectives, let's collaborate to create a comprehensive, unified response that:
-1. Combines the key insights from all viewpoints
-2. Resolves any contradictions
-3. Provides a clear, coherent analysis
-4. Maintains accuracy and precision
+Please:
+1. Identify the strongest points and insights from each response
+2. Vote on which elements should be included in the final response
+3. Point out any contradictions or inconsistencies that need to be resolved
+4. Suggest how to combine the best elements into a cohesive response
 
-Please synthesize these viewpoints into one cohesive response.`;
+Format your response as a structured analysis with clear recommendations for the final unified response.`;
 
-  // Use the first available agent (preferably GPT-4 if available) to synthesize
+  // Use each agent to vote and provide recommendations
+  const votingResponses = await Promise.all(
+    agents.map(agent => makeProviderRequest(agent, votingPrompt))
+  );
+
+  // Create a synthesis prompt based on the voting results
+  const synthesisPrompt = `Based on the voting results from all agents:
+
+${votingResponses.join('\n\n')}
+
+Please create a final, unified response that:
+1. Incorporates the most voted-for elements and insights
+2. Resolves any identified contradictions
+3. Maintains a clear and coherent flow
+4. Presents a balanced perspective from all agents
+
+The response should be well-structured and ready for presentation to the user.`;
+
+  // Use the first agent (typically the most capable) to create the final synthesis
   const synthesizer = agents[0];
-  console.log('Synthesizing responses using:', synthesizer.provider);
-  
-  const synthesizedResponse = await makeProviderRequest(synthesizer, discussionPrompt);
-  console.log('Synthesis complete');
-  
-  return synthesizedResponse;
+  console.log('Creating final synthesis using:', synthesizer.provider);
+  return await makeProviderRequest(synthesizer, synthesisPrompt);
 }
 
 serve(async (req) => {
@@ -170,9 +182,9 @@ serve(async (req) => {
       })
     );
 
-    // Step 2: Synthesize the responses through agent interaction
-    console.log('Synthesizing responses...');
-    const finalResponse = await synthesizeResponses(agents, initialResponses);
+    // Step 2: Conduct voting and create final synthesis
+    console.log('Starting voting and synthesis process...');
+    const finalResponse = await conductVotingRound(agents, initialResponses);
 
     const fusionResponse: FusionResponse = {
       final: finalResponse,
@@ -185,6 +197,7 @@ serve(async (req) => {
       JSON.stringify({ response: fusionResponse }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
+
   } catch (error) {
     console.error('Error in multi-agent function:', error);
     return new Response(
