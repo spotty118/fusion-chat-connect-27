@@ -3,6 +3,7 @@ import { Database } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import React, { useEffect } from 'react';  // Added proper React import
 
 export const AnalyticsTools = () => {
   const { toast } = useToast();
@@ -45,7 +46,7 @@ export const AnalyticsTools = () => {
   });
 
   // Handle error with useEffect
-  React.useEffect(() => {
+  useEffect(() => {
     if (error) {
       toast({
         title: "Error",
