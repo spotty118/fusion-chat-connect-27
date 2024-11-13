@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from 'lucide-react';
+import { FusionResponse } from './fusion-mode';
 
 const AGENT_ROLES = {
   RESEARCHER: {
