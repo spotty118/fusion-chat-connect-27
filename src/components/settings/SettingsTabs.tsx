@@ -6,6 +6,9 @@ import { ExportImportSettings } from './ExportImportSettings';
 import { ChatHistoryTools } from './tools/ChatHistoryTools';
 import { ModelConfigTools } from './tools/ModelConfigTools';
 import { PromptTemplateTools } from './tools/PromptTemplateTools';
+import { ApiKeyTools } from './tools/ApiKeyTools';
+import { ThemeTools } from './tools/ThemeTools';
+import { AnalyticsTools } from './tools/AnalyticsTools';
 import { useState } from 'react';
 import { useProviderStatus } from '@/hooks/useProviderStatus';
 
@@ -85,6 +88,9 @@ export function SettingsTabs() {
             <ChatHistoryTools />
             <ModelConfigTools />
             <PromptTemplateTools />
+            <ApiKeyTools />
+            <ThemeTools />
+            <AnalyticsTools />
           </TabsContent>
           
           <TabsContent value="customization" className="mt-0">
