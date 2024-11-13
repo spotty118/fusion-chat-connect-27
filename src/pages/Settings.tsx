@@ -1,12 +1,10 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft } from 'lucide-react';
-import FusionModeSettings from '@/components/settings/FusionModeSettings';
+import { SettingsSection } from '@/components/settings/SettingsSection';
+import { FusionModeSection } from '@/components/settings/FusionModeSection';
 import { LanguageSettings } from '@/components/settings/LanguageSettings';
 import { ExportImportSettings } from '@/components/settings/ExportImportSettings';
 import { KeyboardShortcutsSettings } from '@/components/settings/KeyboardShortcutsSettings';
@@ -34,7 +32,6 @@ const Settings = () => {
     openrouter: localStorage.getItem('openrouter_model') || '',
   }));
 
-  // Fetch existing API keys on component mount
   React.useEffect(() => {
     const fetchApiKeys = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -63,8 +60,6 @@ const Settings = () => {
         });
         
         setApiKeys(keys);
-        
-        // Also set in localStorage for compatibility
         Object.entries(keys).forEach(([provider, key]) => {
           if (key) localStorage.setItem(`${provider}_key`, key);
         });
@@ -100,14 +95,12 @@ const Settings = () => {
         return;
       }
 
-      // Update state and localStorage
       setApiKeys(prev => ({
         ...prev,
         [provider]: value
       }));
       localStorage.setItem(`${provider}_key`, value);
 
-      // Save to Supabase
       const { error } = await supabase
         .from('api_keys')
         .upsert({
@@ -161,52 +154,30 @@ const Settings = () => {
           Back
         </Button>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Settings</CardTitle>
-            <CardDescription>
-              Configure your AI chat experience. Make sure to save your API keys to use the providers.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex items-center justify-between space-x-2">
-              <div className="space-y-0.5">
-                <Label htmlFor="fusion-mode">Fusion Mode</Label>
-                <p className="text-sm text-muted-foreground">
-                  Combine responses from multiple AI providers
-                </p>
-              </div>
-              <Switch
-                id="fusion-mode"
-                checked={fusionMode}
-                onCheckedChange={handleFusionModeChange}
-              />
-            </div>
+        <SettingsSection title="AI Providers">
+          <FusionModeSection
+            fusionMode={fusionMode}
+            onFusionModeChange={handleFusionModeChange}
+            apiKeys={apiKeys}
+            selectedModels={selectedModels}
+            onApiKeyChange={handleApiKeyChange}
+            onModelSelect={handleModelSelect}
+            providerQueries={providerQueries}
+            onActivate={() => navigate('/')}
+          />
+        </SettingsSection>
 
-            {fusionMode && (
-              <FusionModeSettings
-                apiKeys={apiKeys}
-                selectedModels={selectedModels}
-                onApiKeyChange={handleApiKeyChange}
-                onModelSelect={handleModelSelect}
-                providerQueries={providerQueries}
-                onActivate={() => navigate('/')}
-              />
-            )}
+        <SettingsSection title="Customization">
+          <LanguageSettings />
+        </SettingsSection>
 
-            <div className="border-t pt-6">
-              <LanguageSettings />
-            </div>
+        <SettingsSection title="Keyboard Shortcuts">
+          <KeyboardShortcutsSettings />
+        </SettingsSection>
 
-            <div className="border-t pt-6">
-              <KeyboardShortcutsSettings />
-            </div>
-
-            <div className="border-t pt-6">
-              <ExportImportSettings />
-            </div>
-          </CardContent>
-        </Card>
+        <SettingsSection title="Backup & Restore">
+          <ExportImportSettings />
+        </SettingsSection>
       </div>
     </div>
   );
