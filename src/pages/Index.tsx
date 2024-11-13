@@ -48,7 +48,7 @@ const Index = () => {
     navigate('/login');
   };
 
-  const handleSendMessage = async (content) => {
+  const handleSendMessage = async (content: string) => {
     try {
       setIsLoading(true);
       const userMessage = { role: 'user', content };
@@ -61,19 +61,26 @@ const Index = () => {
 
       const response = await generateResponse(content, isFusionMode);
       
-      // If it's a fusion mode response, it will include individual provider responses
-      if (response.providers) {
+      // Check if response is a fusion mode response (object) or regular response (string)
+      if (typeof response === 'object' && 'providers' in response) {
         setFusionResponses(response.providers.map(p => ({
           ...p,
           timestamp: new Date().toLocaleTimeString()
         })));
+        
+        const aiMessage = { 
+          role: 'assistant', 
+          content: response.final 
+        };
+        setMessages(prev => [...prev, aiMessage]);
+      } else {
+        // Handle regular string response
+        const aiMessage = { 
+          role: 'assistant', 
+          content: response 
+        };
+        setMessages(prev => [...prev, aiMessage]);
       }
-
-      const aiMessage = { 
-        role: 'assistant', 
-        content: isFusionMode ? response.final : response 
-      };
-      setMessages(prev => [...prev, aiMessage]);
     } catch (error) {
       toast({
         title: "Error",
