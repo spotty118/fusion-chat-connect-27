@@ -9,129 +9,13 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      api_keys: {
-        Row: {
-          api_key: string
-          created_at: string | null
-          id: string
-          provider: string
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          api_key: string
-          created_at?: string | null
-          id?: string
-          provider: string
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          api_key?: string
-          created_at?: string | null
-          id?: string
-          provider?: string
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      chat_messages: {
-        Row: {
-          created_at: string | null
-          id: string
-          message: string
-          model: string
-          provider: string
-          response: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          message: string
-          model: string
-          provider: string
-          response: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          message?: string
-          model?: string
-          provider?: string
-          response?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      profiles: {
-        Row: {
-          created_at: string
-          email_notifications: boolean | null
-          id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          email_notifications?: boolean | null
-          id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          email_notifications?: boolean | null
-          id?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      response_cache: {
-        Row: {
-          cache_key: string
-          combined_response: string
-          created_at: string | null
-          expires_at: string
-          id: string
-        }
-        Insert: {
-          cache_key: string
-          combined_response: string
-          created_at?: string | null
-          expires_at: string
-          id?: string
-        }
-        Update: {
-          cache_key?: string
-          combined_response?: string
-          created_at?: string | null
-          expires_at?: string
-          id?: string
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      get_cached_response: {
-        Args: {
-          cache_key: string
-        }
-        Returns: {
-          combined_response: string
-        }[]
-      }
-      store_cached_response: {
-        Args: {
-          input_cache_key: string
-          input_combined_response: string
-          input_expires_at: string
-        }
-        Returns: undefined
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
