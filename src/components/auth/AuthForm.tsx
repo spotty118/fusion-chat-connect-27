@@ -3,6 +3,7 @@ import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 interface AuthFormProps {
   supabaseClient: SupabaseClient;
@@ -10,6 +11,8 @@ interface AuthFormProps {
 }
 
 export const AuthForm = ({ supabaseClient, onTestLogin }: AuthFormProps) => {
+  const { toast } = useToast();
+
   return (
     <div className="w-full max-w-md">
       <div className="bg-white rounded-3xl shadow-2xl p-8 space-y-8">
@@ -59,7 +62,17 @@ export const AuthForm = ({ supabaseClient, onTestLogin }: AuthFormProps) => {
           theme="light"
           providers={[]}
           onlyThirdPartyProviders={false}
-          redirectTo={window.location.origin}
+          redirectTo={`${window.location.origin}/`}
+          localization={{
+            variables: {
+              sign_in: {
+                email_label: 'Email',
+                password_label: 'Password',
+              },
+            },
+          }}
+          showLinks={true}
+          view="sign_in"
         />
       </div>
     </div>
