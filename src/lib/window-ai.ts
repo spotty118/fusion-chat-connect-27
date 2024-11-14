@@ -21,17 +21,24 @@ const setVerified = () => {
 };
 
 const waitForWindowAI = async (retries = 0): Promise<boolean> => {
-  if (typeof window !== 'undefined' && window?.ai) {
+  // Check if window.ai exists and has the required methods
+  if (typeof window !== 'undefined' && window?.ai?.getCurrentModel && window?.ai?.generateText) {
     if (!isVerified()) {
       setVerified();
     }
     return true;
   }
 
-  if (retries >= MAX_RETRIES && !isVerified()) {
-    throw new Error(
-      "Window AI not found! Please install the Chrome extension: https://windowai.io"
-    );
+  if (retries >= MAX_RETRIES) {
+    if (typeof window !== 'undefined' && window?.ai) {
+      throw new Error(
+        "Window AI extension needs to be updated. Please update to the latest version."
+      );
+    } else {
+      throw new Error(
+        "Window AI not found! Please install the Chrome extension: https://windowai.io"
+      );
+    }
   }
 
   await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
