@@ -4,12 +4,6 @@ const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000;
 const AUTH_COOKIE_NAME = 'window_ai_verified';
 
-interface WindowAIResponse {
-  message?: { content: string };
-  text?: string;
-  delta?: { content: string };
-}
-
 const isVerified = () => {
   return document.cookie.includes(AUTH_COOKIE_NAME);
 };
@@ -21,37 +15,43 @@ const setVerified = () => {
 };
 
 const waitForWindowAI = async (retries = 0): Promise<boolean> => {
-  // Check if window.ai exists and has the required methods
-  if (typeof window !== 'undefined' && window?.ai?.getCurrentModel && window?.ai?.generateText) {
+  // First check if we're in fusion mode
+  const fusionMode = localStorage.getItem('fusionMode') === 'true';
+  if (fusionMode) {
+    return true; // Skip Window AI check in fusion mode
+  }
+
+  // Basic check for window.ai existence
+  if (typeof window === 'undefined' || !window.ai) {
+    if (retries >= MAX_RETRIES) {
+      throw new Error("Window AI not found! Please install the Chrome extension: https://windowai.io");
+    }
+    await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+    return waitForWindowAI(retries + 1);
+  }
+
+  // Extension exists, verify functionality
+  try {
+    // Try to get current model as a test
+    await window.ai.getCurrentModel();
     if (!isVerified()) {
       setVerified();
     }
     return true;
-  }
-
-  if (retries >= MAX_RETRIES) {
-    if (typeof window !== 'undefined' && window?.ai) {
-      throw new Error(
-        "Window AI extension needs to be updated. Please update to the latest version."
-      );
-    } else {
-      throw new Error(
-        "Window AI not found! Please install the Chrome extension: https://windowai.io"
-      );
+  } catch (error) {
+    if (retries >= MAX_RETRIES) {
+      throw new Error("Window AI extension needs to be updated or reconfigured. Please check your extension settings.");
     }
+    await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+    return waitForWindowAI(retries + 1);
   }
-
-  await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-  return waitForWindowAI(retries + 1);
 };
 
 export const checkWindowAI = async () => {
   const fusionMode = localStorage.getItem('fusionMode') === 'true';
-  
   if (fusionMode) {
-    return false;
+    return true;
   }
-  
   return waitForWindowAI();
 };
 
@@ -82,7 +82,7 @@ export const generateResponse = async (message: string) => {
     }
 
     if (Array.isArray(response)) {
-      const firstResponse = response[0] as WindowAIResponse;
+      const firstResponse = response[0];
       if (!firstResponse) {
         throw new Error('Empty response from Window AI');
       }
@@ -93,7 +93,7 @@ export const generateResponse = async (message: string) => {
       if ('delta' in firstResponse && firstResponse.delta?.content) return firstResponse.delta.content;
     }
 
-    const objectResponse = response as WindowAIResponse;
+    const objectResponse = response;
     if (typeof objectResponse === 'object') {
       if ('message' in objectResponse && objectResponse.message?.content) return objectResponse.message.content;
       if ('text' in objectResponse && objectResponse.text) return objectResponse.text;
