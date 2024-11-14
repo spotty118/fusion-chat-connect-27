@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,6 +7,7 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -15,31 +16,68 @@ serve(async (req) => {
     const { provider, apiKey } = await req.json();
     console.log(`Fetching models for provider: ${provider}`);
     
+    if (!apiKey) {
+      console.log('No API key provided');
+      return new Response(
+        JSON.stringify({ 
+          models: getDefaultModels(provider),
+          message: 'Using default models (no API key provided)'
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200
+        }
+      );
+    }
+
     let models: string[] = [];
 
     if (provider === 'openai') {
-      const response = await fetch('https://api.openai.com/v1/models', {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
+      try {
+        const response = await fetch('https://api.openai.com/v1/models', {
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          console.error('OpenAI API error:', await response.text());
+          return new Response(
+            JSON.stringify({ 
+              models: getDefaultModels(provider),
+              error: 'Failed to fetch OpenAI models'
+            }),
+            { 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              status: 200
+            }
+          );
         }
-      });
 
-      if (!response.ok) {
-        console.error('OpenAI API error:', await response.text());
-        throw new Error('Failed to fetch OpenAI models');
+        const data = await response.json();
+        models = data.data
+          .filter((model: { id: string }) => 
+            (model.id.includes('gpt-4') || model.id.includes('gpt-3.5')) &&
+            !model.id.includes('vision') &&
+            !model.id.includes('instruct')
+          )
+          .map((model: { id: string }) => model.id)
+          .sort()
+          .reverse();
+      } catch (error) {
+        console.error('Error fetching OpenAI models:', error);
+        return new Response(
+          JSON.stringify({ 
+            models: getDefaultModels(provider),
+            error: 'Error fetching OpenAI models'
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200
+          }
+        );
       }
-
-      const data = await response.json();
-      models = data.data
-        .filter((model: { id: string }) => 
-          (model.id.includes('gpt-4') || model.id.includes('gpt-3.5')) &&
-          !model.id.includes('vision') &&
-          !model.id.includes('instruct')
-        )
-        .map((model: { id: string }) => model.id)
-        .sort()
-        .reverse();
     }
 
     if (provider === 'claude') {
@@ -67,41 +105,69 @@ serve(async (req) => {
 
         if (!response.ok) {
           console.error('Claude API verification failed:', await response.text());
-          throw new Error('Invalid Claude API key');
+          return new Response(
+            JSON.stringify({ 
+              models: getDefaultModels(provider),
+              error: 'Invalid Claude API key'
+            }),
+            { 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              status: 200
+            }
+          );
         }
       } catch (error) {
         console.error('Error verifying Claude API key:', error);
-        throw new Error('Failed to verify Claude API key');
+        return new Response(
+          JSON.stringify({ 
+            models: getDefaultModels(provider),
+            error: 'Failed to verify Claude API key'
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200
+          }
+        );
       }
     }
 
-    if (provider === 'google') {
+    if (provider === 'openrouter') {
       try {
-        const response = await fetch(
-          'https://generativelanguage.googleapis.com/v1/models?key=' + apiKey
-        );
+        const response = await fetch('https://openrouter.ai/api/v1/models', {
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          }
+        });
 
         if (!response.ok) {
-          console.error('Google AI API error:', await response.text());
-          throw new Error('Failed to fetch Google AI models');
+          console.error('OpenRouter API error:', await response.text());
+          return new Response(
+            JSON.stringify({ 
+              models: getDefaultModels(provider),
+              error: 'Failed to fetch OpenRouter models'
+            }),
+            { 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              status: 200
+            }
+          );
         }
 
         const data = await response.json();
-        models = data.models
-          .filter((model: { name: string }) => 
-            model.name.includes('gemini') && 
-            !model.name.includes('vision')
-          )
-          .map((model: { name: string }) => {
-            return model.name.replace('models/', '');
-          })
-          .sort()
-          .reverse();
-
-        console.log('Available Google AI models:', models);
+        models = data.data.map((model: { id: string }) => model.id);
       } catch (error) {
-        console.error('Error fetching Google AI models:', error);
-        throw new Error('Failed to fetch Google AI models');
+        console.error('Error fetching OpenRouter models:', error);
+        return new Response(
+          JSON.stringify({ 
+            models: getDefaultModels(provider),
+            error: 'Error fetching OpenRouter models'
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200
+          }
+        );
       }
     }
 
@@ -109,10 +175,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ models }),
       { 
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200
       }
     );
   } catch (error) {
@@ -123,12 +187,25 @@ serve(async (req) => {
         details: error.toString()
       }),
       { 
-        status: 500,
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
   }
 });
+
+function getDefaultModels(provider: string): string[] {
+  const DEFAULT_MODELS = {
+    openai: ['gpt-4', 'gpt-3.5-turbo'],
+    claude: [
+      'claude-3-opus-20240229',
+      'claude-3-sonnet-20240229',
+      'claude-3-haiku-20240307',
+      'claude-2.1'
+    ],
+    google: ['palm-2'],
+    openrouter: ['openrouter/auto', 'mistralai/mixtral-8x7b-instruct', 'anthropic/claude-2']
+  };
+  
+  return DEFAULT_MODELS[provider as keyof typeof DEFAULT_MODELS] || [];
+}
