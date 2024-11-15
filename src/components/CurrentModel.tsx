@@ -12,14 +12,15 @@ export const CurrentModel = () => {
         return 'fusion/multi-provider';
       }
 
-      const manualApiKey = localStorage.getItem('manualApiKey');
-      const manualModel = localStorage.getItem('manualModel');
+      const provider = localStorage.getItem('manualProvider') || 'openai';
+      const apiKey = localStorage.getItem(`${provider}_key`);
+      const model = localStorage.getItem(`${provider}_model`);
 
-      if (!manualApiKey || !manualModel) {
+      if (!apiKey || !model) {
         throw new Error('No model configuration found');
       }
 
-      return `openai/${manualModel}`;
+      return `${provider}/${model}`;
     },
     refetchInterval: 2000,
     retry: 3,
