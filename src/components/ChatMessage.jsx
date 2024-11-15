@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { UserCircle2, Bot, MessageSquareQuote } from 'lucide-react';
+import { UserCircle2, Bot, MessageSquareQuote, Sparkles } from 'lucide-react';
 import { CodeBlock } from './chat/CodeBlock';
 import { Button } from '@/components/ui/button';
 import FusionResponse from './FusionResponse';
@@ -73,16 +73,23 @@ const ChatMessage = ({ message, isAI, isLoading, onReply }) => {
 
   return (
     <div className={cn(
-      "flex w-full group items-start gap-4 transition-transform duration-200 ease-in-out hover:scale-[1.01]",
+      "flex w-full group items-start gap-4 transition-all duration-300 ease-in-out hover:scale-[1.01]",
       isAI ? "justify-start" : "justify-end"
     )}>
       {isAI && (
-        <div className="w-12 h-12 rounded-2xl rotate-3 flex items-center justify-center bg-gradient-to-br from-fusion-primary to-fusion-secondary text-white shadow-lg shadow-fusion-primary/20 ring-2 ring-white transform group-hover:rotate-6 transition-all duration-300">
-          <Bot size={24} />
+        <div className="relative">
+          <div className="w-12 h-12 rounded-2xl rotate-3 flex items-center justify-center bg-gradient-to-br from-fusion-primary to-fusion-secondary text-white shadow-lg shadow-fusion-primary/20 ring-2 ring-white transform group-hover:rotate-6 transition-all duration-300">
+            <Bot size={24} />
+          </div>
+          <div className="absolute -top-1 -right-1">
+            <div className="w-4 h-4 rounded-lg bg-white shadow-md flex items-center justify-center">
+              <Sparkles className="h-2.5 w-2.5 text-yellow-400" />
+            </div>
+          </div>
         </div>
       )}
       <div className={cn(
-        "relative max-w-[85%] rounded-3xl px-6 py-4 shadow-lg transition-all duration-300 group",
+        "relative max-w-[85%] rounded-3xl px-6 py-4 shadow-lg transition-all duration-300 group animate-fade-in",
         isAI 
           ? "bg-white text-gray-800 rounded-tl-lg border border-gray-100 hover:shadow-xl" 
           : "bg-gradient-to-br from-fusion-primary to-fusion-secondary text-white rounded-tr-lg hover:shadow-fusion-primary/30",
@@ -97,7 +104,7 @@ const ChatMessage = ({ message, isAI, isLoading, onReply }) => {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0"
+                className="h-8 w-8 p-0 hover:bg-gray-100/80 rounded-xl"
                 onClick={() => onReply?.(messageContent)}
               >
                 <MessageSquareQuote className="h-4 w-4" />
@@ -107,8 +114,15 @@ const ChatMessage = ({ message, isAI, isLoading, onReply }) => {
         )}
       </div>
       {!isAI && (
-        <div className="w-12 h-12 rounded-2xl -rotate-3 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 text-fusion-primary shadow-lg shadow-gray-200/50 ring-2 ring-white transform group-hover:-rotate-6 transition-all duration-300">
-          <UserCircle2 size={24} />
+        <div className="relative">
+          <div className="w-12 h-12 rounded-2xl -rotate-3 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 text-fusion-primary shadow-lg shadow-gray-200/50 ring-2 ring-white transform group-hover:-rotate-6 transition-all duration-300">
+            <UserCircle2 size={24} />
+          </div>
+          <div className="absolute -bottom-1 -left-1">
+            <div className="w-4 h-4 rounded-lg bg-white shadow-md flex items-center justify-center">
+              <Sparkles className="h-2.5 w-2.5 text-fusion-primary" />
+            </div>
+          </div>
         </div>
       )}
     </div>
