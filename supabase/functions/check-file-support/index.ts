@@ -6,23 +6,23 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const { provider, model } = await req.json();
+    console.log('Checking file support for:', { provider, model }); // Debug log
 
     // Check file support based on provider and model
     let supportsFiles = false;
 
     switch (provider) {
       case 'openai':
-        // Only GPT-4 Vision models support files
         supportsFiles = model.includes('vision');
         break;
       case 'claude':
-        // Claude 3 models support files
         supportsFiles = model.includes('claude-3');
         break;
       default:
@@ -37,6 +37,7 @@ serve(async (req) => {
       }
     );
   } catch (error) {
+    console.error('Error in check-file-support:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { 

@@ -4,17 +4,10 @@ export const supportsFileAttachments = async (provider: string, model: string): 
   if (!provider || !model) return false;
 
   try {
-    // Get the current session
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) {
-      throw new Error('No active session found');
-    }
-
+    console.log('Checking file support for:', { provider, model }); // Debug log
+    
     const { data, error } = await supabase.functions.invoke('check-file-support', {
       body: { provider, model },
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      }
     });
 
     if (error) {
@@ -22,6 +15,7 @@ export const supportsFileAttachments = async (provider: string, model: string): 
       return false;
     }
 
+    console.log('File support response:', data); // Debug log
     return data?.supportsFiles || false;
   } catch (error) {
     console.warn('Error checking file support:', error);
