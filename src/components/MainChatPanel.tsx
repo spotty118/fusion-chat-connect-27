@@ -14,7 +14,7 @@ const MainChatPanel = ({ messages, isLoading, onSendMessage, inputRef }: MainCha
   return (
     <div className={cn(
       "flex-1 flex flex-col bg-white/70 backdrop-blur-xl shadow-2xl rounded-3xl overflow-hidden border border-gray-100",
-      "max-w-4xl mx-auto w-full" // Add max width and center when alone
+      "max-w-4xl mx-auto w-full"
     )}>
       <ChatContainer messages={messages} isLoading={isLoading} />
       <ChatInput ref={inputRef} onSendMessage={onSendMessage} disabled={isLoading} />

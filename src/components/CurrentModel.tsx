@@ -1,6 +1,5 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { checkWindowAI } from '@/lib/window-ai';
 import { Database } from 'lucide-react';
 
 export const CurrentModel = () => {
@@ -16,25 +15,11 @@ export const CurrentModel = () => {
       const manualApiKey = localStorage.getItem('manualApiKey');
       const manualModel = localStorage.getItem('manualModel');
 
-      if (manualApiKey && manualModel) {
-        return `openai/${manualModel}`;
+      if (!manualApiKey || !manualModel) {
+        throw new Error('No model configuration found');
       }
 
-      if (typeof window === 'undefined') {
-        throw new Error('Window is not defined');
-      }
-
-      await checkWindowAI();
-
-      if (!window.ai?.getCurrentModel) {
-        if (manualModel) {
-          return `openai/${manualModel} (fallback)`;
-        }
-        throw new Error('Window AI extension not properly initialized');
-      }
-
-      const model = await window.ai.getCurrentModel();
-      return model || (manualModel ? `openai/${manualModel} (fallback)` : null);
+      return `openai/${manualModel}`;
     },
     refetchInterval: 2000,
     retry: 3,
@@ -51,32 +36,12 @@ export const CurrentModel = () => {
     );
   }
 
-  if (error) {
-    const manualModel = localStorage.getItem('manualModel');
-    if (manualModel) {
-      return (
-        <div className="text-sm text-white/80 flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-blue-500" />
-          <Database className="h-4 w-4" />
-          <span>Fallback: OpenAI/{manualModel}</span>
-        </div>
-      );
-    }
+  if (error || !currentModel) {
     return (
       <div className="text-sm text-white/80 flex items-center gap-2">
         <div className="w-2 h-2 rounded-full bg-red-500" />
         <Database className="h-4 w-4" />
-        <span>Error loading model</span>
-      </div>
-    );
-  }
-
-  if (!currentModel) {
-    return (
-      <div className="text-sm text-white/80 flex items-center gap-2">
-        <div className="w-2 h-2 rounded-full bg-gray-500" />
-        <Database className="h-4 w-4" />
-        <span>No model selected</span>
+        <span>No model configured</span>
       </div>
     );
   }
@@ -94,15 +59,13 @@ export const CurrentModel = () => {
     );
   }
 
-  // Extract provider and model name
   const [provider, ...modelParts] = currentModel.split('/');
   const modelName = modelParts.join('/');
   const displayProvider = provider.charAt(0).toUpperCase() + provider.slice(1);
-  const isFallback = modelName.includes('(fallback)');
 
   return (
     <div className="text-sm text-white/80 flex items-center gap-2">
-      <div className={`w-2 h-2 rounded-full ${isFallback ? 'bg-blue-500' : 'bg-green-500'}`} />
+      <div className="w-2 h-2 rounded-full bg-green-500" />
       <Database className="h-4 w-4" />
       <span>{displayProvider}</span>
       <span className="mx-1">•</span>
