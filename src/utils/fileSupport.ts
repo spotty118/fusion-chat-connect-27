@@ -4,6 +4,7 @@ export const supportsFileAttachments = async (provider: string, model: string): 
   if (!provider || !model) return false;
 
   try {
+    // Get the current session
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.access_token) {
       throw new Error('No active session found');
