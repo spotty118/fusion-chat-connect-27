@@ -1,5 +1,19 @@
 import { generateFusionResponse } from './fusion-mode';
 
+interface AIResponseMessage {
+  content: string;
+}
+
+interface AIResponseDelta {
+  content: string;
+}
+
+interface AIResponseChoice {
+  message?: AIResponseMessage;
+  text?: string;
+  delta?: AIResponseDelta;
+}
+
 export const checkWindowAI = async () => {
   const fusionMode = localStorage.getItem('fusionMode') === 'true';
   if (fusionMode) {
@@ -102,7 +116,7 @@ export const generateResponse = async (message: string) => {
     }
 
     if (Array.isArray(response)) {
-      const firstResponse = response[0];
+      const firstResponse = response[0] as AIResponseChoice;
       if (!firstResponse) {
         throw new Error('Empty response from Window AI');
       }
@@ -114,9 +128,10 @@ export const generateResponse = async (message: string) => {
     }
 
     if (typeof response === 'object' && response !== null) {
-      if ('message' in response && response.message?.content) return response.message.content;
-      if ('text' in response && response.text) return response.text;
-      if ('delta' in response && response.delta?.content) return response.delta.content;
+      const objectResponse = response as AIResponseChoice;
+      if ('message' in objectResponse && objectResponse.message?.content) return objectResponse.message.content;
+      if ('text' in objectResponse && objectResponse.text) return objectResponse.text;
+      if ('delta' in objectResponse && objectResponse.delta?.content) return objectResponse.delta.content;
     }
     
     throw new Error('Unrecognized response format from Window AI');
