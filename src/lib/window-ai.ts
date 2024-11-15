@@ -31,42 +31,31 @@ const waitForWindowAI = async (retries = 0): Promise<boolean> => {
 
   // Check if Window AI extension is installed
   if (!window.ai) {
-    if (retries >= MAX_RETRIES) {
-      throw new Error("Window AI not found! Please install the Chrome extension: https://windowai.io");
-    }
-    await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-    return waitForWindowAI(retries + 1);
+    throw new Error("Window AI not found! Please install the Chrome extension: https://windowai.io");
   }
 
   // Verify required methods exist
   if (!window.ai.generateText || !window.ai.getCurrentModel) {
-    if (retries >= MAX_RETRIES) {
-      throw new Error("Window AI extension is not properly initialized. Please refresh the page.");
-    }
-    await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-    return waitForWindowAI(retries + 1);
+    throw new Error("Window AI extension is not properly initialized. Please refresh the page.");
   }
 
-  // Verify model selection
+  // Verify model selection and authentication
   try {
     const model = await window.ai.getCurrentModel();
     if (!model) {
-      if (retries >= MAX_RETRIES) {
-        throw new Error('Please select a model in the Window AI extension');
-      }
-      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-      return waitForWindowAI(retries + 1);
+      throw new Error('Please select a model in the Window AI extension');
     }
     return true;
   } catch (error) {
-    if (error instanceof Error && error.message === 'NOT_AUTHENTICATED') {
-      throw new Error('Please authenticate with Window AI extension first');
+    if (error instanceof Error) {
+      if (error.message === 'NOT_AUTHENTICATED') {
+        throw new Error('Please authenticate with Window AI extension first. Click the extension icon and sign in.');
+      }
+      if (error.message.includes('model')) {
+        throw new Error('Please select a model in the Window AI extension and refresh the page');
+      }
     }
-    if (retries >= MAX_RETRIES) {
-      throw new Error("Please check Window AI extension settings and refresh the page");
-    }
-    await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-    return waitForWindowAI(retries + 1);
+    throw error;
   }
 };
 
@@ -90,6 +79,7 @@ export const generateResponse = async (message: string) => {
       return response;
     }
 
+    // Check Window AI status before attempting to generate
     await checkWindowAI();
     
     const response = await window.ai.generateText({
@@ -125,10 +115,13 @@ export const generateResponse = async (message: string) => {
     
     throw new Error('Unrecognized response format from Window AI');
   } catch (error) {
-    if (error instanceof Error && error.message === 'NOT_AUTHENTICATED') {
-      throw new Error('Please authenticate with Window AI extension first');
+    if (error instanceof Error) {
+      if (error.message === 'NOT_AUTHENTICATED') {
+        throw new Error('Please authenticate with Window AI extension first. Click the extension icon and sign in.');
+      }
+      console.error("Error generating response:", error);
+      throw error;
     }
-    console.error("Error generating response:", error);
-    throw error;
+    throw new Error('An unexpected error occurred');
   }
 };
