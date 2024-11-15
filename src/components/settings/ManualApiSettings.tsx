@@ -5,34 +5,43 @@ import { useToast } from "@/components/ui/use-toast";
 import { Key } from "lucide-react";
 import { ModelSelector } from "../ModelSelector";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const ManualApiSettings = () => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [selectedProvider, setSelectedProvider] = useState(() => localStorage.getItem('manualProvider') || 'openai');
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem('manualApiKey') || '');
-  const [selectedModel, setSelectedModel] = useState(() => localStorage.getItem('manualModel') || '');
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem(`${selectedProvider}_key`) || '');
+  const [selectedModel, setSelectedModel] = useState(() => localStorage.getItem(`${selectedProvider}_model`) || '');
 
+  // Update API key in localStorage when it changes
   useEffect(() => {
     if (apiKey) {
-      localStorage.setItem('manualApiKey', apiKey);
+      localStorage.setItem(`${selectedProvider}_key`, apiKey);
     } else {
-      localStorage.removeItem('manualApiKey');
+      localStorage.removeItem(`${selectedProvider}_key`);
     }
-  }, [apiKey]);
+  }, [apiKey, selectedProvider]);
 
+  // Update selected model in localStorage when it changes
   useEffect(() => {
     if (selectedModel) {
-      localStorage.setItem('manualModel', selectedModel);
+      localStorage.setItem(`${selectedProvider}_model`, selectedModel);
     } else {
-      localStorage.removeItem('manualModel');
+      localStorage.removeItem(`${selectedProvider}_model`);
     }
-  }, [selectedModel]);
+  }, [selectedModel, selectedProvider]);
 
+  // Handle provider change
   useEffect(() => {
     if (selectedProvider) {
       localStorage.setItem('manualProvider', selectedProvider);
-      // Reset model when provider changes
-      setSelectedModel('');
+      // Load the stored API key for the selected provider
+      const storedKey = localStorage.getItem(`${selectedProvider}_key`) || '';
+      setApiKey(storedKey);
+      // Load the stored model for the selected provider
+      const storedModel = localStorage.getItem(`${selectedProvider}_model`) || '';
+      setSelectedModel(storedModel);
     } else {
       localStorage.removeItem('manualProvider');
     }
@@ -40,9 +49,16 @@ export const ManualApiSettings = () => {
 
   const handleApiKeyChange = (value: string) => {
     setApiKey(value);
+    // Reset selected model when API key changes
+    setSelectedModel('');
+    // Invalidate the models query to trigger a refresh
+    queryClient.invalidateQueries({ queryKey: ['models', selectedProvider] });
+    
     toast({
       title: value ? "API Key Saved" : "API Key Removed",
-      description: value ? "Your API key has been saved" : "Your API key has been removed",
+      description: value 
+        ? `Your ${selectedProvider} API key has been saved` 
+        : `Your ${selectedProvider} API key has been removed`,
     });
   };
 
