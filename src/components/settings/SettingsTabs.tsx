@@ -5,6 +5,7 @@ import { KeyboardShortcutsSettings } from './KeyboardShortcutsSettings';
 import { ExportImportSettings } from './ExportImportSettings';
 import { AppearanceSettings } from './AppearanceSettings';
 import { NotificationSettings } from './NotificationSettings';
+import { ManualApiSettings } from './ManualApiSettings';
 import { useState } from 'react';
 import { useProviderStatus } from '@/hooks/useProviderStatus';
 
@@ -54,6 +55,9 @@ export function SettingsTabs() {
             <TabsTrigger value="providers" className="justify-start w-full">
               AI Providers
             </TabsTrigger>
+            <TabsTrigger value="manual-api" className="justify-start w-full">
+              Manual API
+            </TabsTrigger>
             <TabsTrigger value="appearance" className="justify-start w-full">
               Appearance
             </TabsTrigger>
@@ -81,6 +85,10 @@ export function SettingsTabs() {
               onModelSelect={handleModelSelect}
               providerQueries={providerQueries}
             />
+          </TabsContent>
+          
+          <TabsContent value="manual-api" className="mt-0">
+            <ManualApiSettings />
           </TabsContent>
           
           <TabsContent value="appearance" className="mt-0">

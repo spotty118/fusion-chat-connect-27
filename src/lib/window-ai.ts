@@ -21,7 +21,14 @@ const waitForWindowAI = async (retries = 0): Promise<boolean> => {
   // First check if we're in fusion mode
   const fusionMode = localStorage.getItem('fusionMode') === 'true';
   if (fusionMode) {
-    return true; // Skip Window AI check in fusion mode
+    return true;
+  }
+
+  // Check if manual configuration is being used
+  const manualApiKey = localStorage.getItem('manualApiKey');
+  const manualModel = localStorage.getItem('manualModel');
+  if (manualApiKey && manualModel) {
+    return true;
   }
 
   // Check if we're in a browser environment
@@ -31,28 +38,28 @@ const waitForWindowAI = async (retries = 0): Promise<boolean> => {
 
   // Check if Window AI extension is installed
   if (!window.ai) {
-    throw new Error("Window AI not found! Please install the Chrome extension: https://windowai.io");
+    throw new Error("Window AI not found! Please install the Chrome extension: https://windowai.io or configure manual API settings");
   }
 
   // Verify required methods exist
   if (!window.ai.generateText || !window.ai.getCurrentModel) {
-    throw new Error("Window AI extension is not properly initialized. Please refresh the page.");
+    throw new Error("Window AI extension is not properly initialized. Please refresh the page or use manual API settings");
   }
 
   // Verify model selection and authentication
   try {
     const model = await window.ai.getCurrentModel();
     if (!model) {
-      throw new Error('Please select a model in the Window AI extension');
+      throw new Error('Please select a model in the Window AI extension or configure manual API settings');
     }
     return true;
   } catch (error) {
     if (error instanceof Error) {
       if (error.message === 'NOT_AUTHENTICATED') {
-        throw new Error('Please authenticate with Window AI extension first. Click the extension icon and sign in.');
+        throw new Error('Please authenticate with Window AI extension or configure manual API settings');
       }
       if (error.message.includes('model')) {
-        throw new Error('Please select a model in the Window AI extension and refresh the page');
+        throw new Error('Please select a model in the Window AI extension or configure manual API settings');
       }
     }
     throw error;
@@ -64,6 +71,13 @@ export const checkWindowAI = async () => {
   if (fusionMode) {
     return true;
   }
+  
+  const manualApiKey = localStorage.getItem('manualApiKey');
+  const manualModel = localStorage.getItem('manualModel');
+  if (manualApiKey && manualModel) {
+    return true;
+  }
+  
   return waitForWindowAI();
 };
 
@@ -79,7 +93,34 @@ export const generateResponse = async (message: string) => {
       return response;
     }
 
-    // Check Window AI status before attempting to generate
+    // Check for manual configuration
+    const manualApiKey = localStorage.getItem('manualApiKey');
+    const manualModel = localStorage.getItem('manualModel');
+    
+    if (manualApiKey && manualModel) {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${manualApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: manualModel,
+          messages: [{ role: "user", content: message }],
+          temperature: 0.7,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error?.message || 'Failed to generate response');
+      }
+
+      const data = await response.json();
+      return data.choices[0].message.content;
+    }
+
+    // If no manual configuration, use Window AI
     await checkWindowAI();
     
     const response = await window.ai.generateText({
@@ -117,7 +158,7 @@ export const generateResponse = async (message: string) => {
   } catch (error) {
     if (error instanceof Error) {
       if (error.message === 'NOT_AUTHENTICATED') {
-        throw new Error('Please authenticate with Window AI extension first. Click the extension icon and sign in.');
+        throw new Error('Please authenticate with Window AI extension or configure manual API settings');
       }
       console.error("Error generating response:", error);
       throw error;
