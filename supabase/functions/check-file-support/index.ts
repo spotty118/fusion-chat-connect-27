@@ -12,37 +12,54 @@ serve(async (req) => {
   }
 
   try {
-    const { provider, model } = await req.json();
+    const body = await req.json();
+    console.log('Received request body:', JSON.stringify(body));
+
+    const provider = body?.provider?.toString();
+    const model = body?.model?.toString();
     
     if (!provider || !model) {
+      console.warn('Missing required fields:', { provider, model });
       return new Response(
-        JSON.stringify({ error: 'Provider and model are required' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        JSON.stringify({ 
+          error: 'Provider and model are required',
+          received: { provider, model }
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400 
+        }
       );
     }
 
     // Check file support based on provider and model
     let supportsFiles = false;
 
-    switch (provider) {
+    switch (provider.toLowerCase()) {
       case 'openai':
-        supportsFiles = model.includes('vision');
+        supportsFiles = model.toLowerCase().includes('vision');
         break;
       case 'claude':
-        supportsFiles = model.includes('claude-3');
+        supportsFiles = model.toLowerCase().includes('claude-3');
         break;
       default:
         supportsFiles = false;
     }
 
+    const response = { supportsFiles };
+    console.log('Sending response:', JSON.stringify(response));
+
     return new Response(
-      JSON.stringify({ supportsFiles }),
+      JSON.stringify(response),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error('Error in check-file-support:', error);
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ 
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500
