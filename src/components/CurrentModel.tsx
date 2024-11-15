@@ -13,6 +13,13 @@ export const CurrentModel = () => {
         return 'fusion/multi-provider';
       }
 
+      const manualApiKey = localStorage.getItem('manualApiKey');
+      const manualModel = localStorage.getItem('manualModel');
+
+      if (manualApiKey && manualModel) {
+        return `openai/${manualModel}`;
+      }
+
       if (typeof window === 'undefined') {
         throw new Error('Window is not defined');
       }
@@ -20,11 +27,14 @@ export const CurrentModel = () => {
       await checkWindowAI();
 
       if (!window.ai?.getCurrentModel) {
+        if (manualModel) {
+          return `openai/${manualModel} (fallback)`;
+        }
         throw new Error('Window AI extension not properly initialized');
       }
 
       const model = await window.ai.getCurrentModel();
-      return model;
+      return model || (manualModel ? `openai/${manualModel} (fallback)` : null);
     },
     refetchInterval: 2000,
     retry: 3,
@@ -42,6 +52,16 @@ export const CurrentModel = () => {
   }
 
   if (error) {
+    const manualModel = localStorage.getItem('manualModel');
+    if (manualModel) {
+      return (
+        <div className="text-sm text-white/80 flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-blue-500" />
+          <Database className="h-4 w-4" />
+          <span>Fallback: OpenAI/{manualModel}</span>
+        </div>
+      );
+    }
     return (
       <div className="text-sm text-white/80 flex items-center gap-2">
         <div className="w-2 h-2 rounded-full bg-red-500" />
@@ -78,10 +98,11 @@ export const CurrentModel = () => {
   const [provider, ...modelParts] = currentModel.split('/');
   const modelName = modelParts.join('/');
   const displayProvider = provider.charAt(0).toUpperCase() + provider.slice(1);
+  const isFallback = modelName.includes('(fallback)');
 
   return (
     <div className="text-sm text-white/80 flex items-center gap-2">
-      <div className="w-2 h-2 rounded-full bg-green-500" />
+      <div className={`w-2 h-2 rounded-full ${isFallback ? 'bg-blue-500' : 'bg-green-500'}`} />
       <Database className="h-4 w-4" />
       <span>{displayProvider}</span>
       <span className="mx-1">•</span>
