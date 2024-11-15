@@ -26,9 +26,20 @@ const FusionModeSettings = ({
   const { isFusionMode, toggleFusionMode } = useFusionMode();
 
   const getConfiguredProvidersCount = () => {
-    return Object.entries(apiKeys).filter(([provider, key]) => 
-      key && key.length > 0 && selectedModels[provider] && selectedModels[provider].length > 0
-    ).length;
+    return Object.entries(apiKeys).filter(([provider, key]) => {
+      const hasKey = key && key.length > 0;
+      const hasModel = selectedModels[provider] && selectedModels[provider].length > 0;
+      
+      // Save to localStorage when a provider is configured
+      if (hasKey) {
+        localStorage.setItem(`${provider}_key`, key);
+      }
+      if (hasModel) {
+        localStorage.setItem(`${provider}_model`, selectedModels[provider]);
+      }
+      
+      return hasKey && hasModel;
+    }).length;
   };
 
   const handleActivate = () => {
