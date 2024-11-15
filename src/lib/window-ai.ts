@@ -24,7 +24,7 @@ const waitForWindowAI = async (retries = 0): Promise<boolean> => {
     return true; // Skip Window AI check in fusion mode
   }
 
-  // Wait for window.ai to be defined
+  // Check if window.ai exists and is properly initialized
   if (typeof window === 'undefined' || !window.ai) {
     if (retries >= MAX_RETRIES) {
       throw new Error("Window AI not found! Please install the Chrome extension: https://windowai.io");
@@ -33,7 +33,16 @@ const waitForWindowAI = async (retries = 0): Promise<boolean> => {
     return waitForWindowAI(retries + 1);
   }
 
-  // Verify the extension is properly initialized
+  // Verify the extension is properly initialized by checking required methods
+  if (!window.ai.generateText || !window.ai.getCurrentModel) {
+    if (retries >= MAX_RETRIES) {
+      throw new Error("Window AI extension is not properly initialized. Please refresh the page.");
+    }
+    await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+    return waitForWindowAI(retries + 1);
+  }
+
+  // Try to get the current model to verify full initialization
   try {
     const model = await window.ai.getCurrentModel();
     if (!model) {
@@ -42,7 +51,7 @@ const waitForWindowAI = async (retries = 0): Promise<boolean> => {
     return true;
   } catch (error) {
     if (retries >= MAX_RETRIES) {
-      throw new Error("Window AI extension is installed but not properly initialized. Please refresh the page or check the extension settings.");
+      throw new Error("Please select a model in the Window AI extension and refresh the page.");
     }
     await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
     return waitForWindowAI(retries + 1);
