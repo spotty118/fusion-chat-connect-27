@@ -2,23 +2,6 @@ import { generateFusionResponse } from './fusion-mode';
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000;
-const AUTH_COOKIE_NAME = 'window_ai_verified';
-
-interface AIResponse {
-  message?: { content: string };
-  text?: string;
-  delta?: { content: string };
-}
-
-const isVerified = () => {
-  return document.cookie.includes(AUTH_COOKIE_NAME);
-};
-
-const setVerified = () => {
-  const date = new Date();
-  date.setTime(date.getTime() + (30 * 24 * 60 * 60 * 1000));
-  document.cookie = `${AUTH_COOKIE_NAME}=true; expires=${date.toUTCString()}; path=/`;
-};
 
 const waitForWindowAI = async (retries = 0): Promise<boolean> => {
   // First check if we're in fusion mode
@@ -27,7 +10,7 @@ const waitForWindowAI = async (retries = 0): Promise<boolean> => {
     return true; // Skip Window AI check in fusion mode
   }
 
-  // Basic check for window.ai existence
+  // Wait for window.ai to be defined
   if (typeof window === 'undefined' || !window.ai) {
     if (retries >= MAX_RETRIES) {
       throw new Error("Window AI not found! Please install the Chrome extension: https://windowai.io");
@@ -36,17 +19,16 @@ const waitForWindowAI = async (retries = 0): Promise<boolean> => {
     return waitForWindowAI(retries + 1);
   }
 
-  // Extension exists, verify functionality
+  // Verify the extension is properly initialized
   try {
-    // Try to get current model as a test
-    await window.ai.getCurrentModel();
-    if (!isVerified()) {
-      setVerified();
+    const model = await window.ai.getCurrentModel();
+    if (!model) {
+      throw new Error('No model selected in Window AI');
     }
     return true;
   } catch (error) {
     if (retries >= MAX_RETRIES) {
-      throw new Error("Window AI extension needs to be updated or reconfigured. Please check your extension settings.");
+      throw new Error("Window AI extension is installed but not properly initialized. Please refresh the page or check the extension settings.");
     }
     await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
     return waitForWindowAI(retries + 1);
@@ -88,22 +70,21 @@ export const generateResponse = async (message: string) => {
     }
 
     if (Array.isArray(response)) {
-      const firstResponse = response[0] as AIResponse;
+      const firstResponse = response[0];
       if (!firstResponse) {
         throw new Error('Empty response from Window AI');
       }
 
       if (typeof firstResponse === 'string') return firstResponse;
-      if (firstResponse.message?.content) return firstResponse.message.content;
-      if (firstResponse.text) return firstResponse.text;
-      if (firstResponse.delta?.content) return firstResponse.delta.content;
+      if ('message' in firstResponse && firstResponse.message?.content) return firstResponse.message.content;
+      if ('text' in firstResponse && firstResponse.text) return firstResponse.text;
+      if ('delta' in firstResponse && firstResponse.delta?.content) return firstResponse.delta.content;
     }
 
-    const objectResponse = response as AIResponse;
-    if (typeof objectResponse === 'object') {
-      if (objectResponse.message?.content) return objectResponse.message.content;
-      if (objectResponse.text) return objectResponse.text;
-      if (objectResponse.delta?.content) return objectResponse.delta.content;
+    if (typeof response === 'object' && response !== null) {
+      if ('message' in response && response.message?.content) return response.message.content;
+      if ('text' in response && response.text) return response.text;
+      if ('delta' in response && response.delta?.content) return response.delta.content;
     }
     
     throw new Error('Unrecognized response format from Window AI');
