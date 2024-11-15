@@ -1,4 +1,6 @@
 import { generateFusionResponse } from './fusion-mode';
+import { fetchModelsFromBackend } from '../api/modelsApi';
+import { supabase } from "@/integrations/supabase/client";
 
 interface AIResponseMessage {
   content: string;
@@ -16,48 +18,68 @@ interface AIResponseChoice {
 
 export const checkWindowAI = async () => {
   const fusionMode = localStorage.getItem('fusionMode') === 'true';
+  
   if (fusionMode) {
     return true;
   }
   
   const manualApiKey = localStorage.getItem('manualApiKey');
   const manualModel = localStorage.getItem('manualModel');
-  if (manualApiKey && manualModel) {
-    return true;
-  }
   
-  // Check if we're in a browser environment
+  // If manual configuration exists, verify it
+  if (manualApiKey && manualModel) {
+    try {
+      const models = await fetchModelsFromBackend('openai', manualApiKey);
+      if (models.includes(manualModel)) {
+        return true;
+      }
+    } catch (error) {
+      console.warn('Manual API configuration validation failed:', error);
+    }
+  }
+
+  // Check Window AI availability
   if (typeof window === 'undefined') {
     throw new Error('Window AI is only available in browser environments');
   }
 
-  // Check if Window AI extension is installed
   if (!window.ai) {
+    // Instead of throwing error, we'll check for fallback configuration
+    const models = await fetchModelsFromBackend('openai', manualApiKey || '');
+    if (models.length > 0) {
+      return true;
+    }
     throw new Error("Window AI not found! Please install the Chrome extension: https://windowai.io or configure manual API settings");
   }
 
-  // Verify required methods exist
   if (!window.ai.generateText || !window.ai.getCurrentModel) {
     throw new Error("Window AI extension is not properly initialized. Please refresh the page or use manual API settings");
   }
 
-  // Verify model selection and authentication
   try {
     const model = await window.ai.getCurrentModel();
     if (!model) {
+      // If no model selected in Window AI, check for fallback models
+      const models = await fetchModelsFromBackend('openai', manualApiKey || '');
+      if (models.length > 0) {
+        return true;
+      }
       throw new Error('Please select a model in the Window AI extension or configure manual API settings');
     }
     return true;
   } catch (error) {
     if (error instanceof Error) {
       if (error.message === 'NOT_AUTHENTICATED') {
+        // Check for fallback models when Window AI is not authenticated
+        const models = await fetchModelsFromBackend('openai', manualApiKey || '');
+        if (models.length > 0) {
+          return true;
+        }
         throw new Error('Please authenticate with Window AI extension or configure manual API settings');
       }
-      if (error.message.includes('model')) {
-        throw new Error('Please select a model in the Window AI extension or configure manual API settings');
-      }
+      throw error;
     }
-    throw error;
+    throw new Error('An unexpected error occurred');
   }
 };
 
@@ -73,34 +95,33 @@ export const generateResponse = async (message: string) => {
       return response;
     }
 
-    // Check for manual configuration
+    // Check for manual configuration first
     const manualApiKey = localStorage.getItem('manualApiKey');
     const manualModel = localStorage.getItem('manualModel');
     
     if (manualApiKey && manualModel) {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${manualApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: manualModel,
-          messages: [{ role: "user", content: message }],
-          temperature: 0.7,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error?.message || 'Failed to generate response');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('No active session found');
       }
 
-      const data = await response.json();
+      const { data, error } = await supabase.functions.invoke('api-handler', {
+        body: { 
+          provider: 'openai',
+          message,
+          model: manualModel,
+          apiKey: manualApiKey
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        }
+      });
+
+      if (error) throw error;
       return data.choices[0].message.content;
     }
 
-    // If no manual configuration, use Window AI
+    // Try Window AI if no manual configuration
     await checkWindowAI();
     
     const response = await window.ai.generateText({
