@@ -1,4 +1,4 @@
-import React, { forwardRef, useState, useEffect } from 'react';
+import React, { forwardRef, useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Send, Paperclip } from 'lucide-react';
@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 
 const ChatInput = forwardRef(({ onSendMessage, disabled }, ref) => {
   const [message, setMessage] = useState('');
+  const fileInputRef = useRef(null);
   
   // Get current provider and model from localStorage
   const currentProvider = localStorage.getItem('manualProvider') || 'openai';
@@ -17,8 +18,8 @@ const ChatInput = forwardRef(({ onSendMessage, disabled }, ref) => {
     queryKey: ['file-support', currentProvider, currentModel],
     queryFn: () => supportsFileAttachments(currentProvider, currentModel),
     enabled: !!currentProvider && !!currentModel,
-    staleTime: 30000, // Cache the result for 30 seconds
-    retry: 1, // Only retry once if the check fails
+    staleTime: 30000,
+    retry: 1,
   });
 
   const handleSubmit = (e) => {
@@ -29,10 +30,29 @@ const ChatInput = forwardRef(({ onSendMessage, disabled }, ref) => {
     }
   };
 
+  const handleFileClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // TODO: Handle file upload
+      console.log('File selected:', file);
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit} className="p-4 border-t bg-white/50 backdrop-blur-sm">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center gap-2">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            className="hidden"
+            accept="image/*"
+          />
           <Button
             type="button"
             variant="ghost"
@@ -43,6 +63,7 @@ const ChatInput = forwardRef(({ onSendMessage, disabled }, ref) => {
                 : "opacity-50 cursor-not-allowed text-gray-400"
             }`}
             disabled={!showAttachments || disabled || isLoading}
+            onClick={handleFileClick}
           >
             <Paperclip className="h-5 w-5" />
           </Button>
