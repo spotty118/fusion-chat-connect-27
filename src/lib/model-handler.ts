@@ -14,6 +14,7 @@ export const generateResponse = async (message: string) => {
     }
 
     // Use manual configuration
+    const manualProvider = localStorage.getItem('manualProvider') || 'openai';
     const manualApiKey = localStorage.getItem('manualApiKey');
     const manualModel = localStorage.getItem('manualModel');
     
@@ -28,7 +29,7 @@ export const generateResponse = async (message: string) => {
 
     const { data, error } = await supabase.functions.invoke('api-handler', {
       body: { 
-        provider: 'openai',
+        provider: manualProvider,
         message,
         model: manualModel,
         apiKey: manualApiKey
@@ -39,7 +40,19 @@ export const generateResponse = async (message: string) => {
     });
 
     if (error) throw error;
-    return data.choices[0].message.content;
+
+    // Extract the response based on the provider
+    switch (manualProvider) {
+      case 'openai':
+      case 'openrouter':
+        return data.choices[0].message.content;
+      case 'claude':
+        return data.content[0].text;
+      case 'google':
+        return data.candidates[0].content.parts[0].text;
+      default:
+        throw new Error(`Unsupported provider: ${manualProvider}`);
+    }
   } catch (error) {
     console.error("Error generating response:", error);
     throw error;

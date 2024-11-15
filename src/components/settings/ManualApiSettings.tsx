@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Key } from "lucide-react";
 import { ModelSelector } from "../ModelSelector";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export const ManualApiSettings = () => {
   const { toast } = useToast();
+  const [selectedProvider, setSelectedProvider] = useState(() => localStorage.getItem('manualProvider') || 'openai');
   const [apiKey, setApiKey] = useState(() => localStorage.getItem('manualApiKey') || '');
   const [selectedModel, setSelectedModel] = useState(() => localStorage.getItem('manualModel') || '');
 
@@ -26,6 +28,16 @@ export const ManualApiSettings = () => {
     }
   }, [selectedModel]);
 
+  useEffect(() => {
+    if (selectedProvider) {
+      localStorage.setItem('manualProvider', selectedProvider);
+      // Reset model when provider changes
+      setSelectedModel('');
+    } else {
+      localStorage.removeItem('manualProvider');
+    }
+  }, [selectedProvider]);
+
   const handleApiKeyChange = (value: string) => {
     setApiKey(value);
     toast({
@@ -43,13 +55,28 @@ export const ManualApiSettings = () => {
       
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="apiKey">OpenAI API Key</Label>
+          <Label htmlFor="provider">Provider</Label>
+          <Select value={selectedProvider} onValueChange={setSelectedProvider}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select provider" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="openai">OpenAI</SelectItem>
+              <SelectItem value="claude">Claude</SelectItem>
+              <SelectItem value="google">Google PaLM</SelectItem>
+              <SelectItem value="openrouter">OpenRouter</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="apiKey">{selectedProvider.charAt(0).toUpperCase() + selectedProvider.slice(1)} API Key</Label>
           <Input
             id="apiKey"
             type="password"
             value={apiKey}
             onChange={(e) => handleApiKeyChange(e.target.value)}
-            placeholder="Enter your OpenAI API key..."
+            placeholder={`Enter your ${selectedProvider} API key...`}
           />
           <p className="text-sm text-muted-foreground">
             Used as fallback when Window AI extension is not available
@@ -59,7 +86,7 @@ export const ManualApiSettings = () => {
         <div className="space-y-2">
           <Label htmlFor="model">Model</Label>
           <ModelSelector
-            provider="openai"
+            provider={selectedProvider as 'openai' | 'claude' | 'google' | 'openrouter'}
             apiKey={apiKey}
             selectedModel={selectedModel}
             onModelSelect={setSelectedModel}
