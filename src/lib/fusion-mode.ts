@@ -22,7 +22,7 @@ export const generateFusionResponse = async (message: string): Promise<FusionRes
     }
 
     // Fetch API keys from Supabase
-    const { data: apiKeysData, error: apiKeysError } = await supabase
+    let { data: apiKeysData, error: apiKeysError } = await supabase
       .from('api_keys')
       .select('provider, api_key')
       .eq('user_id', session.user.id);
