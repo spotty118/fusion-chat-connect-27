@@ -1,6 +1,6 @@
 import { useToast } from '@/hooks/use-toast';
 import { useState, useRef, useEffect } from 'react';
-import { generateResponse } from '@/lib/window-ai';
+import { generateResponse } from '@/lib/model-handler';
 import { ChatSearch } from '@/components/chat/ChatSearch';
 import { ChatExport } from '@/components/chat/ChatExport';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
