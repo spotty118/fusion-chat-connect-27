@@ -4,21 +4,18 @@ export const supportsFileAttachments = async (provider: string, model: string): 
   if (!provider || !model) return false;
 
   try {
-    console.log('Checking file support for:', { provider, model }); // Debug log
-    
     const { data, error } = await supabase.functions.invoke('check-file-support', {
-      body: { provider, model },
+      body: { provider, model }
     });
 
     if (error) {
-      console.warn('Error checking file support:', error);
+      console.warn('Error checking file support:', error.message);
       return false;
     }
 
-    console.log('File support response:', data); // Debug log
     return data?.supportsFiles || false;
   } catch (error) {
-    console.warn('Error checking file support:', error);
+    console.warn('Error checking file support:', error instanceof Error ? error.message : 'Unknown error');
     return false;
   }
 };

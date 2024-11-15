@@ -13,7 +13,13 @@ serve(async (req) => {
 
   try {
     const { provider, model } = await req.json();
-    console.log('Checking file support for:', { provider, model }); // Debug log
+    
+    if (!provider || !model) {
+      return new Response(
+        JSON.stringify({ error: 'Provider and model are required' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
 
     // Check file support based on provider and model
     let supportsFiles = false;
@@ -31,15 +37,12 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({ supportsFiles }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error('Error in check-file-support:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: 'Internal server error' }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500
