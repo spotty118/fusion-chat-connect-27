@@ -37,7 +37,9 @@ serve(async (req) => {
 
     switch (provider.toLowerCase()) {
       case 'openai':
-        supportsFiles = model.toLowerCase().includes('vision');
+        // Support both vision models and GPT-4o models
+        supportsFiles = model.toLowerCase().includes('vision') || 
+                       model.toLowerCase().includes('gpt-4o');
         break;
       case 'claude':
         supportsFiles = model.toLowerCase().includes('claude-3');
