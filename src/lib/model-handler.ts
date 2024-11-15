@@ -13,10 +13,10 @@ export const generateResponse = async (message: string) => {
       return response;
     }
 
-    // Use manual configuration
+    // Use manual configuration with provider-specific keys
     const manualProvider = localStorage.getItem('manualProvider') || 'openai';
-    const manualApiKey = localStorage.getItem('manualApiKey');
-    const manualModel = localStorage.getItem('manualModel');
+    const manualApiKey = localStorage.getItem(`${manualProvider}_key`);
+    const manualModel = localStorage.getItem(`${manualProvider}_model`);
     
     if (!manualApiKey || !manualModel) {
       throw new Error('No API configuration found. Please configure your API settings.');
@@ -49,7 +49,7 @@ export const generateResponse = async (message: string) => {
       case 'claude':
         return data.content[0].text;
       case 'google':
-        return data.candidates[0].content.parts[0].text;
+        return data.candidates[0].output;
       default:
         throw new Error(`Unsupported provider: ${manualProvider}`);
     }
