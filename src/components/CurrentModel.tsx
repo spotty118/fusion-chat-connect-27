@@ -14,15 +14,23 @@ export const CurrentModel = () => {
 
       const provider = localStorage.getItem('manualProvider') || 'openai';
       const apiKey = localStorage.getItem(`${provider}_key`);
-      const model = localStorage.getItem(`${provider}_model`);
+      const model = localStorage.getItem(`${provider}_model`) || '';
 
-      if (!apiKey || !model) {
-        throw new Error('No model configuration found');
+      // Clear any stale model data when provider changes
+      const providers = ['openai', 'claude', 'google', 'openrouter'];
+      providers.forEach(p => {
+        if (p !== provider) {
+          localStorage.removeItem(`${p}_model`);
+        }
+      });
+
+      if (!apiKey) {
+        throw new Error('No API configuration found');
       }
 
-      return `${provider}/${model}`;
+      return `${provider}/${model || 'No model selected'}`;
     },
-    refetchInterval: 2000,
+    refetchInterval: 1000, // Reduced interval to catch changes faster
     retry: 3,
     retryDelay: 1000,
   });
