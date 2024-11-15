@@ -21,7 +21,7 @@ export const supportsFileAttachments = async (provider: string, model: string): 
       return false;
     }
 
-    return data.supportsFiles || false;
+    return data?.supportsFiles || false;
   } catch (error) {
     console.warn('Error checking file support:', error);
     return false;
