@@ -25,17 +25,19 @@ const ChatInput = forwardRef(({ onSendMessage, disabled }, ref) => {
     <form onSubmit={handleSubmit} className="p-4 border-t bg-white/50 backdrop-blur-sm">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center gap-2">
-          {showAttachments && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-10 w-10 rounded-xl hover:bg-gray-100"
-              disabled={disabled}
-            >
-              <Paperclip className="h-5 w-5 text-gray-500" />
-            </Button>
-          )}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className={`h-10 w-10 rounded-xl ${
+              showAttachments 
+                ? "hover:bg-gray-100 text-gray-700" 
+                : "opacity-50 cursor-not-allowed text-gray-400"
+            }`}
+            disabled={!showAttachments || disabled}
+          >
+            <Paperclip className="h-5 w-5" />
+          </Button>
           <Input
             ref={ref}
             type="text"
