@@ -1,36 +1,17 @@
 import { generateFusionResponse } from './fusion-mode';
 
-const MAX_RETRIES = 3;
-const RETRY_DELAY = 1000;
-
-interface AIResponseMessage {
-  content: string;
-}
-
-interface AIResponseDelta {
-  content: string;
-}
-
-interface AIResponseChoice {
-  message?: AIResponseMessage;
-  text?: string;
-  delta?: AIResponseDelta;
-}
-
-const waitForWindowAI = async (retries = 0): Promise<boolean> => {
-  // First check if we're in fusion mode
+export const checkWindowAI = async () => {
   const fusionMode = localStorage.getItem('fusionMode') === 'true';
   if (fusionMode) {
     return true;
   }
-
-  // Check if manual configuration is being used
+  
   const manualApiKey = localStorage.getItem('manualApiKey');
   const manualModel = localStorage.getItem('manualModel');
   if (manualApiKey && manualModel) {
     return true;
   }
-
+  
   // Check if we're in a browser environment
   if (typeof window === 'undefined') {
     throw new Error('Window AI is only available in browser environments');
@@ -64,21 +45,6 @@ const waitForWindowAI = async (retries = 0): Promise<boolean> => {
     }
     throw error;
   }
-};
-
-export const checkWindowAI = async () => {
-  const fusionMode = localStorage.getItem('fusionMode') === 'true';
-  if (fusionMode) {
-    return true;
-  }
-  
-  const manualApiKey = localStorage.getItem('manualApiKey');
-  const manualModel = localStorage.getItem('manualModel');
-  if (manualApiKey && manualModel) {
-    return true;
-  }
-  
-  return waitForWindowAI();
 };
 
 export const generateResponse = async (message: string) => {
@@ -136,7 +102,7 @@ export const generateResponse = async (message: string) => {
     }
 
     if (Array.isArray(response)) {
-      const firstResponse = response[0] as AIResponseChoice;
+      const firstResponse = response[0];
       if (!firstResponse) {
         throw new Error('Empty response from Window AI');
       }
@@ -148,10 +114,9 @@ export const generateResponse = async (message: string) => {
     }
 
     if (typeof response === 'object' && response !== null) {
-      const objectResponse = response as AIResponseChoice;
-      if ('message' in objectResponse && objectResponse.message?.content) return objectResponse.message.content;
-      if ('text' in objectResponse && objectResponse.text) return objectResponse.text;
-      if ('delta' in objectResponse && objectResponse.delta?.content) return objectResponse.delta.content;
+      if ('message' in response && response.message?.content) return response.message.content;
+      if ('text' in response && response.text) return response.text;
+      if ('delta' in response && response.delta?.content) return response.delta.content;
     }
     
     throw new Error('Unrecognized response format from Window AI');

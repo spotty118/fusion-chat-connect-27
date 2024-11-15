@@ -1,9 +1,9 @@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Key } from "lucide-react";
+import { ModelSelector } from "../ModelSelector";
 
 export const ManualApiSettings = () => {
   const { toast } = useToast();
@@ -34,14 +34,6 @@ export const ManualApiSettings = () => {
     });
   };
 
-  const handleModelSelect = (value: string) => {
-    setSelectedModel(value);
-    toast({
-      title: "Model Selected",
-      description: `Selected model: ${value}`,
-    });
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center space-x-2">
@@ -66,15 +58,12 @@ export const ManualApiSettings = () => {
 
         <div className="space-y-2">
           <Label htmlFor="model">Model</Label>
-          <Select value={selectedModel} onValueChange={handleModelSelect}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select a model" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="gpt-4">GPT-4</SelectItem>
-              <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo</SelectItem>
-            </SelectContent>
-          </Select>
+          <ModelSelector
+            provider="openai"
+            apiKey={apiKey}
+            selectedModel={selectedModel}
+            onModelSelect={setSelectedModel}
+          />
         </div>
       </div>
     </div>

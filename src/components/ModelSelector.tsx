@@ -18,10 +18,6 @@ interface ModelSelectorProps {
   fusionMode?: boolean;
 }
 
-const fetchModels = async (provider: string, apiKey: string): Promise<string[]> => {
-  return await fetchModelsFromBackend(provider, apiKey);
-};
-
 export const ModelSelector = ({
   provider,
   apiKey,
@@ -32,7 +28,7 @@ export const ModelSelector = ({
   const { toast } = useToast();
   const { data: models = [], isLoading } = useQuery({
     queryKey: ['models', provider, apiKey, fusionMode],
-    queryFn: () => fetchModels(provider, apiKey),
+    queryFn: () => fetchModelsFromBackend(provider, apiKey),
     enabled: true,
     retry: 1,
     gcTime: 0,
