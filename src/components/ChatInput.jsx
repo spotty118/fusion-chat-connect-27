@@ -17,6 +17,8 @@ const ChatInput = forwardRef(({ onSendMessage, disabled }, ref) => {
     queryKey: ['file-support', currentProvider, currentModel],
     queryFn: () => supportsFileAttachments(currentProvider, currentModel),
     enabled: !!currentProvider && !!currentModel,
+    staleTime: 30000, // Cache the result for 30 seconds
+    retry: 1, // Only retry once if the check fails
   });
 
   const handleSubmit = (e) => {
