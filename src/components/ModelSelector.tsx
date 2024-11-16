@@ -29,7 +29,7 @@ export const ModelSelector = ({
   const { data: models = [], isLoading } = useQuery({
     queryKey: ['models', provider, apiKey, fusionMode],
     queryFn: () => fetchModelsFromBackend(provider, apiKey),
-    enabled: !!apiKey, // Only fetch when API key is present
+    enabled: !!apiKey,
     retry: 1,
     gcTime: 0,
     staleTime: 30000,
