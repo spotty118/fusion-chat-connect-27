@@ -73,13 +73,13 @@ const ChatMessage = ({ message, isAI, isLoading, onReply }) => {
 
   return (
     <div className={cn(
-      "flex w-full group items-start gap-4 transition-all duration-300 ease-in-out hover:scale-[1.01] mb-4",
+      "flex w-full group items-start gap-4 transition-all duration-300 ease-in-out hover:scale-[1.01]",
       isAI ? "justify-start" : "justify-end"
     )}>
       {isAI && (
         <div className="relative">
           <div className="w-12 h-12 rounded-2xl rotate-3 flex items-center justify-center bg-gradient-to-br from-fusion-primary to-fusion-secondary text-white shadow-lg shadow-fusion-primary/20 ring-2 ring-white transform group-hover:rotate-6 transition-all duration-300">
-            <Bot className="h-5 w-5" />
+            <Bot size={24} />
           </div>
           <div className="absolute -top-1 -right-1">
             <div className="w-4 h-4 rounded-lg bg-white shadow-md flex items-center justify-center">
@@ -89,7 +89,7 @@ const ChatMessage = ({ message, isAI, isLoading, onReply }) => {
         </div>
       )}
       <div className={cn(
-        "relative max-w-[70%] rounded-3xl px-6 py-4 shadow-lg transition-all duration-300 group animate-fade-in",
+        "relative max-w-[85%] rounded-3xl px-6 py-4 shadow-lg transition-all duration-300 group animate-fade-in",
         isAI 
           ? "bg-white text-gray-800 rounded-tl-lg border border-gray-100 hover:shadow-xl" 
           : "bg-gradient-to-br from-fusion-primary to-fusion-secondary text-white rounded-tr-lg hover:shadow-fusion-primary/30",
