@@ -44,14 +44,21 @@ export const ModelSelector = ({
     }
   });
 
+  const handleModelSelect = (value: string) => {
+    onModelSelect(value);
+    localStorage.setItem(`${provider}_model`, value);
+  };
+
   return (
     <Select
       disabled={isLoading}
       value={selectedModel}
-      onValueChange={onModelSelect}
+      onValueChange={handleModelSelect}
     >
       <SelectTrigger className="w-full">
-        <SelectValue placeholder="Select a model">Select a model</SelectValue>
+        <SelectValue placeholder="Select a model">
+          {selectedModel || "Select a model"}
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
         {models.map((model) => (

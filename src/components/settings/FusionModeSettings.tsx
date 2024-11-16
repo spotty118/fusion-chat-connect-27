@@ -29,22 +29,12 @@ const FusionModeSettings = ({
     return Object.entries(apiKeys).filter(([provider, key]) => {
       const hasKey = key && key.length > 0;
       const hasModel = selectedModels[provider] && selectedModels[provider].length > 0;
-      
-      // Save to localStorage when a provider is configured
-      if (hasKey) {
-        localStorage.setItem(`${provider}_key`, key);
-      }
-      if (hasModel) {
-        localStorage.setItem(`${provider}_model`, selectedModels[provider]);
-      }
-      
       return hasKey && hasModel;
     }).length;
   };
 
   const handleActivate = () => {
     if (isFusionMode) {
-      // Deactivating fusion mode
       toggleFusionMode();
       toast({
         title: "Fusion Mode Deactivated",
@@ -77,6 +67,7 @@ const FusionModeSettings = ({
 
   const configuredCount = getConfiguredProvidersCount();
   const isActivatable = !isFusionMode && configuredCount >= 3;
+  const hasAnyKeys = Object.values(apiKeys).some(key => key && key.length > 0);
 
   return (
     <div className="space-y-6 animate-in fade-in-50 relative">
@@ -132,9 +123,9 @@ const FusionModeSettings = ({
 
       <div className="space-y-2">
         <Button 
-          className={`w-full relative overflow-hidden group ${!isActivatable && !isFusionMode ? 'opacity-50 cursor-not-allowed' : ''}`}
+          className={`w-full relative overflow-hidden group ${!isActivatable && !isFusionMode && !hasAnyKeys ? 'opacity-50 cursor-not-allowed' : ''}`}
           onClick={handleActivate}
-          disabled={!isActivatable && !isFusionMode}
+          disabled={!isActivatable && !isFusionMode && !hasAnyKeys}
         >
           <span className="relative z-10 flex items-center justify-center gap-2">
             {isFusionMode ? 'Deactivate' : 'Activate'} Fusion Mode
@@ -144,7 +135,7 @@ const FusionModeSettings = ({
         <p className="text-sm text-gray-500 text-center">
           {isFusionMode 
             ? "Multi-provider mode is active" 
-            : `${configuredCount}/4 providers configured (${isActivatable ? 'Ready to activate' : `Need ${3 - configuredCount} more`})`}
+            : `${configuredCount}/4 providers configured (${isActivatable ? 'Ready to activate' : hasAnyKeys ? `Need ${3 - configuredCount} more` : 'Enter API keys to begin'})`}
         </p>
       </div>
     </div>
