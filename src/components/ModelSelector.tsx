@@ -56,7 +56,7 @@ export const ModelSelector = ({
       onValueChange={handleModelSelect}
     >
       <SelectTrigger className="w-full">
-        <SelectValue placeholder={apiKey ? "Select a model" : "Enter API key first"} />
+        <SelectValue placeholder="Select model" />
       </SelectTrigger>
       <SelectContent>
         {models?.map((model) => (
