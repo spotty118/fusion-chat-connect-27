@@ -29,7 +29,7 @@ export const ModelSelector = ({
   const { data: models = [], isLoading } = useQuery({
     queryKey: ['models', provider, apiKey, fusionMode],
     queryFn: () => fetchModelsFromBackend(provider, apiKey),
-    enabled: true,
+    enabled: !!apiKey, // Only fetch when API key is present
     retry: 1,
     gcTime: 0,
     staleTime: 30000,
@@ -51,13 +51,13 @@ export const ModelSelector = ({
 
   return (
     <Select
-      disabled={isLoading}
+      disabled={isLoading || !apiKey}
       value={selectedModel}
       onValueChange={handleModelSelect}
     >
       <SelectTrigger className="w-full">
-        <SelectValue placeholder="Select a model">
-          {selectedModel || "Select a model"}
+        <SelectValue placeholder={apiKey ? "Select a model" : "Enter API key first"}>
+          {selectedModel || (apiKey ? "Select a model" : "Enter API key first")}
         </SelectValue>
       </SelectTrigger>
       <SelectContent>

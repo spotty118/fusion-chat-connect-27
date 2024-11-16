@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const fetchModelsFromBackend = async (provider: string, apiKey: string): Promise<string[]> => {
   try {
     if (!apiKey) {
-      return getDefaultModels(provider);
+      return [];
     }
 
     // Get the current session
@@ -56,10 +56,15 @@ export const fetchModelsFromBackend = async (provider: string, apiKey: string): 
       }
     }
 
-    return getDefaultModels(provider);
+    // For Google, just return default models since we don't need to fetch them
+    if (provider === 'google') {
+      return getDefaultModels(provider);
+    }
+
+    return [];
   } catch (error) {
     console.error(`Error fetching models for ${provider}:`, error);
-    return getDefaultModels(provider);
+    return [];
   }
 };
 
