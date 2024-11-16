@@ -24,13 +24,13 @@ export const fetchModelsFromBackend = async (provider: string, apiKey: string): 
 
         if (error) {
           console.warn(`Error fetching ${provider} models:`, error);
-          return getDefaultModels(provider);
+          return [];
         }
 
-        return data.models.length > 0 ? data.models : getDefaultModels(provider);
+        return data.models || [];
       } catch (error) {
         console.warn(`Error fetching ${provider} models:`, error);
-        return getDefaultModels(provider);
+        return [];
       }
     }
 
@@ -45,20 +45,20 @@ export const fetchModelsFromBackend = async (provider: string, apiKey: string): 
         });
 
         if (!response.ok) {
-          return getDefaultModels(provider);
+          return [];
         }
 
         const data = await response.json();
         return data.data.map((model: { id: string }) => model.id);
       } catch (error) {
         console.warn('Error fetching OpenRouter models:', error);
-        return getDefaultModels(provider);
+        return [];
       }
     }
 
     // For Google, just return default models since we don't need to fetch them
-    if (provider === 'google') {
-      return getDefaultModels(provider);
+    if (provider === 'google' && apiKey) {
+      return ['palm-2'];
     }
 
     return [];
@@ -66,20 +66,4 @@ export const fetchModelsFromBackend = async (provider: string, apiKey: string): 
     console.error(`Error fetching models for ${provider}:`, error);
     return [];
   }
-};
-
-const getDefaultModels = (provider: string): string[] => {
-  const DEFAULT_MODELS = {
-    openai: ['gpt-4', 'gpt-3.5-turbo'],
-    claude: [
-      'claude-3-opus-20240229',
-      'claude-3-sonnet-20240229',
-      'claude-3-haiku-20240307',
-      'claude-2.1'
-    ],
-    google: ['palm-2'],
-    openrouter: ['openrouter/auto', 'mistralai/mixtral-8x7b-instruct', 'anthropic/claude-2']
-  };
-  
-  return DEFAULT_MODELS[provider as keyof typeof DEFAULT_MODELS] || [];
 };
