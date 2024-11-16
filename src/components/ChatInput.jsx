@@ -43,30 +43,48 @@ const ChatInput = forwardRef(({ onSendMessage, disabled }, ref) => {
     if (file) {
       setIsUploading(true);
       try {
-        const session = await supabase.auth.getSession();
-        const userId = session?.data?.session?.user?.id;
+        const { data: { session } } = await supabase.auth.getSession();
+        const userId = session?.user?.id;
 
         if (!userId) {
           throw new Error('User not authenticated');
         }
 
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('userId', userId);
+        // Upload file directly to Supabase Storage
+        const fileExt = file.name.split('.').pop();
+        const filePath = `${userId}/${crypto.randomUUID()}.${fileExt}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('temp_uploads')
+          .upload(filePath, file);
 
-        const response = await fetch('/functions/v1/upload-temp-file', {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to upload file');
+        if (uploadError) {
+          throw uploadError;
         }
 
-        const data = await response.json();
+        // Get the public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('temp_uploads')
+          .getPublicUrl(filePath);
+
+        // Store file metadata in the database
+        const { error: dbError } = await supabase
+          .from('temp_files')
+          .insert({
+            user_id: userId,
+            filename: file.name,
+            file_path: filePath,
+            content_type: file.type,
+            size: file.size,
+          });
+
+        if (dbError) {
+          throw dbError;
+        }
+
         setUploadedFile({
-          name: data.filename,
-          url: data.publicUrl
+          name: file.name,
+          url: publicUrl
         });
 
         toast({
@@ -88,7 +106,9 @@ const ChatInput = forwardRef(({ onSendMessage, disabled }, ref) => {
 
   const removeFile = () => {
     setUploadedFile(null);
-    fileInputRef.current.value = '';
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   return (
