@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { ModelSelector } from '@/components/ModelSelector';
 import { CheckCircle2, XCircle } from 'lucide-react';
 import { UseQueryResult } from '@tanstack/react-query';
+import { Card } from "@/components/ui/card";
 
 type Provider = 'openai' | 'claude' | 'google' | 'openrouter';
 
@@ -32,7 +33,7 @@ const ProviderConfig = ({
   const isLoading = statusQuery.isLoading;
 
   return (
-    <div className="space-y-4">
+    <Card className="p-6 space-y-4 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50 shadow-lg rounded-xl transition-all duration-300 hover:shadow-xl hover:scale-[1.01]">
       <div className="flex items-center justify-between">
         <Label htmlFor={`${provider}-key`} className="flex items-center space-x-2">
           <div className={`w-2 h-2 rounded-full ${bgColor}`} />
@@ -50,7 +51,7 @@ const ProviderConfig = ({
         value={apiKey}
         onChange={(e) => onApiKeyChange(e.target.value)}
         placeholder="Enter API key..."
-        className="mb-2"
+        className="mb-2 bg-white/50 dark:bg-slate-800/50 border-slate-200/50 dark:border-slate-700/50"
       />
       <ModelSelector
         provider={provider}
@@ -58,7 +59,7 @@ const ProviderConfig = ({
         onModelSelect={onModelSelect}
         selectedModel={selectedModel}
       />
-    </div>
+    </Card>
   );
 };
 

@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { Download, Upload } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 export const ExportImportSettings = () => {
   const { toast } = useToast();
@@ -59,18 +60,26 @@ export const ExportImportSettings = () => {
   };
 
   return (
-    <div className="space-y-4">
+    <Card className="p-6 space-y-4 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50">
       <Label>Backup & Restore</Label>
-      <div className="flex space-x-4">
-        <Button onClick={handleExport} variant="outline" className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row gap-4">
+        <Button 
+          onClick={handleExport} 
+          variant="outline" 
+          className="flex items-center gap-2 bg-white/50 dark:bg-slate-800/50 hover:bg-white/80 dark:hover:bg-slate-700/80"
+        >
           <Download className="h-4 w-4" />
           Export Settings
         </Button>
-        <Button onClick={handleImport} variant="outline" className="flex items-center gap-2">
+        <Button 
+          onClick={handleImport} 
+          variant="outline" 
+          className="flex items-center gap-2 bg-white/50 dark:bg-slate-800/50 hover:bg-white/80 dark:hover:bg-slate-700/80"
+        >
           <Upload className="h-4 w-4" />
           Import Settings
         </Button>
       </div>
-    </div>
+    </Card>
   );
 };
