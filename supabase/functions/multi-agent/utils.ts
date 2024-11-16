@@ -1,4 +1,5 @@
 import { Agent, AgentResponse } from './types.ts';
+import { analyzePrompt, getBestProviderForCategory } from '../../src/utils/promptAnalysis.ts';
 
 export async function makeProviderRequest(agent: Agent, prompt: string): Promise<string> {
   try {
@@ -94,15 +95,26 @@ export async function makeProviderRequest(agent: Agent, prompt: string): Promise
 
 export async function conductVotingRound(
   agents: Agent[], 
-  initialResponses: AgentResponse[]
+  initialResponses: AgentResponse[],
+  originalPrompt: string
 ): Promise<string> {
+  // Analyze the prompt to understand the context and requirements
+  const analysis = analyzePrompt(originalPrompt);
+  
+  // Get the best provider for this type of prompt
+  const availableProviders = agents.map(a => a.provider);
+  const primaryProvider = getBestProviderForCategory(analysis.category, availableProviders);
+  
   // Create a context that includes all previous responses
   const context = initialResponses.map(r => 
     `${r.role.toUpperCase()} (${r.provider}):\n${r.response}`
   ).join('\n\n');
 
-  const votingPrompt = `As an AI model participating in a collaborative task, analyze these responses and create a cohesive synthesis:
+  // Enhance the voting prompt with context awareness
+  const votingPrompt = `As an AI model participating in a collaborative task, analyze these responses and create a cohesive synthesis.
+Context: This is a ${analysis.category} query with key topics: ${analysis.topics.join(', ')}
 
+Previous responses:
 ${context}
 
 Instructions:
@@ -112,16 +124,13 @@ Instructions:
    - Combines the best elements from all perspectives
    - Maintains consistency and coherence
    - Addresses the original query comprehensively
+   - Focuses particularly on ${analysis.category} aspects
 
 Important: Focus on creating a clear, well-structured response that builds upon all previous insights.`;
 
-  // Ensure we're using all available agents for synthesis
-  const availableAgents = agents.filter(agent => 
-    !initialResponses.some(r => r.provider === agent.provider && r.role === agent.role)
-  );
-
-  // If no additional agents are available, use the first agent
-  const synthesizer = availableAgents.length > 0 ? availableAgents[0] : agents[0];
-  console.log('Creating final synthesis using:', synthesizer.provider);
+  // Prioritize the best provider for this category for the final synthesis
+  const synthesizer = agents.find(a => a.provider === primaryProvider) || agents[0];
+  console.log(`Creating final synthesis using ${synthesizer.provider} (best for ${analysis.category} category)`);
+  
   return await makeProviderRequest(synthesizer, votingPrompt);
 }

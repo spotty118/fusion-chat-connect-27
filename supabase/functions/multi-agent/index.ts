@@ -13,29 +13,33 @@ serve(async (req) => {
   }
 
   try {
-    const { message, agents, collaborationSteps } = await req.json();
+    const { message, agents } = await req.json();
     console.log('Starting collaborative multi-agent process');
     console.log('Active agents:', agents.map((a: Agent) => `${a.provider} (${a.role})`));
 
     const agentResponses: AgentResponse[] = [];
-    let currentContext = message;
 
-    // Ensure each agent gets a chance to contribute
-    for (const agent of agents) {
+    // Analyze the prompt to understand context and requirements
+    const analysis = analyzePrompt(message);
+    console.log('Prompt analysis:', analysis);
+
+    // Sort agents by their suitability for the prompt category
+    const sortedAgents = [...agents].sort((a, b) => {
+      const aStrength = getProviderStrength(a.provider, analysis.category);
+      const bStrength = getProviderStrength(b.provider, analysis.category);
+      return bStrength - aStrength;
+    });
+
+    // Get responses from each agent
+    for (const agent of sortedAgents) {
       console.log(`Getting response from ${agent.provider} as ${agent.role}`);
       try {
-        const response = await makeProviderRequest(agent, currentContext);
+        const response = await makeProviderRequest(agent, message);
         agentResponses.push({
           provider: agent.provider,
           role: agent.role,
           response: response
         });
-
-        // Update context with new response
-        currentContext = `Original query: ${message}\n\nCurrent insights:\n${agentResponses.map(r => 
-          `${r.role.toUpperCase()} (${r.provider}):\n${r.response}`
-        ).join('\n\n')}`;
-
       } catch (error) {
         console.error(`Error with ${agent.provider}:`, error);
         // Continue with other agents if one fails
@@ -46,16 +50,19 @@ serve(async (req) => {
       throw new Error('No agents were able to provide responses');
     }
 
-    // Conduct final synthesis
+    // Conduct final synthesis with enhanced context awareness
     console.log('Starting final synthesis phase');
-    const finalResponse = await conductVotingRound(agents, agentResponses);
+    const finalResponse = await conductVotingRound(agents, agentResponses, message);
 
     const fusionResponse = {
       final: finalResponse,
-      providers: agentResponses
+      providers: agentResponses,
+      analysis: {
+        category: analysis.category,
+        topics: analysis.topics,
+        confidence: analysis.confidence
+      }
     };
-
-    console.log('Successfully completed multi-agent collaboration');
 
     return new Response(
       JSON.stringify({ response: fusionResponse }),
@@ -73,3 +80,14 @@ serve(async (req) => {
     );
   }
 });
+
+function getProviderStrength(provider: string, category: string): number {
+  const strengths: Record<string, Record<string, number>> = {
+    openai: { creative: 0.8, technical: 0.9, code: 0.9, general: 0.8 },
+    claude: { creative: 0.9, technical: 0.8, code: 0.8, general: 0.9 },
+    google: { creative: 0.7, technical: 0.9, code: 0.8, general: 0.8 },
+    openrouter: { creative: 0.8, technical: 0.8, code: 0.7, general: 0.9 }
+  };
+  
+  return strengths[provider]?.[category] || 0.5;
+}

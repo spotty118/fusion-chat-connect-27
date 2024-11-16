@@ -1,5 +1,6 @@
 import React from 'react';
-import { Bot, Sparkles } from 'lucide-react';
+import { Bot, Sparkles, Brain, Tag } from 'lucide-react';
+import { Badge } from './ui/badge';
 
 interface FusionResponseProps {
   response: {
@@ -9,6 +10,11 @@ interface FusionResponseProps {
       role: string;
       response: string;
     }>;
+    analysis?: {
+      category: string;
+      topics: string[];
+      confidence: number;
+    };
   };
 }
 
@@ -30,6 +36,23 @@ const FusionResponse = ({ response }: FusionResponseProps) => {
           Fusion Response
         </span>
       </div>
+      
+      {response.analysis && (
+        <div className="flex items-center gap-2 text-sm text-gray-500">
+          <Brain className="h-4 w-4" />
+          <span className="capitalize">{response.analysis.category}</span>
+          <span className="text-gray-300">|</span>
+          <div className="flex items-center gap-1">
+            <Tag className="h-3 w-3" />
+            {response.analysis.topics.map((topic, index) => (
+              <Badge key={index} variant="secondary" className="text-xs">
+                {topic}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="prose prose-sm max-w-none">
         {response.final}
       </div>
