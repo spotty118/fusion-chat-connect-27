@@ -49,56 +49,35 @@ export function SettingsTabs() {
 
   return (
     <Tabs defaultValue="providers" className="w-full h-[calc(100vh-8rem)]">
-      <div className="flex flex-col md:flex-row h-full gap-6">
-        <div className="w-full md:w-48 shrink-0">
-          <TabsList className="flex flex-row md:flex-col h-auto w-full space-y-0 space-x-2 md:space-x-0 md:space-y-2 bg-transparent p-2 sticky top-0">
-            <TabsTrigger 
-              value="providers" 
-              className="w-full justify-start data-[state=active]:bg-white/80 dark:data-[state=active]:bg-slate-800/80 backdrop-blur-sm transition-all duration-300"
-            >
+      <div className="flex h-full gap-6">
+        <div className="w-48 shrink-0">
+          <TabsList className="flex-col h-auto w-full space-y-2 bg-muted p-2 sticky top-0">
+            <TabsTrigger value="providers" className="justify-start w-full">
               AI Providers
             </TabsTrigger>
-            <TabsTrigger 
-              value="manual-api" 
-              className="w-full justify-start data-[state=active]:bg-white/80 dark:data-[state=active]:bg-slate-800/80 backdrop-blur-sm transition-all duration-300"
-            >
+            <TabsTrigger value="manual-api" className="justify-start w-full">
               Manual API
             </TabsTrigger>
-            <TabsTrigger 
-              value="appearance" 
-              className="w-full justify-start data-[state=active]:bg-white/80 dark:data-[state=active]:bg-slate-800/80 backdrop-blur-sm transition-all duration-300"
-            >
+            <TabsTrigger value="appearance" className="justify-start w-full">
               Appearance
             </TabsTrigger>
-            <TabsTrigger 
-              value="notifications" 
-              className="w-full justify-start data-[state=active]:bg-white/80 dark:data-[state=active]:bg-slate-800/80 backdrop-blur-sm transition-all duration-300"
-            >
+            <TabsTrigger value="notifications" className="justify-start w-full">
               Notifications
             </TabsTrigger>
-            <TabsTrigger 
-              value="customization" 
-              className="w-full justify-start data-[state=active]:bg-white/80 dark:data-[state=active]:bg-slate-800/80 backdrop-blur-sm transition-all duration-300"
-            >
+            <TabsTrigger value="customization" className="justify-start w-full">
               Language
             </TabsTrigger>
-            <TabsTrigger 
-              value="shortcuts" 
-              className="w-full justify-start data-[state=active]:bg-white/80 dark:data-[state=active]:bg-slate-800/80 backdrop-blur-sm transition-all duration-300"
-            >
+            <TabsTrigger value="shortcuts" className="justify-start w-full">
               Keyboard Shortcuts
             </TabsTrigger>
-            <TabsTrigger 
-              value="backup" 
-              className="w-full justify-start data-[state=active]:bg-white/80 dark:data-[state=active]:bg-slate-800/80 backdrop-blur-sm transition-all duration-300"
-            >
+            <TabsTrigger value="backup" className="justify-start w-full">
               Backup & Restore
             </TabsTrigger>
           </TabsList>
         </div>
         
-        <div className="flex-1 min-h-0 overflow-y-auto space-y-6 p-2">
-          <TabsContent value="providers" className="mt-0 space-y-6">
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <TabsContent value="providers" className="mt-0">
             <FusionModeSettings
               apiKeys={apiKeys}
               selectedModels={selectedModels}
@@ -108,27 +87,27 @@ export function SettingsTabs() {
             />
           </TabsContent>
           
-          <TabsContent value="manual-api" className="mt-0 space-y-6">
+          <TabsContent value="manual-api" className="mt-0">
             <ManualApiSettings />
           </TabsContent>
           
-          <TabsContent value="appearance" className="mt-0 space-y-6">
+          <TabsContent value="appearance" className="mt-0">
             <AppearanceSettings />
           </TabsContent>
           
-          <TabsContent value="notifications" className="mt-0 space-y-6">
+          <TabsContent value="notifications" className="mt-0">
             <NotificationSettings />
           </TabsContent>
           
-          <TabsContent value="customization" className="mt-0 space-y-6">
+          <TabsContent value="customization" className="mt-0">
             <LanguageSettings />
           </TabsContent>
           
-          <TabsContent value="shortcuts" className="mt-0 space-y-6">
+          <TabsContent value="shortcuts" className="mt-0">
             <KeyboardShortcutsSettings />
           </TabsContent>
           
-          <TabsContent value="backup" className="mt-0 space-y-6">
+          <TabsContent value="backup" className="mt-0">
             <ExportImportSettings />
           </TabsContent>
         </div>
