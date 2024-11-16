@@ -1,5 +1,5 @@
 import { Agent, AgentResponse } from './types.ts';
-import { analyzePrompt, getBestProviderForCategory } from '../../src/utils/promptAnalysis.ts';
+import { analyzePrompt, getBestProviderForCategory } from './prompt-analysis.ts';
 
 export async function makeProviderRequest(agent: Agent, prompt: string): Promise<string> {
   try {

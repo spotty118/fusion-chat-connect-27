@@ -1,3 +1,5 @@
+export type PromptCategory = 'creative' | 'technical' | 'code' | 'general';
+
 export interface Agent {
   provider: string;
   model: string;
@@ -16,4 +18,11 @@ export interface AgentResponse {
 export interface FusionResponse {
   final: string;
   providers: AgentResponse[];
+}
+
+export interface PromptAnalysis {
+  category: PromptCategory;
+  confidence: number;
+  sentiment: number;
+  topics: string[];
 }
