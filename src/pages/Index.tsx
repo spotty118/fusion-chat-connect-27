@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { FusionResponse } from '@/lib/fusion-mode';
 import { useFusionMode } from '@/hooks/useFusionMode';
 import { Settings } from 'lucide-react';
+import { generateResponse } from '@/lib/model-handler';
 
 const Index = () => {
   const [messages, setMessages] = useState([]);
