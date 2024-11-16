@@ -20,10 +20,12 @@ export const ChatHeader = ({ isFusionMode, sidePanelOpen, onToggleSidePanel }: C
   };
 
   return (
-    <header className="bg-gradient-to-br from-fusion-primary to-fusion-secondary p-6 text-white shadow-2xl sticky top-0 z-10 backdrop-blur-lg bg-opacity-95">
+    <header className="bg-gradient-to-br from-blue-600 via-blue-700 to-purple-700 p-6 text-white shadow-2xl sticky top-0 z-10 backdrop-blur-lg bg-opacity-95">
       <div className="flex justify-between items-center max-w-5xl mx-auto w-full">
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold tracking-tight">ThinkLink</h1>
+          <h1 className="text-3xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-100">
+            ThinkLink
+          </h1>
           <CurrentModel />
         </div>
         <div className="flex items-center gap-3">

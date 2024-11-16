@@ -78,7 +78,7 @@ const ChatMessage = ({ message, isAI, isLoading, onReply }) => {
     )}>
       {isAI && (
         <div className="relative">
-          <div className="w-12 h-12 rounded-2xl rotate-3 flex items-center justify-center bg-gradient-to-br from-fusion-primary to-fusion-secondary text-white shadow-lg shadow-fusion-primary/20 ring-2 ring-white transform group-hover:rotate-6 transition-all duration-300">
+          <div className="w-12 h-12 rounded-2xl rotate-3 flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-lg shadow-blue-500/20 ring-2 ring-white transform group-hover:rotate-6 transition-all duration-300">
             <Bot size={24} />
           </div>
           <div className="absolute -top-1 -right-1">
@@ -89,11 +89,11 @@ const ChatMessage = ({ message, isAI, isLoading, onReply }) => {
         </div>
       )}
       <div className={cn(
-        "relative max-w-[85%] rounded-3xl px-6 py-4 shadow-lg transition-all duration-300 group animate-fade-in",
+        "relative max-w-[85%] rounded-3xl px-6 py-4 transition-all duration-300 group animate-fade-in glass-effect",
         isAI 
-          ? "bg-white text-gray-800 rounded-tl-lg border border-gray-100 hover:shadow-xl" 
-          : "bg-gradient-to-br from-fusion-primary to-fusion-secondary text-white rounded-tr-lg hover:shadow-fusion-primary/30",
-        isAI ? "shadow-lg shadow-gray-100/50" : "shadow-lg shadow-fusion-primary/20"
+          ? "bg-white/80 text-gray-800 rounded-tl-lg border border-white/20" 
+          : "bg-gradient-to-br from-blue-500 to-purple-500 text-white rounded-tr-lg",
+        isAI ? "shadow-lg shadow-gray-100/50" : "shadow-lg shadow-blue-500/20"
       )}>
         {isAI && isLoading ? <TypingIndicator /> : (
           <>
@@ -104,7 +104,7 @@ const ChatMessage = ({ message, isAI, isLoading, onReply }) => {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0 hover:bg-gray-100/80 rounded-xl"
+                className="h-8 w-8 p-0 hover:bg-white/20 rounded-xl"
                 onClick={() => onReply?.(messageContent)}
               >
                 <MessageSquareQuote className="h-4 w-4" />
@@ -115,12 +115,12 @@ const ChatMessage = ({ message, isAI, isLoading, onReply }) => {
       </div>
       {!isAI && (
         <div className="relative">
-          <div className="w-12 h-12 rounded-2xl -rotate-3 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 text-fusion-primary shadow-lg shadow-gray-200/50 ring-2 ring-white transform group-hover:-rotate-6 transition-all duration-300">
+          <div className="w-12 h-12 rounded-2xl -rotate-3 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 text-blue-500 shadow-lg shadow-gray-200/50 ring-2 ring-white transform group-hover:-rotate-6 transition-all duration-300">
             <UserCircle2 size={24} />
           </div>
           <div className="absolute -bottom-1 -left-1">
             <div className="w-4 h-4 rounded-lg bg-white shadow-md flex items-center justify-center">
-              <Sparkles className="h-2.5 w-2.5 text-fusion-primary" />
+              <Sparkles className="h-2.5 w-2.5 text-blue-500" />
             </div>
           </div>
         </div>

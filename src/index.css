@@ -6,33 +6,24 @@
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
- 
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
- 
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
- 
-    --primary: 222.2 47.4% 11.2%;
+    --primary: 221.2 83.2% 53.3%;
     --primary-foreground: 210 40% 98%;
- 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
- 
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
- 
     --accent: 210 40% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
- 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
- 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
- 
-    --radius: 0.5rem;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 1rem;
   }
 
   * {
@@ -40,7 +31,13 @@
   }
 
   body {
-    @apply bg-background text-foreground antialiased min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100;
+    @apply bg-background text-foreground antialiased min-h-screen;
+    background: linear-gradient(
+      to bottom right,
+      rgb(249, 250, 251),
+      rgb(243, 244, 246),
+      rgb(229, 231, 235)
+    );
   }
 
   /* Custom scrollbar styles */
@@ -70,4 +67,19 @@
 
 .animate-fade-in {
   animation: fade-in 0.5s ease-out forwards;
+}
+
+/* Modern card styles */
+.modern-card {
+  @apply bg-white/80 backdrop-blur-lg rounded-2xl border border-white/20 shadow-xl;
+  transition: all 0.3s ease;
+}
+
+.modern-card:hover {
+  @apply shadow-2xl transform -translate-y-1;
+}
+
+/* Glass morphism effect */
+.glass-effect {
+  @apply bg-white/30 backdrop-blur-md border border-white/20;
 }
