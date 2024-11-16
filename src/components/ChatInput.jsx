@@ -67,11 +67,11 @@ const ChatInput = forwardRef(({ onSendMessage, disabled }, ref) => {
           .from('temp_uploads')
           .getPublicUrl(filePath);
 
-        // Store file metadata in the database
+        // Store file metadata in the database with explicit user_id
         const { error: dbError } = await supabase
           .from('temp_files')
           .insert({
-            user_id: userId,
+            user_id: userId, // Explicitly set the user_id
             filename: file.name,
             file_path: filePath,
             content_type: file.type,
