@@ -27,32 +27,21 @@ export const generateFusionResponse = async (message: string): Promise<FusionRes
       .select('provider, api_key')
       .eq('user_id', session.user.id);
 
-    console.log('API Keys Data:', apiKeysData); // Debug log
-
     if (apiKeysError) {
       console.error('Failed to fetch API keys:', apiKeysError);
       throw new Error(`Failed to fetch API keys: ${apiKeysError.message}`);
     }
 
+    // Check local storage as fallback
+    const localApiKeys = {
+      openai: localStorage.getItem('openai_key'),
+      claude: localStorage.getItem('claude_key'),
+      google: localStorage.getItem('google_key'),
+      openrouter: localStorage.getItem('openrouter_key')
+    };
+
+    // Convert local storage keys to the format expected by the rest of the code
     if (!apiKeysData || apiKeysData.length === 0) {
-      // Check local storage as fallback
-      const localApiKeys = {
-        openai: localStorage.getItem('openai_key'),
-        claude: localStorage.getItem('claude_key'),
-        google: localStorage.getItem('google_key'),
-        openrouter: localStorage.getItem('openrouter_key')
-      };
-
-      console.log('Local Storage API Keys:', localApiKeys); // Debug log
-
-      // Check if we have any API keys in local storage
-      const hasLocalKeys = Object.values(localApiKeys).some(key => key && key.length > 0);
-      
-      if (!hasLocalKeys) {
-        throw new Error('No API keys found. Please add your API keys in the settings.');
-      }
-
-      // Convert local storage keys to the format expected by the rest of the code
       apiKeysData = Object.entries(localApiKeys)
         .filter(([_, key]) => key && key.length > 0)
         .map(([provider, api_key]) => ({ provider, api_key }));
@@ -78,15 +67,12 @@ export const generateFusionResponse = async (message: string): Promise<FusionRes
       openrouter: localStorage.getItem('openrouter_model')
     };
 
-    console.log('Selected Models:', selectedModels); // Debug log
-
+    // Only include providers that have both an API key and a selected model
     const activeProviders = Object.keys(apiKeys).filter(provider => {
       const hasApiKey = apiKeys[provider] && apiKeys[provider].length > 0;
       const hasModel = selectedModels[provider] && selectedModels[provider].length > 0;
       return hasApiKey && hasModel;
     });
-
-    console.log('Active Providers:', activeProviders); // Debug log
 
     if (activeProviders.length < 3) {
       throw new Error(
@@ -96,7 +82,16 @@ export const generateFusionResponse = async (message: string): Promise<FusionRes
       );
     }
 
-    const response = await generateMultiAgentResponse(message, apiKeys, selectedModels);
+    // Filter apiKeys and selectedModels to only include active providers
+    const filteredApiKeys: Record<string, string> = {};
+    const filteredModels: Record<string, string> = {};
+    
+    activeProviders.forEach(provider => {
+      filteredApiKeys[provider] = apiKeys[provider];
+      filteredModels[provider] = selectedModels[provider] || '';
+    });
+
+    const response = await generateMultiAgentResponse(message, filteredApiKeys, filteredModels);
     
     if (!response || typeof response !== 'object' || !('final' in response) || !('providers' in response)) {
       throw new Error('Invalid response format from multi-agent system');
