@@ -58,7 +58,7 @@ export const fetchModelsFromBackend = async (provider: string, apiKey: string): 
 
     // For Google, only return models if there's a valid API key
     if (provider === 'google') {
-      return apiKey ? ['palm-2'] : [];
+      return [];
     }
 
     return [];
