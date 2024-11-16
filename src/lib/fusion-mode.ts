@@ -67,11 +67,17 @@ export const generateFusionResponse = async (message: string): Promise<FusionRes
       openrouter: localStorage.getItem('openrouter_model')
     };
 
-    // Only include providers that have both an API key and a selected model
+    // Check which providers are enabled
+    const enabledProviders = Object.keys(apiKeys).filter(provider => 
+      localStorage.getItem(`${provider}_enabled`) !== 'false'
+    );
+
+    // Only include providers that have both an API key, a selected model, and are enabled
     const activeProviders = Object.keys(apiKeys).filter(provider => {
       const hasApiKey = apiKeys[provider] && apiKeys[provider].length > 0;
       const hasModel = selectedModels[provider] && selectedModels[provider].length > 0;
-      return hasApiKey && hasModel;
+      const isEnabled = enabledProviders.includes(provider);
+      return hasApiKey && hasModel && isEnabled;
     });
 
     if (activeProviders.length < 3) {

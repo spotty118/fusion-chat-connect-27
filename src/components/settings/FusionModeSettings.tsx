@@ -5,6 +5,8 @@ import ProviderConfig from './ProviderConfig';
 import { UseQueryResult } from '@tanstack/react-query';
 import { Zap } from 'lucide-react';
 import { useFusionMode } from '@/hooks/useFusionMode';
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface FusionModeSettingsProps {
   apiKeys: Record<string, string>;
@@ -24,12 +26,27 @@ const FusionModeSettings = ({
   const [isAnimating, setIsAnimating] = useState(false);
   const { toast } = useToast();
   const { isFusionMode, toggleFusionMode } = useFusionMode();
+  const [enabledProviders, setEnabledProviders] = useState<Record<string, boolean>>(() => ({
+    openai: true,
+    claude: true,
+    google: true,
+    openrouter: true
+  }));
+
+  const handleProviderToggle = (provider: string) => {
+    setEnabledProviders(prev => ({
+      ...prev,
+      [provider]: !prev[provider]
+    }));
+    localStorage.setItem(`${provider}_enabled`, (!enabledProviders[provider]).toString());
+  };
 
   const getConfiguredProvidersCount = () => {
     return Object.entries(apiKeys).filter(([provider, key]) => {
       const hasKey = key && key.length > 0;
       const hasModel = selectedModels[provider] && selectedModels[provider].length > 0;
-      return hasKey && hasModel;
+      const isEnabled = enabledProviders[provider];
+      return hasKey && hasModel && isEnabled;
     }).length;
   };
 
@@ -80,46 +97,37 @@ const FusionModeSettings = ({
         </div>
       )}
       
-      <ProviderConfig
-        provider="openai"
-        label="OpenAI Configuration"
-        bgColor="bg-blue-500"
-        apiKey={apiKeys.openai}
-        onApiKeyChange={onApiKeyChange('openai')}
-        selectedModel={selectedModels.openai}
-        onModelSelect={onModelSelect('openai')}
-        statusQuery={providerQueries.openai}
-      />
-      <ProviderConfig
-        provider="claude"
-        label="Anthropic Claude Configuration"
-        bgColor="bg-purple-500"
-        apiKey={apiKeys.claude}
-        onApiKeyChange={onApiKeyChange('claude')}
-        selectedModel={selectedModels.claude}
-        onModelSelect={onModelSelect('claude')}
-        statusQuery={providerQueries.claude}
-      />
-      <ProviderConfig
-        provider="google"
-        label="Google PaLM Configuration"
-        bgColor="bg-green-500"
-        apiKey={apiKeys.google}
-        onApiKeyChange={onApiKeyChange('google')}
-        selectedModel={selectedModels.google}
-        onModelSelect={onModelSelect('google')}
-        statusQuery={providerQueries.google}
-      />
-      <ProviderConfig
-        provider="openrouter"
-        label="OpenRouter Configuration"
-        bgColor="bg-orange-500"
-        apiKey={apiKeys.openrouter}
-        onApiKeyChange={onApiKeyChange('openrouter')}
-        selectedModel={selectedModels.openrouter}
-        onModelSelect={onModelSelect('openrouter')}
-        statusQuery={providerQueries.openrouter}
-      />
+      {Object.entries({
+        openai: { label: "OpenAI Configuration", bgColor: "bg-blue-500" },
+        claude: { label: "Anthropic Claude Configuration", bgColor: "bg-purple-500" },
+        google: { label: "Google PaLM Configuration", bgColor: "bg-green-500" },
+        openrouter: { label: "OpenRouter Configuration", bgColor: "bg-orange-500" }
+      }).map(([provider, config]) => (
+        <div key={provider} className="space-y-4">
+          <div className="flex items-center justify-between">
+            <Label htmlFor={`${provider}-toggle`} className="text-sm font-medium">
+              Enable {config.label}
+            </Label>
+            <Switch
+              id={`${provider}-toggle`}
+              checked={enabledProviders[provider]}
+              onCheckedChange={() => handleProviderToggle(provider)}
+            />
+          </div>
+          {enabledProviders[provider] && (
+            <ProviderConfig
+              provider={provider as any}
+              label={config.label}
+              bgColor={config.bgColor}
+              apiKey={apiKeys[provider]}
+              onApiKeyChange={onApiKeyChange(provider)}
+              selectedModel={selectedModels[provider]}
+              onModelSelect={onModelSelect(provider)}
+              statusQuery={providerQueries[provider]}
+            />
+          )}
+        </div>
+      ))}
 
       <div className="space-y-2">
         <Button 
