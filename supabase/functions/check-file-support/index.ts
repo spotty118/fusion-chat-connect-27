@@ -37,12 +37,24 @@ serve(async (req) => {
 
     switch (provider.toLowerCase()) {
       case 'openai':
-        // Support both vision models and GPT-4o models
+        // Support both vision models and GPT-4 models
         supportsFiles = model.toLowerCase().includes('vision') || 
-                       model.toLowerCase().includes('gpt-4o');
+                       model.toLowerCase().includes('gpt-4');
         break;
       case 'claude':
+        // Claude 3 models support vision
         supportsFiles = model.toLowerCase().includes('claude-3');
+        break;
+      case 'google':
+        // Gemini models support vision
+        supportsFiles = model.toLowerCase().includes('gemini');
+        break;
+      case 'openrouter':
+        // OpenRouter supports vision through specific models
+        supportsFiles = model.toLowerCase().includes('vision') || 
+                       model.toLowerCase().includes('claude-3') ||
+                       model.toLowerCase().includes('gemini') ||
+                       model.toLowerCase().includes('gpt-4');
         break;
       default:
         supportsFiles = false;
