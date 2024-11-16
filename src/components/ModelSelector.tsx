@@ -51,7 +51,7 @@ export const ModelSelector = ({
       onValueChange={onModelSelect}
     >
       <SelectTrigger className="w-full">
-        <SelectValue placeholder="Select a model" defaultValue="Select a model" />
+        <SelectValue placeholder="Select a model">Select a model</SelectValue>
       </SelectTrigger>
       <SelectContent>
         {models.map((model) => (
