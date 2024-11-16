@@ -1,9 +1,9 @@
-import { PromptCategory, PromptAnalysis } from './types.ts';
+import { PromptCategory, PromptAnalysis } from './types';
 
 const CATEGORY_KEYWORDS = {
-  creative: ['write', 'story', 'creative', 'imagine', 'design'],
+  creative: ['write', 'story', 'creative', 'imagine', 'design', 'dragon'],
   technical: ['explain', 'how', 'what', 'why', 'technical'],
-  code: ['code', 'function', 'programming', 'debug', 'implement'],
+  code: ['code', 'function', 'programming', 'debug', 'implement', 'sort', 'array'],
   general: ['help', 'can', 'would', 'should', 'opinion']
 };
 
@@ -25,7 +25,7 @@ export const analyzePrompt = (prompt: string): PromptAnalysis => {
   });
 
   // Simple topic extraction using keyword frequency
-  const words = lowercasePrompt.split(/\W+/);
+  const words = lowercasePrompt.replace(/[?.,!]/g, '').split(/\s+/);
   const wordFreq: Record<string, number> = {};
   words.forEach(word => {
     if (word.length > 3) { // Skip short words
@@ -34,6 +34,8 @@ export const analyzePrompt = (prompt: string): PromptAnalysis => {
   });
   
   const topics = Object.entries(wordFreq)
+    .filter(([word]) => !['with', 'and', 'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'help', 'write', 'creative', 'story'].includes(word))
+    .filter(([word]) => !['with', 'and', 'the', 'a', 'an'].includes(word))
     .sort(([,a], [,b]) => b - a)
     .slice(0, 3)
     .map(([word]) => word);

@@ -1,5 +1,5 @@
-import { Agent, AgentResponse } from './types.ts';
-import { analyzePrompt, getBestProviderForCategory } from './prompt-analysis.ts';
+import { Agent, AgentResponse } from './types';
+import { analyzePrompt, getBestProviderForCategory } from './prompt-analysis';
 
 export async function makeProviderRequest(agent: Agent, prompt: string): Promise<string> {
   try {
@@ -17,7 +17,7 @@ export async function makeProviderRequest(agent: Agent, prompt: string): Promise
       case 'openrouter':
         headers['Authorization'] = `Bearer ${agent.apiKey}`;
         if (agent.provider === 'openrouter') {
-          headers['HTTP-Referer'] = Deno.env.get('APP_URL') ?? '*';
+          headers['HTTP-Referer'] = process.env.APP_URL || '*';
         }
         body = {
           model: agent.model,
@@ -60,7 +60,7 @@ export async function makeProviderRequest(agent: Agent, prompt: string): Promise
         throw new Error(`Unsupported provider: ${agent.provider}`);
     }
 
-    console.log(`Making request to ${agent.provider} with role: ${agent.role}`);
+    console.log(`Making request to ${agent.provider} with role: ${agent.role}, endpoint: ${endpoint}, body:`, body);
     
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -82,7 +82,7 @@ export async function makeProviderRequest(agent: Agent, prompt: string): Promise
       case 'openrouter':
         return data.choices[0].message.content;
       case 'claude':
-        return data.content[0].text;
+        return data.choices[0].message.content;
       case 'google':
         return data.candidates[0].content.parts[0].text;
       default:
