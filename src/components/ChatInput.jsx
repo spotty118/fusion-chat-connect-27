@@ -1,7 +1,7 @@
-import React, { forwardRef, useState, useEffect, useRef } from 'react';
+import React, { forwardRef, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, Paperclip, X } from 'lucide-react';
+import { Send, Paperclip, X, Code, FileText, Image, BarChart } from 'lucide-react';
 import { supportsFileAttachments } from '@/utils/fileSupport';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -111,6 +111,17 @@ const ChatInput = forwardRef(({ onSendMessage, disabled }, ref) => {
     }
   };
 
+  const ToolButton = ({ icon: Icon, label }) => (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="w-8 h-8 rounded-full hover:bg-gray-100"
+      title={label}
+    >
+      <Icon className="h-4 w-4 text-gray-500" />
+    </Button>
+  );
+
   return (
     <form onSubmit={handleSubmit} className="p-4 border-t bg-white/50 backdrop-blur-sm">
       <div className="max-w-4xl mx-auto">
@@ -128,7 +139,7 @@ const ChatInput = forwardRef(({ onSendMessage, disabled }, ref) => {
             </Button>
           </div>
         )}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 bg-white border rounded-full p-2">
           <input
             type="file"
             ref={fileInputRef}
@@ -140,7 +151,7 @@ const ChatInput = forwardRef(({ onSendMessage, disabled }, ref) => {
             type="button"
             variant="ghost"
             size="icon"
-            className={`h-10 w-10 rounded-xl ${
+            className={`h-8 w-8 rounded-full ${
               showAttachments && !isLoading
                 ? "hover:bg-gray-100 text-gray-700" 
                 : "opacity-50 cursor-not-allowed text-gray-400"
@@ -148,24 +159,30 @@ const ChatInput = forwardRef(({ onSendMessage, disabled }, ref) => {
             disabled={!showAttachments || disabled || isLoading || isUploading}
             onClick={handleFileClick}
           >
-            <Paperclip className="h-5 w-5" />
+            <Paperclip className="h-4 w-4" />
           </Button>
           <Input
             ref={ref}
             type="text"
-            placeholder="Type a message..."
+            placeholder="Message multiple AIs..."
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            className="flex-1"
+            className="flex-1 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
             disabled={disabled || isUploading}
           />
+          <div className="flex items-center gap-2 mr-2">
+            <ToolButton icon={Code} label="Code" />
+            <ToolButton icon={FileText} label="Document" />
+            <ToolButton icon={Image} label="Image" />
+            <ToolButton icon={BarChart} label="Data" />
+          </div>
           <Button
             type="submit"
             size="icon"
-            className="h-10 w-10 rounded-xl bg-fusion-primary hover:bg-fusion-primary/90"
+            className="h-10 w-10 rounded-full bg-gradient-to-r from-fusion-primary to-fusion-secondary hover:opacity-90"
             disabled={disabled || !message.trim() || isUploading}
           >
-            <Send className="h-5 w-5" />
+            <Send className="h-5 w-5 text-white" />
           </Button>
         </div>
       </div>
