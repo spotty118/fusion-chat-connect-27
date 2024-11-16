@@ -12,6 +12,7 @@
     "noImplicitAny": false,
     "noUnusedParameters": false,
     "skipLibCheck": true,
+    "esModuleInterop": true,
     "allowJs": true,
     "noUnusedLocals": false,
     "strictNullChecks": false

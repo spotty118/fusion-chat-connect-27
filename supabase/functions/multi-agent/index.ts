@@ -15,7 +15,7 @@ serve(async (req) => {
 
   try {
     const { message, agents } = await req.json();
-    console.log('Starting collaborative multi-agent process');
+    console.log('Starting collaborative multi-agent process with message:', message);
     console.log('Active agents:', agents.map((a: Agent) => `${a.provider} (${a.role})`));
 
     const agentResponses: AgentResponse[] = [];
