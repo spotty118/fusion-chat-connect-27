@@ -7,6 +7,7 @@ export async function makeProviderRequest(agent: Agent, prompt: string): Promise
       'Content-Type': 'application/json',
     };
     let body: Record<string, any>;
+    let endpoint = agent.endpoint;
 
     // Format the message content with role and context
     const messageContent = `Context: ${agent.role}\n\nInstructions: ${agent.instructions}\n\nQuery: ${prompt}`;
@@ -42,10 +43,10 @@ export async function makeProviderRequest(agent: Agent, prompt: string): Promise
         break;
 
       case 'google':
-        const endpoint = `${agent.endpoint}?key=${agent.apiKey}`;
+        // For Google, we append the API key as a query parameter
+        endpoint = `${agent.endpoint}?key=${agent.apiKey}`;
         body = {
           contents: [{
-            role: "user",
             parts: [{ text: `${agent.instructions}\n\n${prompt}` }]
           }],
           generationConfig: {
@@ -61,7 +62,7 @@ export async function makeProviderRequest(agent: Agent, prompt: string): Promise
 
     console.log(`Making request to ${agent.provider} with role: ${agent.role}`);
     
-    const response = await fetch(agent.endpoint, {
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers,
       body: JSON.stringify(body)
