@@ -1,5 +1,6 @@
-import { makeProviderRequest } from './api/providers';
+import { makeProviderRequest } from './provider-api';
 import { ResponseType } from '@/components/ResponseTypeSelector';
+import { intelligentRouter } from './providers/IntelligentAIRouter';
 
 interface ProviderResponse {
   provider: string;
@@ -40,57 +41,37 @@ export const generateFusionResponse = async (message: string, responseType: Resp
   // Get only enabled providers
   const enabledProviders = ['openai', 'claude', 'google', 'openrouter'].filter(provider => {
     const isEnabled = localStorage.getItem(`${provider}_enabled`) === 'true';
-    console.log(`Provider ${provider} enabled status:`, isEnabled);
-    return isEnabled;
+    const hasKey = localStorage.getItem(`${provider}_key`)?.length > 0;
+    const hasModel = localStorage.getItem(`${provider}_model`)?.length > 0;
+    console.log(`Provider ${provider} status:`, { isEnabled, hasKey, hasModel });
+    return isEnabled && hasKey && hasModel;
   });
 
-  console.log('Enabled providers:', enabledProviders);
+  console.log('Enabled and configured providers:', enabledProviders);
 
-  // Get API keys and models only for enabled providers
-  const apiKeys = Object.fromEntries(
-    enabledProviders.map(provider => [
-      provider,
-      localStorage.getItem(`${provider}_key`)
-    ])
-  );
-
-  const selectedModels = Object.fromEntries(
-    enabledProviders.map(provider => [
-      provider,
-      localStorage.getItem(`${provider}_model`)
-    ])
-  );
-
-  // Filter out providers without API keys or models
-  const activeProviders = enabledProviders.filter(provider => {
-    const hasKey = apiKeys[provider] && apiKeys[provider].length > 0;
-    const hasModel = selectedModels[provider] && selectedModels[provider].length > 0;
-    console.log(`Provider ${provider} configuration:`, { hasKey, hasModel });
-    return hasKey && hasModel;
-  });
-
-  console.log('Active providers with valid configuration:', activeProviders);
-
-  if (activeProviders.length < 2) {
-    console.error('Not enough active providers:', activeProviders.length);
-    throw new Error(`Fusion mode requires at least 2 active and configured providers. Currently have ${activeProviders.length} configured.`);
+  if (enabledProviders.length < 2) {
+    console.error('Not enough active providers:', enabledProviders.length);
+    throw new Error(`Fusion mode requires at least 2 active and configured providers. Currently have ${enabledProviders.length} configured.`);
   }
 
   try {
     const formattedPrompt = formatProviderPrompt(message, responseType);
     console.log('Formatted prompt:', formattedPrompt);
 
+    // Get responses from all enabled providers
     const responses = await Promise.all(
-      activeProviders.map(async provider => {
+      enabledProviders.map(async provider => {
         try {
           console.log(`Making request to provider: ${provider}`);
+          const model = localStorage.getItem(`${provider}_model`) || '';
           const response = await makeProviderRequest(
             provider,
-            formattedPrompt,
-            selectedModels[provider]
+            localStorage.getItem(`${provider}_key`) || '',
+            model,
+            formattedPrompt
           );
 
-          console.log(`Successful response from ${provider}:`, response);
+          console.log(`Successful response from ${provider}`);
           return {
             provider,
             content: response,
@@ -107,23 +88,20 @@ export const generateFusionResponse = async (message: string, responseType: Resp
       })
     );
 
-    // For coding responses, ensure we preserve code blocks in the final synthesis
-    let finalResponse = '';
-    if (responseType === 'coding') {
-      finalResponse = responses
-        .filter(r => !r.content.startsWith('Error:'))
-        .map(r => `### ${r.provider.toUpperCase()} Response:\n\n${r.content}`)
-        .join('\n\n');
-    } else {
-      finalResponse = responses
-        .filter(r => !r.content.startsWith('Error:'))
-        .map(r => `${r.provider.toUpperCase()}: ${r.content}`)
-        .join('\n\n');
-    }
+    // Use intelligent routing to synthesize the best response
+    const validResponses = responses.filter(r => !r.content.startsWith('Error:'));
+    const routedResponse = await intelligentRouter.routeRequest({
+      message: formattedPrompt,
+      responseType,
+      maxLatency: 5000,
+      minReliability: 0.8
+    });
+
+    console.log('Routed response:', routedResponse);
 
     return {
       providers: responses,
-      final: finalResponse || 'No valid responses received from any provider.'
+      final: routedResponse.response || 'No valid responses received from any provider.'
     };
   } catch (error) {
     console.error('Fusion mode error:', error);
