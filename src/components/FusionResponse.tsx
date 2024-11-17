@@ -5,18 +5,15 @@ import { CodeBlock } from './chat/CodeBlock';
 
 interface FusionResponseProps {
   response: {
-    final: string;
     providers: Array<{
       provider: string;
-      role: string;
-      response: string;
+      content: string;
+      timestamp: string;
     }>;
-    analysis?: {
-      category: string;
-      topics: string[];
-      confidence: number;
-    };
+    final: string;
   };
+  isLoading?: boolean;
+  error?: string;
 }
 
 const FusionResponse = ({ response }: FusionResponseProps) => {
@@ -61,36 +58,36 @@ const FusionResponse = ({ response }: FusionResponseProps) => {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <div className="relative">
-          <div className="w-8 h-8 rounded-xl rotate-3 flex items-center justify-center bg-gradient-to-br from-fusion-primary to-fusion-secondary text-white shadow-md">
-            <Bot className="h-5 w-5" />
-          </div>
-          <div className="absolute -top-1 -right-1">
-            <div className="w-3 h-3 rounded-lg bg-white shadow-sm flex items-center justify-center">
-              <Sparkles className="h-2 w-2 text-yellow-400" />
-            </div>
-          </div>
+        <div className="flex items-center gap-2">
+          <Bot className="h-5 w-5 text-fusion-primary" />
+          <span className="font-medium">Fusion Response</span>
         </div>
-        <span className="font-medium bg-gradient-to-r from-fusion-primary to-fusion-secondary bg-clip-text text-transparent">
-          Fusion Response
-        </span>
+        <div className="flex gap-2">
+          <Badge variant="outline" className="flex items-center gap-1">
+            <Sparkles className="h-3 w-3" />
+            <span>{response.providers.length} Providers</span>
+          </Badge>
+          <Badge variant="outline" className="flex items-center gap-1">
+            <Brain className="h-3 w-3" />
+            <span>Synthesized</span>
+          </Badge>
+        </div>
       </div>
-      
-      {response.analysis && (
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <Brain className="h-4 w-4" />
-          <span className="capitalize">{response.analysis.category}</span>
-          <span className="text-gray-300">|</span>
-          <div className="flex items-center gap-1">
-            <Tag className="h-3 w-3" />
-            {response.analysis.topics.map((topic, index) => (
-              <Badge key={index} variant="secondary" className="text-xs">
-                {topic}
-              </Badge>
-            ))}
+
+      {response.providers.map((provider, index) => (
+        <div key={index} className="rounded-lg border p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Tag className="h-4 w-4" />
+            <span className="font-medium">{provider.provider.toUpperCase()}</span>
+            <span className="text-sm text-muted-foreground">
+              {new Date(provider.timestamp).toLocaleTimeString()}
+            </span>
+          </div>
+          <div className="prose prose-sm max-w-none">
+            {renderContent(provider.content)}
           </div>
         </div>
-      )}
+      ))}
 
       <div className="prose prose-sm max-w-none">
         {renderContent(response.final)}

@@ -1,138 +1,122 @@
-import { supabase } from "@/integrations/supabase/client";
-import { generateMultiAgentResponse } from './multi-agent';
-import type { ResponseType } from '@/components/ResponseTypeSelector';
+import { makeProviderRequest } from './api/providers';
+import { ResponseType } from '@/components/ResponseTypeSelector';
 
-export interface FusionResponse {
-  final: string;
-  providers: Array<{
-    provider: string;
-    role: string;
-    response: string;
-  }>;
+interface ProviderResponse {
+  provider: string;
+  content: string;
+  timestamp: string;
 }
 
+export interface FusionResponse {
+  providers: ProviderResponse[];
+  final: string;
+}
+
+const getSystemPrompt = (responseType: ResponseType) => {
+  switch (responseType) {
+    case 'coding':
+      return `You are a programming assistant. Always provide practical code examples with explanations. 
+      Use markdown code blocks with appropriate language tags for all code examples. 
+      Format your response to be clear and well-structured with code blocks.`;
+    case 'technical':
+      return 'You are a technical documentation expert. Provide detailed technical explanations with proper formatting.';
+    case 'creative':
+      return 'You are a creative writing assistant. Focus on engaging and imaginative content.';
+    case 'data':
+      return 'You are a data analysis expert. Focus on data insights and visualization suggestions.';
+    default:
+      return 'You are a helpful assistant. Provide clear and concise responses.';
+  }
+};
+
+const formatProviderPrompt = (message: string, responseType: ResponseType) => {
+  const systemPrompt = getSystemPrompt(responseType);
+  return `${systemPrompt}\n\nUser request: ${message}`;
+};
+
 export const generateFusionResponse = async (message: string, responseType: ResponseType = 'general'): Promise<FusionResponse> => {
+  console.log('Generating fusion response with type:', responseType);
+  
+  const apiKeys = {
+    openai: localStorage.getItem('openai_key'),
+    claude: localStorage.getItem('claude_key'),
+    google: localStorage.getItem('google_key'),
+    openrouter: localStorage.getItem('openrouter_key')
+  };
+
+  const selectedModels = {
+    openai: localStorage.getItem('openai_model'),
+    claude: localStorage.getItem('claude_model'),
+    google: localStorage.getItem('google_model'),
+    openrouter: localStorage.getItem('openrouter_model')
+  };
+
+  const activeProviders = Object.keys(apiKeys).filter(
+    provider => apiKeys[provider] && selectedModels[provider]
+  );
+
+  if (activeProviders.length < 2) {
+    throw new Error('Fusion mode requires at least 2 active providers');
+  }
+
   try {
-    const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+    const formattedPrompt = formatProviderPrompt(message, responseType);
+    console.log('Formatted prompt:', formattedPrompt);
 
-    if (sessionError || !session) {
-      throw new Error('Please sign in to use Fusion Mode');
-    }
+    const responses = await Promise.all(
+      activeProviders.map(async provider => {
+        try {
+          const data = await makeProviderRequest(provider, formattedPrompt, selectedModels[provider]);
+          
+          let response;
+          switch (provider) {
+            case 'openai':
+            case 'openrouter':
+              response = data.choices[0].message.content;
+              break;
+            case 'claude':
+              response = data.content[0].text;
+              break;
+            case 'google':
+              response = data.candidates[0].output;
+              break;
+            default:
+              throw new Error(`Unsupported provider: ${provider}`);
+          }
 
-    // Fetch API keys from Supabase
-    let { data: apiKeysData, error: apiKeysError } = await supabase
-      .from('api_keys')
-      .select('provider, api_key')
-      .eq('user_id', session.user.id);
-
-    if (apiKeysError) {
-      console.error('Failed to fetch API keys:', apiKeysError);
-      throw new Error(`Failed to fetch API keys: ${apiKeysError.message}`);
-    }
-
-    // Check local storage as fallback
-    const localApiKeys = {
-      openai: localStorage.getItem('openai_key'),
-      claude: localStorage.getItem('claude_key'),
-      google: localStorage.getItem('google_key'),
-      openrouter: localStorage.getItem('openrouter_key')
-    };
-
-    // Convert local storage keys to the format expected by the rest of the code
-    if (!apiKeysData || apiKeysData.length === 0) {
-      apiKeysData = Object.entries(localApiKeys)
-        .filter(([_, key]) => key && key.length > 0)
-        .map(([provider, api_key]) => ({ provider, api_key }));
-    }
-
-    const apiKeys: Record<string, string> = {
-      openai: '',
-      claude: '',
-      google: '',
-      openrouter: ''
-    };
-
-    apiKeysData.forEach(({ provider, api_key }) => {
-      if (provider in apiKeys) {
-        apiKeys[provider] = api_key;
-      }
-    });
-
-    const selectedModels = {
-      openai: localStorage.getItem('openai_model'),
-      claude: localStorage.getItem('claude_model'),
-      google: localStorage.getItem('google_model'),
-      openrouter: localStorage.getItem('openrouter_model')
-    };
-
-    // Check which providers are enabled
-    const enabledProviders = Object.keys(apiKeys).filter(provider => 
-      localStorage.getItem(`${provider}_enabled`) !== 'false'
+          return {
+            provider,
+            content: response,
+            timestamp: new Date().toISOString()
+          };
+        } catch (error) {
+          console.error(`Error with ${provider}:`, error);
+          return {
+            provider,
+            content: `[${provider} error: ${error.message}]`,
+            timestamp: new Date().toISOString()
+          };
+        }
+      })
     );
 
-    console.log('Enabled providers:', enabledProviders);
-
-    // Only include providers that have both an API key, a selected model, and are enabled
-    const activeProviders = Object.keys(apiKeys).filter(provider => {
-      const hasApiKey = apiKeys[provider] && apiKeys[provider].length > 0;
-      const hasModel = selectedModels[provider] && selectedModels[provider].length > 0;
-      const isEnabled = enabledProviders.includes(provider);
-      
-      console.log(`Provider ${provider}:`, {
-        hasApiKey,
-        hasModel,
-        isEnabled
-      });
-      
-      return hasApiKey && hasModel && isEnabled;
-    });
-
-    console.log('Active providers:', activeProviders);
-
-    if (activeProviders.length < 3) {
-      const configuredCount = activeProviders.length;
-      const missingProviders = Object.keys(apiKeys)
-        .filter(provider => !activeProviders.includes(provider))
-        .map(provider => {
-          const hasApiKey = apiKeys[provider] && apiKeys[provider].length > 0;
-          const hasModel = selectedModels[provider] && selectedModels[provider].length > 0;
-          const isEnabled = enabledProviders.includes(provider);
-          
-          if (!hasApiKey) return `${provider} (missing API key)`;
-          if (!hasModel) return `${provider} (no model selected)`;
-          if (!isEnabled) return `${provider} (disabled)`;
-          return provider;
-        });
-
-      throw new Error(
-        `Fusion mode requires at least 3 active providers. Currently active: ${configuredCount}. ` +
-        `Missing configuration for: ${missingProviders.join(', ')}. ` +
-        'Please ensure you have both API keys and models selected for at least 3 providers, and that they are enabled.'
-      );
+    // For coding responses, ensure we preserve code blocks in the final synthesis
+    let finalResponse = '';
+    if (responseType === 'coding') {
+      finalResponse = responses.map(r => 
+        `### ${r.provider.toUpperCase()} Response:\n\n${r.content}`
+      ).join('\n\n');
+    } else {
+      finalResponse = responses
+        .map(r => `${r.provider.toUpperCase()}: ${r.content}`)
+        .join('\n\n');
     }
 
-    // Filter apiKeys and selectedModels to only include active providers
-    const filteredApiKeys: Record<string, string> = {};
-    const filteredModels: Record<string, string> = {};
-    
-    activeProviders.forEach(provider => {
-      filteredApiKeys[provider] = apiKeys[provider];
-      filteredModels[provider] = selectedModels[provider] || '';
-    });
-
-    const response = await generateMultiAgentResponse(message, filteredApiKeys, filteredModels, responseType);
-    
-    if (!response || typeof response !== 'object' || !('final' in response) || !('providers' in response)) {
-      throw new Error('Invalid response format from multi-agent system');
-    }
-
-    return response as FusionResponse;
-
+    return {
+      providers: responses,
+      final: finalResponse
+    };
   } catch (error) {
-    console.error('Error in multi-agent response:', error);
-    throw error;
+    throw new Error(`Fusion mode error: ${error.message}`);
   }
 };
