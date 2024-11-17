@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { FusionResponse } from './fusion-mode';
+import type { ResponseType } from '@/components/ResponseTypeSelector';
 
 const AGENT_ROLES = {
   RESEARCHER: {
@@ -17,6 +18,21 @@ const AGENT_ROLES = {
   SYNTHESIZER: {
     role: 'synthesizer',
     instructions: 'You are an AI synthesizer. Your role is to combine insights from all agents into a coherent, unified response. Focus on creating a clear, well-structured answer that incorporates the best elements from each perspective.'
+  }
+};
+
+const getResponseTypeInstructions = (responseType: ResponseType) => {
+  switch (responseType) {
+    case 'coding':
+      return 'Focus on providing code examples, technical explanations, and programming best practices.';
+    case 'creative':
+      return 'Focus on creative writing, storytelling, and generating imaginative content.';
+    case 'data':
+      return 'Focus on data analysis, statistics, and structured information presentation.';
+    case 'technical':
+      return 'Focus on technical documentation, specifications, and detailed explanations.';
+    default:
+      return 'Provide a general-purpose response that is clear and helpful.';
   }
 };
 
@@ -38,7 +54,8 @@ export const getAgentEndpoint = (provider: string): string => {
 export const generateMultiAgentResponse = async (
   message: string,
   apiKeys: Record<string, string>,
-  selectedModels: Record<string, string>
+  selectedModels: Record<string, string>,
+  responseType: ResponseType = 'general'
 ): Promise<FusionResponse> => {
   try {
     const { data: { session } } = await supabase.auth.getSession();
@@ -46,17 +63,19 @@ export const generateMultiAgentResponse = async (
       throw new Error('No active session found');
     }
 
-    // Configure agents with specific roles
+    // Configure agents with specific roles and response type instructions
     const agents = Object.entries(apiKeys)
       .filter(([provider, key]) => key && selectedModels[provider])
       .map(([provider, apiKey], index) => {
         const roles = Object.values(AGENT_ROLES);
         const role = roles[index % roles.length];
+        const responseTypeInstruction = getResponseTypeInstructions(responseType);
         
         return {
           provider,
           model: selectedModels[provider],
           ...role,
+          instructions: `${role.instructions}\n\n${responseTypeInstruction}`,
           endpoint: getAgentEndpoint(provider),
           apiKey
         };
@@ -76,7 +95,8 @@ export const generateMultiAgentResponse = async (
           { type: 'critique', description: 'Critical evaluation of initial findings' },
           { type: 'implement', description: 'Implementation suggestions based on research and critique' },
           { type: 'synthesize', description: 'Final synthesis of all perspectives' }
-        ]
+        ],
+        responseType
       },
       headers: {
         Authorization: `Bearer ${session.access_token}`,
