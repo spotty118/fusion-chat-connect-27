@@ -51,12 +51,17 @@ export const generateFusionResponse = async (message: string, responseType: Resp
     openrouter: localStorage.getItem('openrouter_model')
   };
 
-  const activeProviders = Object.keys(apiKeys).filter(
-    provider => apiKeys[provider] && selectedModels[provider]
+  // Check which providers are enabled
+  const enabledProviders = Object.keys(apiKeys).filter(provider => 
+    localStorage.getItem(`${provider}_enabled`) === 'true' &&
+    apiKeys[provider] && 
+    selectedModels[provider]
   );
 
-  if (activeProviders.length < 2) {
-    throw new Error('Fusion mode requires at least 2 active providers');
+  console.log('Enabled providers:', enabledProviders);
+
+  if (enabledProviders.length < 2) {
+    throw new Error('Fusion mode requires at least 2 active and enabled providers');
   }
 
   try {
@@ -64,8 +69,9 @@ export const generateFusionResponse = async (message: string, responseType: Resp
     console.log('Formatted prompt:', formattedPrompt);
 
     const responses = await Promise.all(
-      activeProviders.map(async provider => {
+      enabledProviders.map(async provider => {
         try {
+          console.log(`Making request to provider: ${provider}`);
           const data = await makeProviderRequest(provider, formattedPrompt, selectedModels[provider]);
           
           let response;
@@ -84,6 +90,7 @@ export const generateFusionResponse = async (message: string, responseType: Resp
               throw new Error(`Unsupported provider: ${provider}`);
           }
 
+          console.log(`Successful response from ${provider}`);
           return {
             provider,
             content: response,
@@ -93,7 +100,7 @@ export const generateFusionResponse = async (message: string, responseType: Resp
           console.error(`Error with ${provider}:`, error);
           return {
             provider,
-            content: `[${provider} error: ${error.message}]`,
+            content: `Error: ${error.message}`,
             timestamp: new Date().toISOString()
           };
         }
@@ -103,18 +110,20 @@ export const generateFusionResponse = async (message: string, responseType: Resp
     // For coding responses, ensure we preserve code blocks in the final synthesis
     let finalResponse = '';
     if (responseType === 'coding') {
-      finalResponse = responses.map(r => 
-        `### ${r.provider.toUpperCase()} Response:\n\n${r.content}`
-      ).join('\n\n');
+      finalResponse = responses
+        .filter(r => !r.content.startsWith('Error:'))
+        .map(r => `### ${r.provider.toUpperCase()} Response:\n\n${r.content}`)
+        .join('\n\n');
     } else {
       finalResponse = responses
+        .filter(r => !r.content.startsWith('Error:'))
         .map(r => `${r.provider.toUpperCase()}: ${r.content}`)
         .join('\n\n');
     }
 
     return {
       providers: responses,
-      final: finalResponse
+      final: finalResponse || 'No valid responses received from any provider.'
     };
   } catch (error) {
     throw new Error(`Fusion mode error: ${error.message}`);

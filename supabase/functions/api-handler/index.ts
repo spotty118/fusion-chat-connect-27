@@ -6,36 +6,25 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
-const supabase = createClient(supabaseUrl, supabaseKey);
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { provider, message, model, apiKey } = await req.json();
-    const cacheKey = `${provider}-${model}-${message}`;
-
-    const { data: existingResponse } = await supabase
-      .from('response_cache')
-      .select('response')
-      .eq('cache_key', cacheKey)
-      .single();
-
-    if (existingResponse) {
-      console.log('Cache hit for provider response');
-      return new Response(JSON.stringify(existingResponse.response), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    const { provider, message, model } = await req.json();
+    console.log(`Processing request for provider: ${provider}, model: ${model}`);
 
     let response;
     let endpoint;
     let headers;
     let body;
+
+    // Get API key from request headers
+    const apiKey = req.headers.get('x-api-key');
+    if (!apiKey) {
+      throw new Error('API key is required');
+    }
 
     switch (provider) {
       case 'openai':
@@ -70,23 +59,19 @@ serve(async (req) => {
         break;
 
       case 'google':
-        endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-002:generateContent?key=${apiKey}`;
+        endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
         headers = {
           'Content-Type': 'application/json',
         };
         body = JSON.stringify({
           contents: [{
-            role: "user",
             parts: [{
               text: message
             }]
           }],
           generationConfig: {
-            temperature: 1,
-            topK: 40,
-            topP: 0.95,
-            maxOutputTokens: 8192,
-            responseMimeType: "text/plain"
+            temperature: 0.7,
+            maxOutputTokens: 1000
           }
         });
         break;
@@ -110,7 +95,6 @@ serve(async (req) => {
 
     try {
       console.log(`Sending request to ${endpoint}`);
-      console.log('Request body:', body);
       
       response = await fetch(endpoint, {
         method: 'POST',
@@ -119,57 +103,15 @@ serve(async (req) => {
       });
 
       if (!response.ok) {
-        const error = await response.text();
-        console.error(`${provider} API error:`, error);
-        throw new Error(`${provider} API error: ${error}`);
+        const errorText = await response.text();
+        console.error(`${provider} API error:`, errorText);
+        throw new Error(`${provider} API error: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
-      console.log(`${provider} API response:`, data);
+      console.log(`${provider} API response received`);
 
-      // Transform response based on the provider
-      let transformedResponse;
-      switch (provider) {
-        case 'openai':
-        case 'openrouter':
-          transformedResponse = {
-            choices: [{
-              message: {
-                content: data.choices[0].message.content
-              }
-            }]
-          };
-          break;
-        case 'claude':
-          transformedResponse = {
-            content: [{
-              text: data.content
-            }]
-          };
-          break;
-        case 'google':
-          transformedResponse = {
-            candidates: [{
-              content: {
-                parts: [{
-                  text: data.candidates[0].content.parts[0].text
-                }]
-              }
-            }]
-          };
-          break;
-        default:
-          transformedResponse = data;
-      }
-
-      // Cache the response
-      await supabase.from('response_cache').insert({
-        cache_key: cacheKey,
-        response: transformedResponse,
-        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000)
-      });
-
-      return new Response(JSON.stringify(transformedResponse), {
+      return new Response(JSON.stringify(data), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     } catch (error) {
@@ -178,7 +120,11 @@ serve(async (req) => {
     }
   } catch (error) {
     console.error('Error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(
+      JSON.stringify({ 
+        error: error.message,
+        details: error.stack
+      }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
