@@ -1,13 +1,14 @@
 import { generateFusionResponse } from './fusion-mode';
 import { supabase } from "@/integrations/supabase/client";
-import type { ResponseType } from '@/components/ResponseTypeSelector';
+import { intelligentRouter } from './providers/IntelligentAIRouter';
+import type { ResponseType } from '@/types/ai';
 
 interface GenerateResponseOptions {
   message: string;
   responseType?: ResponseType;
 }
 
-export const generateResponse = async ({ message, responseType = 'general' }: GenerateResponseOptions) => {
+export const generateResponse = async ({ message, responseType = 'chat' }: GenerateResponseOptions) => {
   try {
     const fusionMode = localStorage.getItem('fusionMode') === 'true';
     console.log('Generating response with type:', responseType);
@@ -20,47 +21,15 @@ export const generateResponse = async ({ message, responseType = 'general' }: Ge
       return response;
     }
 
-    // Use manual configuration with provider-specific keys
-    const manualProvider = localStorage.getItem('manualProvider') || 'openai';
-    const manualApiKey = localStorage.getItem(`${manualProvider}_key`);
-    const manualModel = localStorage.getItem(`${manualProvider}_model`);
-    
-    if (!manualApiKey || !manualModel) {
-      throw new Error('No API configuration found. Please configure your API settings.');
-    }
-
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) {
-      throw new Error('No active session found');
-    }
-
-    const { data, error } = await supabase.functions.invoke('api-handler', {
-      body: { 
-        provider: manualProvider,
-        message,
-        model: manualModel,
-        apiKey: manualApiKey,
-        responseType
-      },
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      }
+    // Use intelligent routing for single provider mode
+    const routedResponse = await intelligentRouter.routeRequest(responseType, message, {
+      maxLatency: 5000, // 5 seconds default timeout
+      minReliability: 0.8, // 80% minimum success rate
     });
 
-    if (error) throw error;
+    console.log('Routed response:', routedResponse);
 
-    // Extract the response based on the provider
-    switch (manualProvider) {
-      case 'openai':
-      case 'openrouter':
-        return data.choices[0].message.content;
-      case 'claude':
-        return data.content[0].text;
-      case 'google':
-        return data.candidates[0].output;
-      default:
-        throw new Error(`Unsupported provider: ${manualProvider}`);
-    }
+    return routedResponse.response;
   } catch (error) {
     console.error("Error generating response:", error);
     throw error;
