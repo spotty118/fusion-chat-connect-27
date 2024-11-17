@@ -72,19 +72,44 @@ export const generateFusionResponse = async (message: string): Promise<FusionRes
       localStorage.getItem(`${provider}_enabled`) !== 'false'
     );
 
+    console.log('Enabled providers:', enabledProviders);
+
     // Only include providers that have both an API key, a selected model, and are enabled
     const activeProviders = Object.keys(apiKeys).filter(provider => {
       const hasApiKey = apiKeys[provider] && apiKeys[provider].length > 0;
       const hasModel = selectedModels[provider] && selectedModels[provider].length > 0;
       const isEnabled = enabledProviders.includes(provider);
+      
+      console.log(`Provider ${provider}:`, {
+        hasApiKey,
+        hasModel,
+        isEnabled
+      });
+      
       return hasApiKey && hasModel && isEnabled;
     });
 
+    console.log('Active providers:', activeProviders);
+
     if (activeProviders.length < 3) {
+      const configuredCount = activeProviders.length;
+      const missingProviders = Object.keys(apiKeys)
+        .filter(provider => !activeProviders.includes(provider))
+        .map(provider => {
+          const hasApiKey = apiKeys[provider] && apiKeys[provider].length > 0;
+          const hasModel = selectedModels[provider] && selectedModels[provider].length > 0;
+          const isEnabled = enabledProviders.includes(provider);
+          
+          if (!hasApiKey) return `${provider} (missing API key)`;
+          if (!hasModel) return `${provider} (no model selected)`;
+          if (!isEnabled) return `${provider} (disabled)`;
+          return provider;
+        });
+
       throw new Error(
-        `Fusion mode requires at least 3 active providers. Currently active: ${activeProviders.length}. ` +
-        `Active providers: ${activeProviders.join(', ')}. ` +
-        'Please ensure you have both API keys and models selected for at least 3 providers.'
+        `Fusion mode requires at least 3 active providers. Currently active: ${configuredCount}. ` +
+        `Missing configuration for: ${missingProviders.join(', ')}. ` +
+        'Please ensure you have both API keys and models selected for at least 3 providers, and that they are enabled.'
       );
     }
 
