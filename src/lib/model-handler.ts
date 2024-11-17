@@ -1,12 +1,14 @@
 import { generateFusionResponse } from './fusion-mode';
 import { supabase } from "@/integrations/supabase/client";
+import type { ResponseType } from '@/components/ResponseTypeSelector';
 
-export const generateResponse = async (message: string) => {
+export const generateResponse = async (message: string, responseType: ResponseType = 'general') => {
   try {
     const fusionMode = localStorage.getItem('fusionMode') === 'true';
+    console.log('Generating response with type:', responseType);
 
     if (fusionMode) {
-      const response = await generateFusionResponse(message);
+      const response = await generateFusionResponse(message, responseType);
       if (!response || !response.providers || !response.final) {
         throw new Error('Invalid fusion response format');
       }
@@ -32,7 +34,8 @@ export const generateResponse = async (message: string) => {
         provider: manualProvider,
         message,
         model: manualModel,
-        apiKey: manualApiKey
+        apiKey: manualApiKey,
+        responseType
       },
       headers: {
         Authorization: `Bearer ${session.access_token}`,

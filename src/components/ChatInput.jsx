@@ -6,11 +6,13 @@ import { supportsFileAttachments } from '@/utils/fileSupport';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { ResponseTypeSelector, type ResponseType } from './ResponseTypeSelector';
 
 const ChatInput = forwardRef(({ onSendMessage, disabled }, ref) => {
   const [message, setMessage] = useState('');
   const [uploadedFile, setUploadedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [responseType, setResponseType] = useState<ResponseType>('general');
   const fileInputRef = useRef(null);
   const { toast } = useToast();
   
@@ -28,7 +30,7 @@ const ChatInput = forwardRef(({ onSendMessage, disabled }, ref) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (message.trim()) {
-      onSendMessage(message);
+      onSendMessage(message, responseType);
       setMessage('');
       setUploadedFile(null);
     }
@@ -113,7 +115,7 @@ const ChatInput = forwardRef(({ onSendMessage, disabled }, ref) => {
 
   return (
     <form onSubmit={handleSubmit} className="p-4 border-t bg-white/50 backdrop-blur-sm">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto space-y-4">
         {uploadedFile && (
           <div className="mb-2 p-2 bg-gray-100 rounded-lg flex items-center justify-between">
             <span className="text-sm text-gray-600 truncate">{uploadedFile.name}</span>
@@ -129,6 +131,7 @@ const ChatInput = forwardRef(({ onSendMessage, disabled }, ref) => {
           </div>
         )}
         <div className="flex items-center gap-2">
+          <ResponseTypeSelector value={responseType} onChange={setResponseType} />
           <input
             type="file"
             ref={fileInputRef}

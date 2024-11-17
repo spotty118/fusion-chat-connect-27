@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { FusionResponse } from '@/lib/fusion-mode';
 import { ChatHeader } from '@/components/chat/ChatHeader';
 import { useFusionMode } from '@/hooks/useFusionMode';
+import type { ResponseType } from '@/components/ResponseTypeSelector';
 
 const Index = () => {
   const [messages, setMessages] = useState([]);
@@ -38,7 +39,7 @@ const Index = () => {
     setFilteredMessages(filtered);
   };
 
-  const handleSendMessage = async (content: string) => {
+  const handleSendMessage = async (content: string, responseType: ResponseType = 'general') => {
     try {
       setIsLoading(true);
       const userMessage = { role: 'user', content };
@@ -49,7 +50,7 @@ const Index = () => {
         setSidePanelOpen(true);
       }
 
-      const response = await generateResponse(content);
+      const response = await generateResponse(content, responseType);
       
       if (isFusionMode && typeof response === 'object' && response !== null) {
         const fusionResponse = response as FusionResponse;
@@ -99,7 +100,7 @@ const Index = () => {
       exportButton?.click();
     },
   });
-  
+
   return (
     <div className="flex flex-col h-screen bg-white">
       <ChatHeader 
