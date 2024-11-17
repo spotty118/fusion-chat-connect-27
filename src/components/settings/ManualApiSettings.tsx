@@ -6,6 +6,7 @@ import { Key } from "lucide-react";
 import { ModelSelector } from "../ModelSelector";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export const ManualApiSettings = () => {
   const { toast } = useToast();
@@ -14,23 +15,101 @@ export const ManualApiSettings = () => {
   const [apiKey, setApiKey] = useState(() => localStorage.getItem(`${selectedProvider}_key`) || '');
   const [selectedModel, setSelectedModel] = useState(() => localStorage.getItem(`${selectedProvider}_model`) || '');
 
-  // Update API key in localStorage when it changes
+  // Fetch existing API keys from Supabase on component mount
   useEffect(() => {
-    if (apiKey) {
-      localStorage.setItem(`${selectedProvider}_key`, apiKey);
-    } else {
-      localStorage.removeItem(`${selectedProvider}_key`);
-    }
-  }, [apiKey, selectedProvider]);
+    const fetchApiKeys = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
 
-  // Update selected model in localStorage when it changes
-  useEffect(() => {
-    if (selectedModel) {
-      localStorage.setItem(`${selectedProvider}_model`, selectedModel);
-    } else {
-      localStorage.removeItem(`${selectedProvider}_model`);
+        const { data: apiKeys, error } = await supabase
+          .from('api_keys')
+          .select('provider, api_key')
+          .eq('user_id', session.user.id);
+
+        if (error) throw error;
+
+        // Update localStorage with fetched keys
+        apiKeys?.forEach(({ provider, api_key }) => {
+          localStorage.setItem(`${provider}_key`, api_key);
+        });
+
+        // Update current API key if one exists for selected provider
+        const currentProviderKey = apiKeys?.find(k => k.provider === selectedProvider)?.api_key;
+        if (currentProviderKey) {
+          setApiKey(currentProviderKey);
+        }
+      } catch (error) {
+        console.error('Error fetching API keys:', error);
+      }
+    };
+
+    fetchApiKeys();
+  }, []);
+
+  // Update API key in localStorage and Supabase when it changes
+  const handleApiKeyChange = async (value: string) => {
+    console.log('Saving API key for provider:', selectedProvider);
+    setApiKey(value);
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.error('No active session found');
+        return;
+      }
+
+      if (value) {
+        localStorage.setItem(`${selectedProvider}_key`, value);
+        
+        // Upsert the API key in Supabase
+        const { error } = await supabase
+          .from('api_keys')
+          .upsert({
+            user_id: session.user.id,
+            provider: selectedProvider,
+            api_key: value
+          }, {
+            onConflict: 'user_id,provider'
+          });
+
+        if (error) throw error;
+
+        toast({
+          title: "API Key Saved",
+          description: `Your ${selectedProvider} API key has been saved`,
+        });
+      } else {
+        // Remove API key if value is empty
+        localStorage.removeItem(`${selectedProvider}_key`);
+        
+        const { error } = await supabase
+          .from('api_keys')
+          .delete()
+          .eq('user_id', session.user.id)
+          .eq('provider', selectedProvider);
+
+        if (error) throw error;
+
+        toast({
+          title: "API Key Removed",
+          description: `Your ${selectedProvider} API key has been removed`,
+        });
+      }
+
+      // Reset selected model when API key changes
+      setSelectedModel('');
+      // Invalidate the models query to trigger a refresh
+      queryClient.invalidateQueries({ queryKey: ['models', selectedProvider] });
+    } catch (error) {
+      console.error('Error saving API key:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save API key. Please try again.",
+        variant: "destructive",
+      });
     }
-  }, [selectedModel, selectedProvider]);
+  };
 
   // Handle provider change
   useEffect(() => {
@@ -46,21 +125,6 @@ export const ManualApiSettings = () => {
       localStorage.removeItem('manualProvider');
     }
   }, [selectedProvider]);
-
-  const handleApiKeyChange = (value: string) => {
-    setApiKey(value);
-    // Reset selected model when API key changes
-    setSelectedModel('');
-    // Invalidate the models query to trigger a refresh
-    queryClient.invalidateQueries({ queryKey: ['models', selectedProvider] });
-    
-    toast({
-      title: value ? "API Key Saved" : "API Key Removed",
-      description: value 
-        ? `Your ${selectedProvider} API key has been saved` 
-        : `Your ${selectedProvider} API key has been removed`,
-    });
-  };
 
   return (
     <div className="space-y-6">
