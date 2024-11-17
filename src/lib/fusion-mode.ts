@@ -113,7 +113,8 @@ export const generateFusionResponse = async (message: string, responseType: Resp
       message: formattedPrompt,
       responseType,
       maxLatency: 5000,
-      minReliability: 0.8
+      minReliability: 0.8,
+      availableProviders: enabledProviders // Pass enabled providers to router
     });
 
     console.log('Routed response:', routedResponse);

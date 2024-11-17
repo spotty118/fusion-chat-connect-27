@@ -20,8 +20,13 @@ export class IntelligentAIRouter {
     const taskAnalysis = TaskAnalyzer.analyzeTask(options.message, options.responseType);
     console.log('Task analysis:', taskAnalysis);
 
+    // Filter providers based on availability
+    const availableProviders = this.providers.filter(p => 
+      options.availableProviders?.includes(p.name)
+    );
+
     const rankedProviders = rankProviders(
-      this.providers,
+      availableProviders,
       options.responseType,
       taskAnalysis,
       {

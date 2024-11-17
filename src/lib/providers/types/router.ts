@@ -6,6 +6,7 @@ export interface RouterRequestOptions {
   maxLatency?: number;
   minReliability?: number;
   preferredProvider?: string;
+  availableProviders?: string[]; // Add this field
 }
 
 export interface RouterResponse {
