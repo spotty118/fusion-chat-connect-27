@@ -1,7 +1,6 @@
-import type { AIProvider } from '@/types/ai';
-import type { ResponseType } from '@/components/ResponseTypeSelector';
-import { TaskAnalyzer } from '../TaskAnalyzer';
+import type { AIProvider, ResponseType, TaskComplexity } from '@/types/ai';
 import { PerformanceTracker } from '../PerformanceTracker';
+import { TaskAnalyzer } from '../TaskAnalyzer';
 
 export function rankProviders(
   providers: AIProvider[],
@@ -86,16 +85,6 @@ function calculateProviderScore(
     taskAnalysis.prompt.toLowerCase().includes(specialty.toLowerCase())
   );
   if (isSpecialist) score *= 1.2;
-
-  // Recent performance adjustment
-  const recentPerformance = PerformanceTracker.getInstance().getRecentPerformance(provider.name);
-  score *= 0.7 + recentPerformance * 0.3; // Max 30% impact
-
-  // Cost efficiency adjustment if cost-sensitive
-  if (userPreferences.maxCost) {
-    const costEfficiencyScore = 1 - provider.costPerToken / userPreferences.maxCost;
-    score *= 0.8 + costEfficiencyScore * 0.2; // Max 20% impact
-  }
 
   return score;
 }
