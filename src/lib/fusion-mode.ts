@@ -35,6 +35,10 @@ const formatProviderPrompt = (message: string, responseType: ResponseType) => {
   return `${systemPrompt}\n\nUser request: ${message}`;
 };
 
+const validateProviderResponse = (response: any): boolean => {
+  return response && typeof response === 'string' && response.length > 0;
+};
+
 export const generateFusionResponse = async (message: string, responseType: ResponseType = 'general'): Promise<FusionResponse> => {
   console.log('Generating fusion response with type:', responseType);
   
@@ -59,17 +63,23 @@ export const generateFusionResponse = async (message: string, responseType: Resp
     console.log('Formatted prompt:', formattedPrompt);
 
     // Get responses from all enabled providers
-    const responses = await Promise.all(
+    const responses = await Promise.allSettled(
       enabledProviders.map(async provider => {
         try {
           console.log(`Making request to provider: ${provider}`);
           const model = localStorage.getItem(`${provider}_model`) || '';
+          const apiKey = localStorage.getItem(`${provider}_key`) || '';
+          
           const response = await makeProviderRequest(
             provider,
-            localStorage.getItem(`${provider}_key`) || '',
+            apiKey,
             model,
             formattedPrompt
           );
+
+          if (!validateProviderResponse(response)) {
+            throw new Error(`Invalid response format from ${provider}`);
+          }
 
           console.log(`Successful response from ${provider}`);
           return {
@@ -88,8 +98,17 @@ export const generateFusionResponse = async (message: string, responseType: Resp
       })
     );
 
+    // Filter out failed responses and extract values from fulfilled promises
+    const validResponses = responses
+      .filter((result): result is PromiseFulfilledResult<ProviderResponse> => 
+        result.status === 'fulfilled' && !result.value.content.startsWith('Error:'))
+      .map(result => result.value);
+
+    if (validResponses.length === 0) {
+      throw new Error('No valid responses received from any provider');
+    }
+
     // Use intelligent routing to synthesize the best response
-    const validResponses = responses.filter(r => !r.content.startsWith('Error:'));
     const routedResponse = await intelligentRouter.routeRequest({
       message: formattedPrompt,
       responseType,
@@ -100,7 +119,7 @@ export const generateFusionResponse = async (message: string, responseType: Resp
     console.log('Routed response:', routedResponse);
 
     return {
-      providers: responses,
+      providers: validResponses,
       final: routedResponse.response || 'No valid responses received from any provider.'
     };
   } catch (error) {
