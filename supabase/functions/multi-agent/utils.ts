@@ -1,5 +1,91 @@
+```typescript
 import { Agent, AgentResponse } from './types.ts';
 import { analyzePrompt } from './prompt-analysis.ts';
+
+// Keyword-based strength adjustments for each provider
+const PROVIDER_KEYWORD_STRENGTHS: Record<string, Record<string, string[]>> = {
+  openai: {
+    code: ['function', 'algorithm', 'programming', 'debug', 'typescript', 'javascript'],
+    technical: ['explain', 'how', 'what', 'analysis', 'compare'],
+    creative: ['story', 'imagine', 'creative', 'design', 'generate'],
+    general: ['help', 'can', 'would', 'should', 'opinion']
+  },
+  claude: {
+    code: ['review', 'refactor', 'optimize', 'architecture', 'pattern'],
+    technical: ['research', 'paper', 'academic', 'study', 'science'],
+    creative: ['write', 'novel', 'poetry', 'artistic', 'narrative'],
+    general: ['discuss', 'consider', 'think', 'evaluate', 'assess']
+  },
+  google: {
+    code: ['implement', 'build', 'develop', 'test', 'structure'],
+    technical: ['technical', 'system', 'process', 'method', 'theory'],
+    creative: ['innovative', 'unique', 'original', 'brainstorm', 'conceptual'],
+    general: ['summarize', 'explain', 'describe', 'outline', 'review']
+  },
+  openrouter: {
+    code: ['code', 'program', 'script', 'syntax', 'compile'],
+    technical: ['document', 'specification', 'requirement', 'standard', 'protocol'],
+    creative: ['design', 'create', 'invent', 'compose', 'craft'],
+    general: ['analyze', 'suggest', 'recommend', 'advise', 'guide']
+  }
+};
+
+// Base strengths that will be adjusted based on keywords
+const BASE_STRENGTHS: Record<string, Record<string, number>> = {
+  openai: { code: 0.85, technical: 0.8, creative: 0.75, general: 0.8 },
+  claude: { code: 0.75, technical: 0.85, creative: 0.9, general: 0.85 },
+  google: { code: 0.8, technical: 0.85, creative: 0.75, general: 0.8 },
+  openrouter: { code: 0.75, technical: 0.75, creative: 0.8, general: 0.85 }
+};
+
+function calculateProviderStrength(
+  provider: string,
+  category: string,
+  prompt: string
+): number {
+  const baseStrength = BASE_STRENGTHS[provider]?.[category] || 0.7;
+  const keywords = PROVIDER_KEYWORD_STRENGTHS[provider]?.[category] || [];
+  
+  // Count how many relevant keywords are in the prompt
+  const lowercasePrompt = prompt.toLowerCase();
+  const matchedKeywords = keywords.filter(keyword => 
+    lowercasePrompt.includes(keyword.toLowerCase())
+  );
+  
+  // Adjust strength based on keyword matches (up to 20% boost)
+  const keywordBoost = (matchedKeywords.length / keywords.length) * 0.2;
+  
+  console.log(`Provider ${provider} for ${category}:`, {
+    baseStrength,
+    matchedKeywords: matchedKeywords.join(', '),
+    keywordBoost,
+    finalStrength: Math.min(baseStrength + keywordBoost, 1)
+  });
+
+  return Math.min(baseStrength + keywordBoost, 1);
+}
+
+export function getBestProviderForCategory(
+  category: string,
+  availableProviders: string[],
+  prompt: string
+): string {
+  let bestProvider = availableProviders[0];
+  let maxStrength = 0;
+
+  availableProviders.forEach(provider => {
+    const strength = calculateProviderStrength(provider, category, prompt);
+    console.log(`Provider ${provider} strength for ${category}: ${strength}`);
+    
+    if (strength > maxStrength) {
+      maxStrength = strength;
+      bestProvider = provider;
+    }
+  });
+
+  console.log(`Selected ${bestProvider} as best provider for ${category} with strength ${maxStrength}`);
+  return bestProvider;
+}
 
 export async function makeProviderRequest(agent: Agent, prompt: string): Promise<string> {
   try {
@@ -43,7 +129,6 @@ export async function makeProviderRequest(agent: Agent, prompt: string): Promise
         break;
 
       case 'google':
-        // For Google, we append the API key as a query parameter
         endpoint = `${agent.endpoint}?key=${agent.apiKey}`;
         body = {
           contents: [{
@@ -94,54 +179,8 @@ export async function makeProviderRequest(agent: Agent, prompt: string): Promise
   }
 }
 
-export function getBestProviderForCategory(category: string, availableProviders: string[]): string {
-  // Enhanced provider selection based on category and strengths
-  const providerStrengths: Record<string, Record<string, number>> = {
-    openai: {
-      code: 0.9,
-      technical: 0.85,
-      creative: 0.8,
-      general: 0.85
-    },
-    claude: {
-      code: 0.8,
-      technical: 0.9,
-      creative: 0.95,
-      general: 0.9
-    },
-    google: {
-      code: 0.85,
-      technical: 0.9,
-      creative: 0.8,
-      general: 0.85
-    },
-    openrouter: {
-      code: 0.8,
-      technical: 0.8,
-      creative: 0.85,
-      general: 0.9
-    }
-  };
-
-  // Find the provider with the highest strength for this category
-  let bestProvider = availableProviders[0];
-  let maxStrength = 0;
-
-  availableProviders.forEach(provider => {
-    const strength = providerStrengths[provider]?.[category] || 0;
-    console.log(`Provider ${provider} strength for ${category}: ${strength}`);
-    if (strength > maxStrength) {
-      maxStrength = strength;
-      bestProvider = provider;
-    }
-  });
-
-  console.log(`Selected ${bestProvider} as best provider for ${category} with strength ${maxStrength}`);
-  return bestProvider;
-}
-
 export async function conductVotingRound(
-  agents: Agent[], 
+  agents: Agent[],
   initialResponses: AgentResponse[],
   originalPrompt: string
 ): Promise<string> {
@@ -151,7 +190,7 @@ export async function conductVotingRound(
   
   // Get the best provider for this type of prompt
   const availableProviders = agents.map(a => a.provider);
-  const primaryProvider = getBestProviderForCategory(analysis.category, availableProviders);
+  const primaryProvider = getBestProviderForCategory(analysis.category, availableProviders, originalPrompt);
   console.log(`Selected ${primaryProvider} as primary provider based on category ${analysis.category}`);
   
   // Create a context that includes all previous responses
@@ -187,3 +226,4 @@ Important: Focus on creating a clear, well-structured response that builds upon 
   
   return await makeProviderRequest(synthesizer, votingPrompt);
 }
+```
