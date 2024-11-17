@@ -8,12 +8,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ResponseTypeSelector, type ResponseType } from './ResponseTypeSelector';
 
-const ChatInput = forwardRef(({ onSendMessage, disabled }, ref) => {
+interface ChatInputProps {
+  onSendMessage: (message: string, responseType: ResponseType) => void;
+  disabled?: boolean;
+}
+
+const ChatInput = forwardRef<HTMLInputElement, ChatInputProps>(({ onSendMessage, disabled = false }, ref) => {
   const [message, setMessage] = useState('');
-  const [uploadedFile, setUploadedFile] = useState(null);
+  const [uploadedFile, setUploadedFile] = useState<{ name: string; url: string } | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [responseType, setResponseType] = useState<ResponseType>('general');
-  const fileInputRef = useRef(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   
   const currentProvider = localStorage.getItem('manualProvider') || 'openai';
@@ -27,7 +32,7 @@ const ChatInput = forwardRef(({ onSendMessage, disabled }, ref) => {
     retry: 1,
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim()) {
       onSendMessage(message, responseType);
@@ -40,7 +45,7 @@ const ChatInput = forwardRef(({ onSendMessage, disabled }, ref) => {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = async (e) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setIsUploading(true);
@@ -52,7 +57,6 @@ const ChatInput = forwardRef(({ onSendMessage, disabled }, ref) => {
           throw new Error('User not authenticated');
         }
 
-        // Upload file directly to Supabase Storage
         const fileExt = file.name.split('.').pop();
         const filePath = `${userId}/${crypto.randomUUID()}.${fileExt}`;
         
@@ -64,16 +68,14 @@ const ChatInput = forwardRef(({ onSendMessage, disabled }, ref) => {
           throw uploadError;
         }
 
-        // Get the public URL
         const { data: { publicUrl } } = supabase.storage
           .from('temp_uploads')
           .getPublicUrl(filePath);
 
-        // Store file metadata in the database with explicit user_id
         const { error: dbError } = await supabase
           .from('temp_files')
           .insert({
-            user_id: userId, // Explicitly set the user_id
+            user_id: userId,
             filename: file.name,
             file_path: filePath,
             content_type: file.type,
@@ -97,7 +99,7 @@ const ChatInput = forwardRef(({ onSendMessage, disabled }, ref) => {
         console.error('Upload error:', error);
         toast({
           title: "Upload failed",
-          description: error.message,
+          description: error instanceof Error ? error.message : 'Upload failed',
           variant: "destructive",
         });
       } finally {

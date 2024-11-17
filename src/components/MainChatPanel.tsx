@@ -2,11 +2,17 @@ import React from 'react';
 import ChatContainer from './ChatContainer';
 import ChatInput from './ChatInput';
 import { cn } from '@/lib/utils';
+import type { ResponseType } from './ResponseTypeSelector';
+
+interface Message {
+  role: string;
+  content: string;
+}
 
 interface MainChatPanelProps {
-  messages: any[];
+  messages: Message[];
   isLoading: boolean;
-  onSendMessage: (message: string) => void;
+  onSendMessage: (message: string, responseType: ResponseType) => void;
   inputRef: React.RefObject<HTMLInputElement>;
 }
 
