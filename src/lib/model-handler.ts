@@ -2,7 +2,12 @@ import { generateFusionResponse } from './fusion-mode';
 import { supabase } from "@/integrations/supabase/client";
 import type { ResponseType } from '@/components/ResponseTypeSelector';
 
-export const generateResponse = async (message: string, responseType: ResponseType = 'general') => {
+interface GenerateResponseOptions {
+  message: string;
+  responseType?: ResponseType;
+}
+
+export const generateResponse = async ({ message, responseType = 'general' }: GenerateResponseOptions) => {
   try {
     const fusionMode = localStorage.getItem('fusionMode') === 'true';
     console.log('Generating response with type:', responseType);

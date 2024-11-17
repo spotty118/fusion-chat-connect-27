@@ -50,7 +50,7 @@ const Index = () => {
         setSidePanelOpen(true);
       }
 
-      const response = await generateResponse(content, responseType);
+      const response = await generateResponse({ message: content, responseType });
       
       if (isFusionMode && typeof response === 'object' && response !== null) {
         const fusionResponse = response as FusionResponse;
@@ -78,7 +78,7 @@ const Index = () => {
     } catch (error) {
       toast({
         title: "Error",
-        description: error.message,
+        description: error instanceof Error ? error.message : 'An error occurred',
         variant: "destructive",
       });
     } finally {
