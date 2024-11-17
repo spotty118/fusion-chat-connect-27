@@ -27,18 +27,20 @@ const FusionModeSettings = ({
   const { toast } = useToast();
   const { isFusionMode, toggleFusionMode } = useFusionMode();
   const [enabledProviders, setEnabledProviders] = useState<Record<string, boolean>>(() => ({
-    openai: true,
-    claude: true,
-    google: true,
-    openrouter: true
+    openai: localStorage.getItem('openai_enabled') === 'true',
+    claude: localStorage.getItem('claude_enabled') === 'true',
+    google: localStorage.getItem('google_enabled') === 'true',
+    openrouter: localStorage.getItem('openrouter_enabled') === 'true'
   }));
 
   const handleProviderToggle = (provider: string) => {
+    const newValue = !enabledProviders[provider];
     setEnabledProviders(prev => ({
       ...prev,
-      [provider]: !prev[provider]
+      [provider]: newValue
     }));
-    localStorage.setItem(`${provider}_enabled`, (!enabledProviders[provider]).toString());
+    localStorage.setItem(`${provider}_enabled`, newValue.toString());
+    console.log(`Provider ${provider} ${newValue ? 'enabled' : 'disabled'}`);
   };
 
   const getConfiguredProvidersCount = () => {
@@ -46,6 +48,7 @@ const FusionModeSettings = ({
       const hasKey = key && key.length > 0;
       const hasModel = selectedModels[provider] && selectedModels[provider].length > 0;
       const isEnabled = enabledProviders[provider];
+      console.log(`Provider ${provider} status:`, { hasKey, hasModel, isEnabled });
       return hasKey && hasModel && isEnabled;
     }).length;
   };

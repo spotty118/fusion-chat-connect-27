@@ -37,13 +37,16 @@ const formatProviderPrompt = (message: string, responseType: ResponseType) => {
 export const generateFusionResponse = async (message: string, responseType: ResponseType = 'general'): Promise<FusionResponse> => {
   console.log('Generating fusion response with type:', responseType);
   
-  // Only get API keys for enabled providers
-  const enabledProviders = ['openai', 'claude', 'google', 'openrouter'].filter(provider => 
-    localStorage.getItem(`${provider}_enabled`) === 'true'
-  );
+  // Get only enabled providers
+  const enabledProviders = ['openai', 'claude', 'google', 'openrouter'].filter(provider => {
+    const isEnabled = localStorage.getItem(`${provider}_enabled`) === 'true';
+    console.log(`Provider ${provider} enabled status:`, isEnabled);
+    return isEnabled;
+  });
 
   console.log('Enabled providers:', enabledProviders);
 
+  // Get API keys and models only for enabled providers
   const apiKeys = Object.fromEntries(
     enabledProviders.map(provider => [
       provider,
@@ -59,15 +62,18 @@ export const generateFusionResponse = async (message: string, responseType: Resp
   );
 
   // Filter out providers without API keys or models
-  const activeProviders = enabledProviders.filter(provider => 
-    apiKeys[provider] && 
-    selectedModels[provider]
-  );
+  const activeProviders = enabledProviders.filter(provider => {
+    const hasKey = apiKeys[provider] && apiKeys[provider].length > 0;
+    const hasModel = selectedModels[provider] && selectedModels[provider].length > 0;
+    console.log(`Provider ${provider} configuration:`, { hasKey, hasModel });
+    return hasKey && hasModel;
+  });
 
-  console.log('Active providers with API keys and models:', activeProviders);
+  console.log('Active providers with valid configuration:', activeProviders);
 
   if (activeProviders.length < 2) {
-    throw new Error('Fusion mode requires at least 2 active and configured providers');
+    console.error('Not enough active providers:', activeProviders.length);
+    throw new Error(`Fusion mode requires at least 2 active and configured providers. Currently have ${activeProviders.length} configured.`);
   }
 
   try {
@@ -121,6 +127,6 @@ export const generateFusionResponse = async (message: string, responseType: Resp
     };
   } catch (error) {
     console.error('Fusion mode error:', error);
-    throw new Error(`Fusion mode error: ${error.message}`);
+    throw error;
   }
 };
