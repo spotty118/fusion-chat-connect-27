@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { makeProviderRequest, conductVotingRound } from './utils.ts';
 import { analyzePrompt } from './prompt-analysis.ts';
-import type { Agent, AgentResponse } from './types.ts';
+import { Agent, AgentResponse } from './types.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

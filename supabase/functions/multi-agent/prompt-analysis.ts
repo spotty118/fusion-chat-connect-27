@@ -1,75 +1,54 @@
-import { PromptCategory, PromptAnalysis } from './types';
+import { PromptAnalysis, PromptCategory } from './types.ts';
 
-const CATEGORY_KEYWORDS = {
-  creative: ['write', 'story', 'creative', 'imagine', 'design', 'dragon'],
-  technical: ['explain', 'how', 'what', 'why', 'technical'],
-  code: ['code', 'function', 'programming', 'debug', 'implement', 'sort', 'array'],
-  general: ['help', 'can', 'would', 'should', 'opinion']
-};
+export function analyzePrompt(prompt: string): PromptAnalysis {
+  // Simple analysis based on keywords
+  const lowerPrompt = prompt.toLowerCase();
+  
+  // Define keyword sets for different categories
+  const codeKeywords = ['code', 'function', 'programming', 'debug', 'error', 'syntax'];
+  const technicalKeywords = ['technical', 'system', 'architecture', 'design', 'implement'];
+  const creativeKeywords = ['creative', 'story', 'write', 'design', 'imagine'];
 
-export const analyzePrompt = (prompt: string): PromptAnalysis => {
-  const lowercasePrompt = prompt.toLowerCase();
-  
-  // Simple keyword-based classification
-  let maxCategory: PromptCategory = 'general';
-  let maxCount = 0;
-  
-  Object.entries(CATEGORY_KEYWORDS).forEach(([category, keywords]) => {
-    const count = keywords.reduce((acc, keyword) => 
-      acc + (lowercasePrompt.includes(keyword) ? 1 : 0), 0
-    );
-    if (count > maxCount) {
-      maxCount = count;
-      maxCategory = category as PromptCategory;
-    }
-  });
+  // Count matches for each category
+  const codeMatches = codeKeywords.filter(kw => lowerPrompt.includes(kw)).length;
+  const technicalMatches = technicalKeywords.filter(kw => lowerPrompt.includes(kw)).length;
+  const creativeMatches = creativeKeywords.filter(kw => lowerPrompt.includes(kw)).length;
 
-  // Simple topic extraction using keyword frequency
-  const words = lowercasePrompt.replace(/[?.,!]/g, '').split(/\s+/);
-  const wordFreq: Record<string, number> = {};
-  words.forEach(word => {
-    if (word.length > 3) { // Skip short words
-      wordFreq[word] = (wordFreq[word] || 0) + 1;
-    }
-  });
+  // Determine category based on keyword matches
+  let category: PromptCategory = 'general';
+  let confidence = 0.5;
+
+  if (codeMatches > technicalMatches && codeMatches > creativeMatches) {
+    category = 'code';
+    confidence = 0.7 + (codeMatches * 0.1);
+  } else if (technicalMatches > creativeMatches) {
+    category = 'technical';
+    confidence = 0.7 + (technicalMatches * 0.1);
+  } else if (creativeMatches > 0) {
+    category = 'creative';
+    confidence = 0.7 + (creativeMatches * 0.1);
+  }
+
+  // Extract potential topics (simple implementation)
+  const words = prompt.split(/\s+/);
+  const topics = words
+    .filter(word => word.length > 4)
+    .filter(word => !['what', 'when', 'where', 'which', 'while', 'would'].includes(word.toLowerCase()))
+    .slice(0, 3);
+
+  // Simple sentiment analysis (very basic implementation)
+  const positiveWords = ['good', 'great', 'excellent', 'amazing', 'wonderful', 'best'];
+  const negativeWords = ['bad', 'wrong', 'error', 'issue', 'problem', 'worst'];
   
-  const topics = Object.entries(wordFreq)
-    .filter(([word]) => !['with', 'and', 'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'help', 'write', 'creative', 'story'].includes(word))
-    .filter(([word]) => !['with', 'and', 'the', 'a', 'an'].includes(word))
-    .sort(([,a], [,b]) => b - a)
-    .slice(0, 3)
-    .map(([word]) => word);
+  const positiveCount = positiveWords.filter(word => lowerPrompt.includes(word)).length;
+  const negativeCount = negativeWords.filter(word => lowerPrompt.includes(word)).length;
+  
+  const sentiment = (positiveCount - negativeCount) / (positiveCount + negativeCount + 1);
 
   return {
-    category: maxCategory,
-    confidence: Math.min(maxCount / 3, 1), // Normalize confidence
-    sentiment: 0.5, // Neutral default
+    category,
+    confidence: Math.min(confidence, 1),
+    sentiment,
     topics
   };
-};
-
-export const getBestProviderForCategory = (
-  category: PromptCategory,
-  availableProviders: string[]
-): string => {
-  // Provider strengths based on categories
-  const providerStrengths: Record<string, Record<PromptCategory, number>> = {
-    openai: { creative: 0.8, technical: 0.9, code: 0.9, general: 0.8 },
-    claude: { creative: 0.9, technical: 0.8, code: 0.8, general: 0.9 },
-    google: { creative: 0.7, technical: 0.9, code: 0.8, general: 0.8 },
-    openrouter: { creative: 0.8, technical: 0.8, code: 0.7, general: 0.9 }
-  };
-
-  let bestProvider = availableProviders[0];
-  let maxStrength = 0;
-
-  availableProviders.forEach(provider => {
-    const strength = providerStrengths[provider]?.[category] || 0;
-    if (strength > maxStrength) {
-      maxStrength = strength;
-      bestProvider = provider;
-    }
-  });
-
-  return bestProvider;
-};
+}

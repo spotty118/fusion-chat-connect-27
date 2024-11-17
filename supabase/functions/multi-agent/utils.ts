@@ -1,5 +1,5 @@
-import { Agent, AgentResponse } from './types';
-import { analyzePrompt, getBestProviderForCategory } from './prompt-analysis';
+import { Agent, AgentResponse } from './types.ts';
+import { analyzePrompt } from './prompt-analysis.ts';
 
 export async function makeProviderRequest(agent: Agent, prompt: string): Promise<string> {
   try {
@@ -17,7 +17,7 @@ export async function makeProviderRequest(agent: Agent, prompt: string): Promise
       case 'openrouter':
         headers['Authorization'] = `Bearer ${agent.apiKey}`;
         if (agent.provider === 'openrouter') {
-          headers['HTTP-Referer'] = process.env.APP_URL || '*';
+          headers['HTTP-Referer'] = Deno.env.get('APP_URL') || '*';
         }
         body = {
           model: agent.model,
@@ -60,7 +60,7 @@ export async function makeProviderRequest(agent: Agent, prompt: string): Promise
         throw new Error(`Unsupported provider: ${agent.provider}`);
     }
 
-    console.log(`Making request to ${agent.provider} with role: ${agent.role}, endpoint: ${endpoint}, body:`, body);
+    console.log(`Making request to ${agent.provider} with role: ${agent.role}`);
     
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -75,14 +75,14 @@ export async function makeProviderRequest(agent: Agent, prompt: string): Promise
     }
 
     const data = await response.json();
-    console.log(`${agent.provider} response:`, JSON.stringify(data, null, 2));
+    console.log(`${agent.provider} response received`);
 
     switch (agent.provider) {
       case 'openai':
       case 'openrouter':
         return data.choices[0].message.content;
       case 'claude':
-        return data.choices[0].message.content;
+        return data.content[0].text;
       case 'google':
         return data.candidates[0].content.parts[0].text;
       default:
@@ -91,6 +91,20 @@ export async function makeProviderRequest(agent: Agent, prompt: string): Promise
   } catch (error) {
     console.error(`Error with ${agent.provider}:`, error);
     throw error;
+  }
+}
+
+export function getBestProviderForCategory(category: string, availableProviders: string[]): string {
+  // Simple provider selection based on category
+  switch (category) {
+    case 'code':
+      return availableProviders.includes('openai') ? 'openai' : availableProviders[0];
+    case 'creative':
+      return availableProviders.includes('claude') ? 'claude' : availableProviders[0];
+    case 'technical':
+      return availableProviders.includes('google') ? 'google' : availableProviders[0];
+    default:
+      return availableProviders[0];
   }
 }
 
