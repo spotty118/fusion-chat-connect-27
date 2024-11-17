@@ -95,17 +95,49 @@ export async function makeProviderRequest(agent: Agent, prompt: string): Promise
 }
 
 export function getBestProviderForCategory(category: string, availableProviders: string[]): string {
-  // Simple provider selection based on category
-  switch (category) {
-    case 'code':
-      return availableProviders.includes('openai') ? 'openai' : availableProviders[0];
-    case 'creative':
-      return availableProviders.includes('claude') ? 'claude' : availableProviders[0];
-    case 'technical':
-      return availableProviders.includes('google') ? 'google' : availableProviders[0];
-    default:
-      return availableProviders[0];
-  }
+  // Enhanced provider selection based on category and strengths
+  const providerStrengths: Record<string, Record<string, number>> = {
+    openai: {
+      code: 0.9,
+      technical: 0.85,
+      creative: 0.8,
+      general: 0.85
+    },
+    claude: {
+      code: 0.8,
+      technical: 0.9,
+      creative: 0.95,
+      general: 0.9
+    },
+    google: {
+      code: 0.85,
+      technical: 0.9,
+      creative: 0.8,
+      general: 0.85
+    },
+    openrouter: {
+      code: 0.8,
+      technical: 0.8,
+      creative: 0.85,
+      general: 0.9
+    }
+  };
+
+  // Find the provider with the highest strength for this category
+  let bestProvider = availableProviders[0];
+  let maxStrength = 0;
+
+  availableProviders.forEach(provider => {
+    const strength = providerStrengths[provider]?.[category] || 0;
+    console.log(`Provider ${provider} strength for ${category}: ${strength}`);
+    if (strength > maxStrength) {
+      maxStrength = strength;
+      bestProvider = provider;
+    }
+  });
+
+  console.log(`Selected ${bestProvider} as best provider for ${category} with strength ${maxStrength}`);
+  return bestProvider;
 }
 
 export async function conductVotingRound(
@@ -115,10 +147,12 @@ export async function conductVotingRound(
 ): Promise<string> {
   // Analyze the prompt to understand the context and requirements
   const analysis = analyzePrompt(originalPrompt);
+  console.log('Prompt analysis:', analysis);
   
   // Get the best provider for this type of prompt
   const availableProviders = agents.map(a => a.provider);
   const primaryProvider = getBestProviderForCategory(analysis.category, availableProviders);
+  console.log(`Selected ${primaryProvider} as primary provider based on category ${analysis.category}`);
   
   // Create a context that includes all previous responses
   const context = initialResponses.map(r => 
@@ -128,6 +162,7 @@ export async function conductVotingRound(
   // Enhance the voting prompt with context awareness
   const votingPrompt = `As an AI model participating in a collaborative task, analyze these responses and create a cohesive synthesis.
 Context: This is a ${analysis.category} query with key topics: ${analysis.topics.join(', ')}
+Confidence in category: ${analysis.confidence}
 
 Previous responses:
 ${context}
@@ -140,10 +175,13 @@ Instructions:
    - Maintains consistency and coherence
    - Addresses the original query comprehensively
    - Focuses particularly on ${analysis.category} aspects
+   ${analysis.category === 'code' ? '   - Ensure code snippets are complete and properly formatted' : ''}
+   ${analysis.category === 'technical' ? '   - Provide clear technical explanations with examples' : ''}
+   ${analysis.category === 'creative' ? '   - Emphasize creative and innovative aspects' : ''}
 
 Important: Focus on creating a clear, well-structured response that builds upon all previous insights.`;
 
-  // Prioritize the best provider for this category for the final synthesis
+  // Use the best provider for this category for the final synthesis
   const synthesizer = agents.find(a => a.provider === primaryProvider) || agents[0];
   console.log(`Creating final synthesis using ${synthesizer.provider} (best for ${analysis.category} category)`);
   
