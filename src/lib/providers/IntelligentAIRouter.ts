@@ -1,4 +1,4 @@
-import { AIProvider, ResponseType } from '@/types/ai';
+import { AIProvider, TaskComplexity, ResponseType } from '@/types/ai';
 import { TaskAnalyzer } from './TaskAnalyzer';
 import { PerformanceTracker } from './PerformanceTracker';
 import { providers } from './config';
@@ -13,23 +13,26 @@ export class IntelligentAIRouter {
     this.performanceTracker = PerformanceTracker.getInstance();
   }
 
-  async routeRequest(
-    responseType: ResponseType,
-    prompt: string,
-    userPreferences: {
-      preferredProvider?: string;
-      maxCost?: number;
-      maxLatency?: number;
-      minReliability?: number;
-    } = {}
-  ) {
-    console.log('Routing request:', { responseType, prompt, userPreferences });
+  async routeRequest({
+    responseType,
+    message,
+    maxLatency,
+    minReliability
+  }: {
+    responseType: ResponseType;
+    message: string;
+    maxLatency?: number;
+    minReliability?: number;
+  }) {
+    console.log('Routing request:', { responseType, message, maxLatency, minReliability });
     
-    const taskAnalysis = TaskAnalyzer.analyzeTask(prompt, responseType);
+    const taskAnalysis = TaskAnalyzer.analyzeTask(message, responseType);
     console.log('Task analysis:', taskAnalysis);
 
-    const rankedProviders = this.rankProviders(responseType, taskAnalysis, userPreferences);
-    console.log('Ranked providers:', rankedProviders.map(p => p.name));
+    const rankedProviders = this.rankProviders(responseType, taskAnalysis, {
+      maxLatency,
+      minReliability
+    });
 
     if (rankedProviders.length === 0) {
       throw new Error('No suitable provider found for the given task and constraints');
@@ -43,7 +46,7 @@ export class IntelligentAIRouter {
       const startTime = Date.now();
       const response = await makeProviderRequest(
         selectedProvider.name.toLowerCase(),
-        prompt,
+        message,
         localStorage.getItem(`${selectedProvider.name.toLowerCase()}_model`) || ''
       );
       const latency = Date.now() - startTime;
@@ -73,8 +76,11 @@ export class IntelligentAIRouter {
 
       if (rankedProviders.length > 1) {
         console.log('Trying next best provider...');
-        return this.routeRequest(responseType, prompt, {
-          ...userPreferences,
+        return this.routeRequest({
+          responseType,
+          message,
+          maxLatency,
+          minReliability,
           preferredProvider: rankedProviders[1].name,
         });
       }

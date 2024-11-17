@@ -1,12 +1,9 @@
-export type ResponseType =
-  | 'writing'
+export type ResponseType = 
+  | 'general'
   | 'coding'
-  | 'data_analysis'
-  | 'image_generation'
-  | 'chat'
-  | 'math'
-  | 'reasoning'
-  | 'structured_output';
+  | 'creative'
+  | 'data'
+  | 'technical';
 
 export type TaskComplexity = 'simple' | 'moderate' | 'complex' | 'expert';
 

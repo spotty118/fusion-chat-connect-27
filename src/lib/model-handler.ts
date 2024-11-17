@@ -1,14 +1,14 @@
 import { generateFusionResponse } from './fusion-mode';
 import { supabase } from "@/integrations/supabase/client";
 import { intelligentRouter } from './providers/IntelligentAIRouter';
-import type { ResponseType } from '@/types/ai';
+import type { ResponseType } from '@/components/ResponseTypeSelector';
 
 interface GenerateResponseOptions {
   message: string;
   responseType?: ResponseType;
 }
 
-export const generateResponse = async ({ message, responseType = 'chat' }: GenerateResponseOptions) => {
+export const generateResponse = async ({ message, responseType = 'general' }: GenerateResponseOptions) => {
   try {
     const fusionMode = localStorage.getItem('fusionMode') === 'true';
     console.log('Generating response with type:', responseType);
@@ -22,9 +22,11 @@ export const generateResponse = async ({ message, responseType = 'chat' }: Gener
     }
 
     // Use intelligent routing for single provider mode
-    const routedResponse = await intelligentRouter.routeRequest(responseType, message, {
-      maxLatency: 5000, // 5 seconds default timeout
-      minReliability: 0.8, // 80% minimum success rate
+    const routedResponse = await intelligentRouter.routeRequest({
+      responseType,
+      message,
+      maxLatency: 5000,
+      minReliability: 0.8
     });
 
     console.log('Routed response:', routedResponse);
