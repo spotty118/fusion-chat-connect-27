@@ -20,10 +20,21 @@ export class IntelligentAIRouter {
     const taskAnalysis = TaskAnalyzer.analyzeTask(options.message, options.responseType);
     console.log('Task analysis:', taskAnalysis);
 
-    // Filter providers based on availability
-    const availableProviders = this.providers.filter(p => 
-      options.availableProviders?.includes(p.name)
-    );
+    // Only consider providers that are:
+    // 1. In the availableProviders list
+    // 2. Have their localStorage enabled flag set to true
+    const availableProviders = this.providers.filter(p => {
+      const isEnabled = localStorage.getItem(`${p.name.toLowerCase()}_enabled`) === 'true';
+      const isInList = options.availableProviders?.includes(p.name.toLowerCase());
+      console.log(`Provider ${p.name} status:`, { isEnabled, isInList });
+      return isEnabled && isInList;
+    });
+
+    console.log('Available providers after filtering:', availableProviders.map(p => p.name));
+
+    if (availableProviders.length === 0) {
+      throw new Error('No suitable provider found for the given task and constraints');
+    }
 
     const rankedProviders = rankProviders(
       availableProviders,
