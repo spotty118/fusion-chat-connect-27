@@ -13,7 +13,7 @@ export const generateResponse = async ({ message, responseType = 'general' }: Ge
     console.log('Generating response with type:', responseType);
 
     if (fusionMode) {
-      const response = await generateFusionResponse(message, responseType);
+      const response = await generateFusionResponse(message);
       if (!response || !response.providers || !response.final) {
         throw new Error('Invalid fusion response format');
       }
