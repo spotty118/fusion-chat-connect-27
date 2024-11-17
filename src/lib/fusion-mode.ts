@@ -1,6 +1,6 @@
 import { makeProviderRequest } from './provider-api';
-import { ResponseType } from '@/components/ResponseTypeSelector';
 import { intelligentRouter } from './providers/IntelligentAIRouter';
+import type { ResponseType } from '@/components/ResponseTypeSelector';
 
 interface ProviderResponse {
   provider: string;
@@ -89,11 +89,7 @@ export const generateFusionResponse = async (message: string, responseType: Resp
           };
         } catch (error) {
           console.error(`Error with ${provider}:`, error);
-          return {
-            provider,
-            content: `Error: ${error.message}`,
-            timestamp: new Date().toISOString()
-          };
+          throw error;
         }
       })
     );
@@ -101,7 +97,7 @@ export const generateFusionResponse = async (message: string, responseType: Resp
     // Filter out failed responses and extract values from fulfilled promises
     const validResponses = responses
       .filter((result): result is PromiseFulfilledResult<ProviderResponse> => 
-        result.status === 'fulfilled' && !result.value.content.startsWith('Error:'))
+        result.status === 'fulfilled')
       .map(result => result.value);
 
     if (validResponses.length === 0) {
@@ -114,7 +110,7 @@ export const generateFusionResponse = async (message: string, responseType: Resp
       responseType,
       maxLatency: 5000,
       minReliability: 0.8,
-      availableProviders: enabledProviders // Pass enabled providers to router
+      availableProviders: enabledProviders
     });
 
     console.log('Routed response:', routedResponse);

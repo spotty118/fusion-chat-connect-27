@@ -7,6 +7,13 @@ export const makeProviderRequest = async (
   message: string
 ): Promise<string> => {
   try {
+    // Check if provider is enabled before making request
+    const isEnabled = localStorage.getItem(`${provider}_enabled`) === 'true';
+    if (!isEnabled) {
+      console.log(`Provider ${provider} is disabled, skipping request`);
+      throw new Error(`Provider ${provider} is disabled`);
+    }
+
     console.log('Sending request:', { provider, model, messageLength: message.length });
 
     const { data, error } = await supabase.functions.invoke('api-handler', {
