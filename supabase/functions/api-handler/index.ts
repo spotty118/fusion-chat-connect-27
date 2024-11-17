@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,19 +12,16 @@ serve(async (req) => {
   }
 
   try {
-    const { provider, message, model } = await req.json();
+    const { provider, message, model, apiKey } = await req.json();
     console.log(`Processing request for provider: ${provider}, model: ${model}`);
 
-    let response;
+    if (!apiKey) {
+      throw new Error(`API key is required for ${provider}`);
+    }
+
     let endpoint;
     let headers;
     let body;
-
-    // Get API key from request headers
-    const apiKey = req.headers.get('x-api-key');
-    if (!apiKey) {
-      throw new Error('API key is required');
-    }
 
     switch (provider) {
       case 'openai':
@@ -96,7 +93,7 @@ serve(async (req) => {
     try {
       console.log(`Sending request to ${endpoint}`);
       
-      response = await fetch(endpoint, {
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers,
         body,
@@ -109,9 +106,23 @@ serve(async (req) => {
       }
 
       const data = await response.json();
-      console.log(`${provider} API response received`);
+      console.log(`${provider} API response received:`, data);
 
-      return new Response(JSON.stringify(data), {
+      let content = '';
+      switch (provider) {
+        case 'openai':
+        case 'openrouter':
+          content = data.choices[0].message.content;
+          break;
+        case 'claude':
+          content = data.content[0].text;
+          break;
+        case 'google':
+          content = data.candidates[0].output;
+          break;
+      }
+
+      return new Response(JSON.stringify({ content }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     } catch (error) {

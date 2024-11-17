@@ -37,31 +37,37 @@ const formatProviderPrompt = (message: string, responseType: ResponseType) => {
 export const generateFusionResponse = async (message: string, responseType: ResponseType = 'general'): Promise<FusionResponse> => {
   console.log('Generating fusion response with type:', responseType);
   
-  const apiKeys = {
-    openai: localStorage.getItem('openai_key'),
-    claude: localStorage.getItem('claude_key'),
-    google: localStorage.getItem('google_key'),
-    openrouter: localStorage.getItem('openrouter_key')
-  };
-
-  const selectedModels = {
-    openai: localStorage.getItem('openai_model'),
-    claude: localStorage.getItem('claude_model'),
-    google: localStorage.getItem('google_model'),
-    openrouter: localStorage.getItem('openrouter_model')
-  };
-
-  // Check which providers are enabled
-  const enabledProviders = Object.keys(apiKeys).filter(provider => 
-    localStorage.getItem(`${provider}_enabled`) === 'true' &&
-    apiKeys[provider] && 
-    selectedModels[provider]
+  // Only get API keys for enabled providers
+  const enabledProviders = ['openai', 'claude', 'google', 'openrouter'].filter(provider => 
+    localStorage.getItem(`${provider}_enabled`) === 'true'
   );
 
   console.log('Enabled providers:', enabledProviders);
 
-  if (enabledProviders.length < 2) {
-    throw new Error('Fusion mode requires at least 2 active and enabled providers');
+  const apiKeys = Object.fromEntries(
+    enabledProviders.map(provider => [
+      provider,
+      localStorage.getItem(`${provider}_key`)
+    ])
+  );
+
+  const selectedModels = Object.fromEntries(
+    enabledProviders.map(provider => [
+      provider,
+      localStorage.getItem(`${provider}_model`)
+    ])
+  );
+
+  // Filter out providers without API keys or models
+  const activeProviders = enabledProviders.filter(provider => 
+    apiKeys[provider] && 
+    selectedModels[provider]
+  );
+
+  console.log('Active providers with API keys and models:', activeProviders);
+
+  if (activeProviders.length < 2) {
+    throw new Error('Fusion mode requires at least 2 active and configured providers');
   }
 
   try {
@@ -69,28 +75,16 @@ export const generateFusionResponse = async (message: string, responseType: Resp
     console.log('Formatted prompt:', formattedPrompt);
 
     const responses = await Promise.all(
-      enabledProviders.map(async provider => {
+      activeProviders.map(async provider => {
         try {
           console.log(`Making request to provider: ${provider}`);
-          const data = await makeProviderRequest(provider, formattedPrompt, selectedModels[provider]);
-          
-          let response;
-          switch (provider) {
-            case 'openai':
-            case 'openrouter':
-              response = data.choices[0].message.content;
-              break;
-            case 'claude':
-              response = data.content[0].text;
-              break;
-            case 'google':
-              response = data.candidates[0].output;
-              break;
-            default:
-              throw new Error(`Unsupported provider: ${provider}`);
-          }
+          const response = await makeProviderRequest(
+            provider,
+            formattedPrompt,
+            selectedModels[provider]
+          );
 
-          console.log(`Successful response from ${provider}`);
+          console.log(`Successful response from ${provider}:`, response);
           return {
             provider,
             content: response,
@@ -126,6 +120,7 @@ export const generateFusionResponse = async (message: string, responseType: Resp
       final: finalResponse || 'No valid responses received from any provider.'
     };
   } catch (error) {
+    console.error('Fusion mode error:', error);
     throw new Error(`Fusion mode error: ${error.message}`);
   }
 };
