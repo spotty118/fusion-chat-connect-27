@@ -51,6 +51,6 @@ supabase.from('api_keys').select('count').limit(1)
   .then(() => {
     console.log('Successfully connected to Supabase');
   })
-  .catch((error) => {
+  .catch((error: Error) => {
     console.error('Failed to connect to Supabase:', error);
   });
