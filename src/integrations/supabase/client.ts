@@ -38,20 +38,35 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
   }
 });
 
+// Test the connection using async/await
+(async () => {
+  try {
+    // First ensure the profiles table exists
+    const { error: createTableError } = await supabase.rpc('create_profiles_if_not_exists');
+    if (createTableError) {
+      console.error('Error creating profiles table:', createTableError);
+    }
+
+    // Then test the connection
+    const { error: testError } = await supabase
+      .from('api_keys')
+      .select('count')
+      .limit(1);
+      
+    if (testError) {
+      console.error('Failed to connect to Supabase:', testError);
+    } else {
+      console.log('Successfully connected to Supabase');
+    }
+  } catch (error) {
+    console.error('Error testing Supabase connection:', error);
+  }
+})();
+
 // Add a listener for storage changes to update the client when config changes
 window.addEventListener('storage', (event) => {
   if (event.key === 'supabase_url' || event.key === 'supabase_key') {
     console.log('Supabase config updated, refreshing client');
-    window.location.reload(); // Refresh the page to reinitialize the client
+    window.location.reload();
   }
 });
-
-// Test the connection using async/await to properly handle the Promise
-(async () => {
-  try {
-    await supabase.from('api_keys').select('count').limit(1);
-    console.log('Successfully connected to Supabase');
-  } catch (error) {
-    console.error('Failed to connect to Supabase:', error);
-  }
-})();
