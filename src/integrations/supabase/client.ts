@@ -41,20 +41,10 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
 // Test the connection using async/await
 (async () => {
   try {
-    // First ensure the profiles table exists
-    const { error: createTableError } = await supabase.rpc('create_profiles_if_not_exists');
-    if (createTableError) {
-      console.error('Error creating profiles table:', createTableError);
-    }
-
-    // Then test the connection
-    const { error: testError } = await supabase
-      .from('api_keys')
-      .select('count')
-      .limit(1);
-      
-    if (testError) {
-      console.error('Failed to connect to Supabase:', testError);
+    // Test the connection by checking auth status
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    if (authError) {
+      console.error('Failed to connect to Supabase:', authError);
     } else {
       console.log('Successfully connected to Supabase');
     }
