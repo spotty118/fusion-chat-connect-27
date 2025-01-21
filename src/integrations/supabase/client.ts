@@ -46,11 +46,12 @@ window.addEventListener('storage', (event) => {
   }
 });
 
-// Test the connection
-supabase.from('api_keys').select('count').limit(1)
-  .then(() => {
+// Test the connection using async/await to properly handle the Promise
+(async () => {
+  try {
+    await supabase.from('api_keys').select('count').limit(1);
     console.log('Successfully connected to Supabase');
-  })
-  .catch((error: Error) => {
+  } catch (error) {
     console.error('Failed to connect to Supabase:', error);
-  });
+  }
+})();
