@@ -15,8 +15,8 @@ const getSupabaseConfig = () => {
   // Fallback to default values
   console.log('Using default Supabase config');
   return {
-    supabaseUrl: "https://bfveluzxxkrxwvlpelgx.supabase.co",
-    supabaseKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmdmVsdXp4eGtyeHd2bHBlbGd4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzE1NDk5MTYsImV4cCI6MjA0NzEyNTkxNn0.DV2fKcV7ecdwfg8BkepqChyh8ZLPk2MsbiPPPsE8XQo"
+    supabaseUrl: "https://gyecztjxhffpkdweoqzb.supabase.co",
+    supabaseKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5ZWN6dGp4aGZmcGtkd2VvcXpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc0MTUyNjEsImV4cCI6MjA1Mjk5MTI2MX0.lLPoqBsxeDMq6c38Mrl3C7LQMFydzrfiaMZGbzvRFZs"
   };
 };
 
